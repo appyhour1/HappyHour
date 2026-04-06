@@ -380,7 +380,7 @@ export default function App() {
                   )}
                 </div>
                 {photoError && <div className="photo-error">{photoError}</div>}
-                <input ref={fileInputRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={handlePhotoUpload} />
+                <input ref={fileInputRef} type="file" accept="image/*" cpture="environment" style={{display:'none'}} onChange={handlePhotoUpload} />
                 <div className="form-divider"><span>or fill in manually</span></div>
               </>
             )}
