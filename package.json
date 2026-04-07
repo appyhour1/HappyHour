@@ -6,14 +6,31 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "@supabase/supabase-js": "^2.39.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "@types/node": "^18.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.0.0",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^4.2.1",
+    "@types/leaflet": "^1.9.8",
+    "react-router-dom": "^6.22.0",
+    "@types/react-router-dom": "^5.3.3",
+    "posthog-js": "^1.96.1",
+    "react-helmet-async": "^2.0.4"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build"
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version"
+    ]
   }
 }
