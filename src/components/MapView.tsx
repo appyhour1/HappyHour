@@ -218,9 +218,6 @@ export function MapView({
             >
               <Popup
                 className="venue-popup-wrapper"
-                onClose={() => {
-                  // Don't clear selection on popup close — user may want pin highlighted
-                }}
               >
                 <VenuePopup
                   venue={venue}
