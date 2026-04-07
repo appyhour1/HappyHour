@@ -123,7 +123,7 @@ export default function SeoLandingPage() {
     pageVenues = pageVenues.filter(v => v.categories.includes(config.filterCategory!))
   }
 
-  const liveCount = pageVenues.filter(isVenueActiveNow).length
+  const liveCount = pageVenues.filter(v => isVenueActiveNow(v)).length
 
   return (
     <>
