@@ -727,3 +727,180 @@ input, textarea, select { font-family: inherit; }
   .browse-topbar { flex-direction: column; align-items: stretch; }
   .browse-topbar-right { justify-content: flex-end; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   EDIT VENUE FORM
+═══════════════════════════════════════════════════════ */
+
+.detail-edit-btn {
+  display: flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 14px;
+  border: 1px solid #3C3489; border-radius: 8px;
+  background: #EEEDFE; color: #3C3489;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.detail-edit-btn:hover { background: #3C3489; color: #fff; }
+
+.detail-edit-panel {
+  background: #fff;
+  border: 1.5px solid #3C3489;
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ef-form { }
+
+.ef-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.ef-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; color: #1a1a1a;
+}
+.ef-close-btn {
+  background: none; border: none; font-size: 18px;
+  color: #aaa; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; line-height: 1;
+}
+.ef-close-btn:hover { color: #1a1a1a; background: #f5f3ef; }
+
+.ef-section-title {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: .05em; color: #999; margin-bottom: 12px;
+}
+
+.ef-field { margin-bottom: 1rem; }
+.ef-label {
+  display: block; font-size: 11px; font-weight: 500;
+  color: #999; margin-bottom: 5px;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.ef-required { color: #D85A30; }
+.ef-error { display: block; margin-top: 4px; font-size: 12px; color: #c0392b; }
+
+.ef-input, .ef-select {
+  width: 100%; height: 38px;
+  border: 0.5px solid #d0cdc8; border-radius: 8px;
+  padding: 0 12px; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; background: #faf9f7; color: #1a1a1a;
+}
+.ef-input:focus, .ef-select:focus { outline: none; border-color: #3C3489; }
+
+.ef-textarea {
+  width: 100%; border: 0.5px solid #d0cdc8; border-radius: 8px;
+  padding: 9px 12px; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; background: #faf9f7; color: #1a1a1a;
+  resize: vertical; line-height: 1.5;
+}
+.ef-textarea:focus { outline: none; border-color: #3C3489; }
+
+.ef-row { display: flex; gap: 10px; }
+.ef-row .ef-field { flex: 1; }
+
+.ef-days { display: flex; gap: 5px; flex-wrap: wrap; }
+.ef-day-btn {
+  height: 30px; padding: 0 10px;
+  border: 0.5px solid #d0cdc8; border-radius: 20px;
+  font-size: 12px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+  background: #fff; color: #777; cursor: pointer; transition: all .15s;
+}
+.ef-day-btn.active { background: #3C3489; border-color: #3C3489; color: #EEEDFE; }
+
+.ef-btn-save {
+  height: 38px; padding: 0 20px;
+  background: #D85A30; color: #fff; border: none;
+  border-radius: 8px; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: opacity .15s;
+}
+.ef-btn-save:hover { opacity: .88; }
+.ef-btn-save:disabled { opacity: .6; cursor: not-allowed; }
+
+.ef-btn-cancel {
+  height: 38px; padding: 0 16px;
+  border: 0.5px solid #d0cdc8; border-radius: 8px;
+  background: none; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; color: #777; cursor: pointer;
+}
+
+.ef-btn-delete {
+  height: 38px; padding: 0 16px;
+  border: 0.5px solid #f5c6bb; border-radius: 8px;
+  background: none; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; color: #c0392b; cursor: pointer;
+  margin-left: auto;
+}
+.ef-btn-delete:hover { background: #fdf0ee; }
+
+.ef-divider {
+  height: 0.5px; background: #e0ddd8;
+  margin: 1.5rem 0;
+}
+
+.ef-schedule-row {
+  margin-bottom: 10px;
+}
+
+.ef-schedule-summary {
+  display: flex; align-items: flex-start;
+  gap: 10px; padding: 12px;
+  background: #faf9f7; border: 0.5px solid #e0ddd8;
+  border-radius: 10px;
+}
+.ef-schedule-info {
+  display: flex; flex-direction: column; gap: 3px; flex: 1;
+}
+.ef-schedule-days { font-size: 13px; font-weight: 500; color: #1a1a1a; }
+.ef-schedule-time { font-size: 12px; color: #D85A30; font-weight: 500; }
+.ef-schedule-text { font-size: 12px; color: #777; line-height: 1.4; }
+
+.ef-btn-edit-sched {
+  height: 28px; padding: 0 12px; flex-shrink: 0;
+  border: 0.5px solid #d0cdc8; border-radius: 6px;
+  background: #fff; font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 500; color: #444; cursor: pointer;
+}
+.ef-btn-edit-sched:hover { border-color: #3C3489; color: #3C3489; }
+
+.ef-schedule-editor {
+  background: #f5f3ef; border: 0.5px solid #e0ddd8;
+  border-radius: 10px; padding: 1rem;
+}
+.ef-new-schedule { margin-top: 10px; }
+
+.ef-schedule-actions {
+  display: flex; gap: 8px; align-items: center; margin-top: 12px;
+}
+
+.ef-btn-add-schedule {
+  width: 100%; height: 36px;
+  border: 1.5px dashed #d0cdc8; border-radius: 8px;
+  background: none; font-family: 'DM Sans', sans-serif;
+  font-size: 13px; color: #999; cursor: pointer;
+  transition: all .15s; margin-top: 8px;
+}
+.ef-btn-add-schedule:hover { border-color: #D85A30; color: #D85A30; }
+
+.ef-empty-note { font-size: 13px; color: #aaa; margin-bottom: 10px; }
+
+.ef-success-banner {
+  background: #E8F5EE; border: 0.5px solid #A8D5B9;
+  border-radius: 8px; padding: 10px 14px;
+  font-size: 13px; font-weight: 500; color: #085041;
+  margin-bottom: 1rem;
+}
+.ef-error-banner {
+  background: #FEF0EE; border: 0.5px solid #f5c6bb;
+  border-radius: 8px; padding: 10px 14px;
+  font-size: 13px; color: #c0392b; margin-bottom: 1rem;
+}
+
+@media (max-width: 500px) {
+  .ef-row { flex-direction: column; }
+  .detail-edit-panel { padding: 1rem; }
+  .detail-nav-actions { gap: 6px; }
+  .detail-edit-btn span { display: none; }
+}

@@ -13,6 +13,7 @@ import { getScheduleStatus, STATUS_VISUALS } from '../utils/happeningNow'
 import { DEAL_TYPE_COLORS, DEAL_TYPE_LABELS, CATEGORY_LABELS, DAYS_OF_WEEK } from '../types'
 import { Analytics } from '../services/analytics'
 import { SuggestEditForm } from '../components/ContributionForms'
+import { EditVenueForm } from '../components/EditVenueForm'
 import type { Venue, HappyHourStatus, ScheduleStatus } from '../types'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
@@ -33,14 +34,18 @@ export default function VenueDetailPage() {
   const [venue, setVenue] = useState<Venue | null>(null)
   const [loading, setLoading] = useState(true)
   const [showEditForm, setShowEditForm] = useState(false)
+  const [showEditVenue, setShowEditVenue] = useState(false)
   const [activeScheduleIdx, setActiveScheduleIdx] = useState(0)
+
+  function refetchVenue() {
+    if (!id) return
+    getVenueById(id).then(v => { if (v) setVenue(v) })
+  }
 
   useEffect(() => {
     if (!id) return
-    // Try context first for instant render
     const cached = allVenues.find(v => v.id === id)
     if (cached) { setVenue(cached); setLoading(false) }
-    // Always fetch fresh data
     getVenueById(id).then(v => {
       if (v) { setVenue(v); Analytics.venueDetailViewed(v.id, v.name) }
       setLoading(false)
@@ -109,6 +114,12 @@ export default function VenueDetailPage() {
           <button className="detail-back-btn" onClick={() => navigate(-1)}>← Back</button>
           <div className="detail-nav-actions">
             <button
+              className="detail-edit-btn"
+              onClick={() => setShowEditVenue(v => !v)}
+            >
+              {showEditVenue ? '✕ Close editor' : '✏️ Edit venue'}
+            </button>
+            <button
               className={`detail-fav-btn${isFav ? ' saved' : ''}`}
               onClick={() => favorites.toggleFavorite(venue.id, venue.name)}
               aria-label={isFav ? 'Remove from favorites' : 'Save'}
@@ -118,6 +129,17 @@ export default function VenueDetailPage() {
             </button>
           </div>
         </nav>
+
+        {/* ── INLINE EDIT FORM ── */}
+        {showEditVenue && (
+          <div className="detail-edit-panel">
+            <EditVenueForm
+              venue={venue}
+              onClose={() => setShowEditVenue(false)}
+              onSaved={() => { refetchVenue(); setShowEditVenue(false) }}
+            />
+          </div>
+        )}
 
         {/* ── HERO ── */}
         <div className="detail-hero">
