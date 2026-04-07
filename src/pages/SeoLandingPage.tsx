@@ -115,7 +115,7 @@ export default function SeoLandingPage() {
 
   // Filter venues for this page
   let pageVenues = venues
-  if (config.filterOpenNow) pageVenues = pageVenues.filter(isVenueActiveNow)
+  if (config.filterOpenNow) pageVenues = pageVenues.filter(v => isVenueActiveNow(v))
   if (config.filterNeighborhood) {
     pageVenues = pageVenues.filter(v => v.neighborhood.toLowerCase() === config.filterNeighborhood!.toLowerCase())
   }
