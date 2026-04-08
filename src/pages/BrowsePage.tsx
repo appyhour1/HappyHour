@@ -23,7 +23,7 @@ import { VenueCard } from '../components/VenueCard'
 import { BestPicksRow } from '../components/BestPicksRow'
 import type { Venue, HappyHourStatus, ScheduleStatus } from '../types'
 import { DAYS_OF_WEEK } from '../types'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
 
@@ -103,9 +103,10 @@ export default function BrowsePage() {
               ♥ Saved{favorites.count > 0 && ` (${favorites.count})`}
             </button>
           </div>
-          <div className="browse-topbar-right">
-            <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
-          </div>
+         <div className="browse-topbar-right">
+          <Link to="/crawl" className="crawl-nav-btn">🍺 Bar Crawl</Link>
+          <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
+        </div>
         </div>
 
         {/* ── FILTER PANEL ── */}
