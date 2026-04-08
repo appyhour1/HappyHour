@@ -16,6 +16,8 @@ import { SuggestEditForm } from '../components/ContributionForms'
 import { ClaimVenueForm } from '../components/ClaimVenueForm'
 import { useConfirmDeal } from '../hooks/useConfirmDeal'
 import { EditVenueForm } from '../components/EditVenueForm'
+import { PhotoGallery } from '../components/PhotoGallery'
+import { track } from '../services/analytics'
 import type { Venue, HappyHourStatus, ScheduleStatus } from '../types'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
@@ -44,6 +46,18 @@ export default function VenueDetailPage() {
   function refetchVenue() {
     if (!id) return
     getVenueById(id).then(v => { if (v) setVenue(v) })
+  }
+
+  function handleShare() {
+    const url = window.location.href
+    const text = `Check out happy hour at ${venue?.name} 🍺`
+    if (navigator.share) {
+      navigator.share({ title: venue?.name ?? 'Happy Hour', text, url })
+    } else {
+      navigator.clipboard.writeText(url)
+      alert('Link copied!')
+    }
+    track('venue_shared', { venue_id: venue?.id, venue_name: venue?.name, source: 'detail' })
   }
 
   useEffect(() => {
@@ -126,6 +140,9 @@ export default function VenueDetailPage() {
               onClick={() => setShowEditVenue(v => !v)}
             >
               {showEditVenue ? '✕ Close editor' : '✏️ Edit venue'}
+            </button>
+            <button className="detail-share-btn" onClick={handleShare} aria-label="Share">
+              🔗 Share
             </button>
             <button
               className={`detail-fav-btn${isFav ? ' saved' : ''}`}
@@ -277,6 +294,11 @@ export default function VenueDetailPage() {
               </div>
             )
           })()}
+        </div>
+
+        {/* ── PHOTO GALLERY ── */}
+        <div className="detail-section">
+          <PhotoGallery venueId={venue.id} venueName={venue.name} />
         </div>
 
         {/* ── VERIFICATION ── */}

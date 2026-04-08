@@ -73,6 +73,21 @@ export default function BrowsePage() {
   const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
   const confirmDeal = useConfirmDeal()
 
+  // Smart default: auto-enable "open now" between 3pm-9pm on first visit
+  useEffect(() => {
+    const hour = new Date().getHours()
+    const isHappyHourTime = hour >= 15 && hour < 21
+    if (isHappyHourTime && fs.activeCount === 0 && !fs.filters.openNow) {
+      // Only auto-enable if user hasn't touched filters yet
+      const key = 'hh_smart_default_applied'
+      if (!sessionStorage.getItem(key)) {
+        fs.setOpenNow(true)
+        sessionStorage.setItem(key, '1')
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Refresh status badges every minute
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60_000)
@@ -125,7 +140,7 @@ export default function BrowsePage() {
 
         {/* ── TOP BAR ── */}
         <div className="browse-topbar">
-<div className="browse-topbar-left">
+          <div className="browse-topbar-left">
             <button
               className={`mobile-filter-btn${filterOpen ? ' active' : ''}${fs.activeCount > 0 ? ' has-filters' : ''}`}
               onClick={() => setFilterOpen(v => !v)}
@@ -139,9 +154,9 @@ export default function BrowsePage() {
             >
               ♥ Saved{favorites.count > 0 && ` (${favorites.count})`}
             </button>
-            <Link to="/crawl" className="crawl-nav-btn">🍺 Crawl</Link>
           </div>
           <div className="browse-topbar-right">
+            <Link to="/crawl" className="crawl-nav-btn">🍺 Bar Crawl</Link>
             <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
           </div>
         </div>
@@ -228,7 +243,9 @@ export default function BrowsePage() {
             )}
           </div>
         )}
-    {/* ── EMAIL CAPTURE ── */}
+      </div>
+
+        {/* ── EMAIL CAPTURE ── */}
         {showCapture && (
           <EmailCapture trigger={trigger} city={city} onDismiss={dismissEmail} />
         )}
