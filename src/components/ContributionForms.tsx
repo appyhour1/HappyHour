@@ -191,11 +191,28 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
         />
       </Field>
 
+<div className="cf-field">
+        <label className="cf-label">Dog friendly?</label>
+        <div className="cf-dog-row">
+          <button
+            type="button"
+            className={`cf-dog-btn${form.notes?.includes('🐾 Dog friendly') ? ' active' : ''}`}
+            onClick={() => set('notes',
+              form.notes?.includes('🐾 Dog friendly')
+                ? (form.notes || '').replace('🐾 Dog friendly. ', '')
+                : '🐾 Dog friendly. ' + (form.notes || '')
+            )}
+          >
+            🐾 {form.notes?.includes('🐾 Dog friendly') ? 'Yes — dog friendly!' : 'Mark as dog friendly'}
+          </button>
+        </div>
+      </div>
+
       <Field label="Notes (optional)" error={fieldError('notes')}>
         <Textarea
           value={form.notes}
           onChange={e => set('notes', e.target.value)}
-          placeholder="Anything else we should know"
+          placeholder="Anything else we should know — patio seating, good for groups, etc."
           rows={2}
         />
       </Field>
