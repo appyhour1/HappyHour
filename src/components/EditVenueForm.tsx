@@ -404,8 +404,8 @@ const [saving, setSaving]           = useState(false)
           <button className="ef-btn-add-schedule" onClick={() => setAddingSchedule(true)} type="button">
             + Add schedule manually
           </button>
-          <label className="ef-btn-photo" title="Upload a photo to auto-fill a new schedule">
-            {photoLoading ? <span className="cf-spinner" /> : '📷 Scan photo'}
+ <label className="ef-btn-photo" title="Upload a photo to auto-fill a new schedule">
+            {photoLoading ? <span className="cf-spinner" /> : <span>📷 Scan photo</span>}
             <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
           </label>
         </div>
