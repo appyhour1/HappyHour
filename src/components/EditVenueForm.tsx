@@ -1,19 +1,7 @@
-/**
- * EditVenueForm.tsx
- *
- * Full inline edit form for a venue and its schedules.
- * Saves directly to Supabase — no moderation queue.
- * Appears on the venue detail page when the owner clicks "Edit this venue".
- */
-
 import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Venue, HappyHourSchedule, DayOfWeek } from '../types'
 import { DAYS_OF_WEEK } from '../types'
-
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
 
 function Field({ label, required, error, children }: {
   label: string; required?: boolean; error?: string; children: React.ReactNode
@@ -27,16 +15,7 @@ function Field({ label, required, error, children }: {
   )
 }
 
-// ─────────────────────────────────────────────
-// SCHEDULE EDITOR — edit one schedule at a time
-// ─────────────────────────────────────────────
-
-function ScheduleEditor({
-  schedule,
-  onSave,
-  onDelete,
-  onCancel,
-}: {
+function ScheduleEditor({ schedule, onSave, onDelete, onCancel }: {
   schedule: HappyHourSchedule
   onSave: (updated: Partial<HappyHourSchedule>) => Promise<void>
   onDelete: () => Promise<void>
@@ -72,16 +51,11 @@ function ScheduleEditor({
       <Field label="Days">
         <div className="ef-days">
           {DAYS_OF_WEEK.map(d => (
-            <button
-              key={d}
-              className={`ef-day-btn${days.includes(d) ? ' active' : ''}`}
-              onClick={() => toggleDay(d)}
-              type="button"
-            >{d}</button>
+            <button key={d} className={`ef-day-btn${days.includes(d) ? ' active' : ''}`}
+              onClick={() => toggleDay(d)} type="button">{d}</button>
           ))}
         </div>
       </Field>
-
       <div className="ef-row">
         <Field label="Start time">
           <input className="ef-input" type="time" value={startTime} onChange={e => setStart(e.target.value)} />
@@ -90,17 +64,10 @@ function ScheduleEditor({
           <input className="ef-input" type="time" value={endTime} onChange={e => setEnd(e.target.value)} />
         </Field>
       </div>
-
       <Field label="Deal description" required>
-        <textarea
-          className="ef-textarea"
-          value={dealText}
-          onChange={e => setDealText(e.target.value)}
-          placeholder="e.g. $3 drafts, half-off apps, $5 wells..."
-          rows={3}
-        />
+        <textarea className="ef-textarea" value={dealText} onChange={e => setDealText(e.target.value)}
+          placeholder="e.g. $3 drafts, half-off apps, $5 wells..." rows={3} />
       </Field>
-
       <div className="ef-schedule-actions">
         <button className="ef-btn-save" onClick={handleSave} disabled={saving}>
           {saving ? 'Saving...' : 'Save schedule'}
@@ -114,10 +81,6 @@ function ScheduleEditor({
   )
 }
 
-// ─────────────────────────────────────────────
-// MAIN EDIT FORM
-// ─────────────────────────────────────────────
-
 interface EditVenueFormProps {
   venue: Venue
   onClose: () => void
@@ -125,21 +88,28 @@ interface EditVenueFormProps {
 }
 
 export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
-  // Venue fields
-  const [name, setName]               = useState(venue.name)
+  const [name, setName]                 = useState(venue.name)
   const [neighborhood, setNeighborhood] = useState(venue.neighborhood)
-  const [city, setCity]               = useState(venue.city)
-  const [address, setAddress]         = useState(venue.address ?? '')
-  const [website, setWebsite]         = useState(venue.website ?? '')
-  const [phone, setPhone]             = useState(venue.phone ?? '')
-  const [priceTier, setPriceTier]     = useState(venue.price_tier ?? '')
-
-const [saving, setSaving]           = useState(false)
-  const [error, setError]             = useState<string | null>(null)
-  const [success, setSuccess]         = useState(false)
+  const [city, setCity]                 = useState(venue.city)
+  const [address, setAddress]           = useState(venue.address ?? '')
+  const [website, setWebsite]           = useState(venue.website ?? '')
+  const [phone, setPhone]               = useState(venue.phone ?? '')
+  const [priceTier, setPriceTier]       = useState(venue.price_tier ?? '')
+  const [saving, setSaving]             = useState(false)
+  const [error, setError]               = useState<string | null>(null)
+  const [success, setSuccess]           = useState(false)
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null)
+  const [addingSchedule, setAddingSchedule]       = useState(false)
+  const [newDays, setNewDays]           = useState<DayOfWeek[]>([])
+  const [newStart, setNewStart]         = useState('16:00')
+  const [newEnd, setNewEnd]             = useState('19:00')
+  const [newDealText, setNewDealText]   = useState('')
+  const [savingNew, setSavingNew]       = useState(false)
   const [photoLoading, setPhotoLoading] = useState(false)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoError, setPhotoError]     = useState<string | null>(null)
+
+  const schedules = venue.schedules ?? []
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -170,7 +140,7 @@ const [saving, setSaving]           = useState(false)
         if (parsed.deal_text) setNewDealText(parsed.deal_text)
         if (parsed.start_time) setNewStart(parsed.start_time)
         if (parsed.end_time) setNewEnd(parsed.end_time)
-        if (parsed.days?.length) setNewDays(parsed.days)
+        if (parsed.days && parsed.days.length) setNewDays(parsed.days)
         setAddingSchedule(true)
       } catch {
         setPhotoError('Could not read the image. Try a clearer photo or fill in manually.')
@@ -180,20 +150,6 @@ const [saving, setSaving]           = useState(false)
     reader.readAsDataURL(file)
   }
 
-  // Which schedule is being edited
-  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null)
-
-  // Add new schedule state
-  const [addingSchedule, setAddingSchedule] = useState(false)
-  const [newDays, setNewDays]               = useState<DayOfWeek[]>([])
-  const [newStart, setNewStart]             = useState('16:00')
-  const [newEnd, setNewEnd]                 = useState('19:00')
-  const [newDealText, setNewDealText]       = useState('')
-  const [savingNew, setSavingNew]           = useState(false)
-
-  const schedules = venue.schedules ?? []
-
-  // ── SAVE VENUE ────────────────────────────
   async function saveVenue() {
     if (!name.trim()) { setError('Venue name is required'); return }
     setSaving(true)
@@ -221,7 +177,6 @@ const [saving, setSaving]           = useState(false)
     setSaving(false)
   }
 
-  // ── SAVE EXISTING SCHEDULE ────────────────
   async function saveSchedule(scheduleId: string, updates: Partial<HappyHourSchedule>) {
     const { error: err } = await supabase
       .from('happy_hour_schedules')
@@ -232,18 +187,14 @@ const [saving, setSaving]           = useState(false)
     onSaved()
   }
 
-  // ── DELETE SCHEDULE ───────────────────────
   async function deleteSchedule(scheduleId: string) {
     const { error: err } = await supabase
-      .from('happy_hour_schedules')
-      .delete()
-      .eq('id', scheduleId)
+      .from('happy_hour_schedules').delete().eq('id', scheduleId)
     if (err) throw err
     setEditingScheduleId(null)
     onSaved()
   }
 
-  // ── ADD NEW SCHEDULE ──────────────────────
   async function addSchedule() {
     if (!newDealText.trim()) return
     setSavingNew(true)
@@ -251,16 +202,17 @@ const [saving, setSaving]           = useState(false)
       const { error: err } = await supabase
         .from('happy_hour_schedules')
         .insert([{
-          venue_id:   venue.id,
-          days:       newDays.length ? newDays : DAYS_OF_WEEK,
+          venue_id: venue.id,
+          days: newDays.length ? newDays : DAYS_OF_WEEK,
           start_time: newStart,
-          end_time:   newEnd,
+          end_time: newEnd,
           is_all_day: false,
-          deal_text:  newDealText.trim(),
-          deals:      [],
+          deal_text: newDealText.trim(),
+          deals: [],
         }])
       if (err) throw err
       setAddingSchedule(false)
+      setPhotoPreview(null)
       setNewDays([]); setNewStart('16:00'); setNewEnd('19:00'); setNewDealText('')
       onSaved()
     } catch (e: any) {
@@ -271,16 +223,14 @@ const [saving, setSaving]           = useState(false)
 
   return (
     <div className="ef-form">
-      {/* ── HEADER ── */}
       <div className="ef-header">
         <h2 className="ef-title">Edit venue</h2>
-        <button className="ef-close-btn" onClick={onClose} type="button">✕</button>
+        <button className="ef-close-btn" onClick={onClose} type="button">X</button>
       </div>
 
-      {success && <div className="ef-success-banner">✓ Saved successfully!</div>}
-      {error   && <div className="ef-error-banner">{error}</div>}
+      {success && <div className="ef-success-banner">Saved successfully!</div>}
+      {error && <div className="ef-error-banner">{error}</div>}
 
-      {/* ── VENUE DETAILS ── */}
       <div className="ef-section-title">Venue details</div>
 
       <Field label="Venue name" required>
@@ -312,10 +262,10 @@ const [saving, setSaving]           = useState(false)
       <Field label="Price tier">
         <select className="ef-select" value={priceTier} onChange={e => setPriceTier(e.target.value)}>
           <option value="">Select...</option>
-          <option value="$">$ — Budget</option>
-          <option value="$$">$$ — Moderate</option>
-          <option value="$$$">$$$ — Upscale</option>
-          <option value="$$$$">$$$$ — Fine Dining</option>
+          <option value="$">$ - Budget</option>
+          <option value="$$">$$ - Moderate</option>
+          <option value="$$$">$$$ - Upscale</option>
+          <option value="$$$$">$$$$ - Fine Dining</option>
         </select>
       </Field>
 
@@ -323,15 +273,14 @@ const [saving, setSaving]           = useState(false)
         {saving ? 'Saving...' : 'Save venue details'}
       </button>
 
-      {/* ── SCHEDULES ── */}
       <div className="ef-divider" />
       <div className="ef-section-title">Happy hour schedules</div>
 
       {schedules.length === 0 && (
-        <p className="ef-empty-note">No schedules yet — add one below.</p>
+        <p className="ef-empty-note">No schedules yet - add one below.</p>
       )}
 
-      {schedules.map((s, i) => (
+      {schedules.map(s => (
         <div key={s.id} className="ef-schedule-row">
           {editingScheduleId === s.id ? (
             <ScheduleEditor
@@ -347,7 +296,7 @@ const [saving, setSaving]           = useState(false)
                   {s.days.length === 7 ? 'Every day' : s.days.join(', ')}
                 </span>
                 <span className="ef-schedule-time">
-                  {s.start_time.slice(0,5)} – {s.end_time.slice(0,5)}
+                  {s.start_time.slice(0,5)} - {s.end_time.slice(0,5)}
                 </span>
                 <span className="ef-schedule-text">{s.deal_text}</span>
               </div>
@@ -359,19 +308,16 @@ const [saving, setSaving]           = useState(false)
         </div>
       ))}
 
-      {/* ── ADD NEW SCHEDULE ── */}
       {addingSchedule ? (
         <div className="ef-schedule-editor ef-new-schedule">
           <div className="ef-section-title" style={{ marginBottom: 12 }}>New schedule</div>
           <Field label="Days">
             <div className="ef-days">
               {DAYS_OF_WEEK.map(d => (
-                <button
-                  key={d}
+                <button key={d}
                   className={`ef-day-btn${newDays.includes(d) ? ' active' : ''}`}
                   onClick={() => setNewDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])}
-                  type="button"
-                >{d}</button>
+                  type="button">{d}</button>
               ))}
             </div>
           </Field>
@@ -384,13 +330,8 @@ const [saving, setSaving]           = useState(false)
             </Field>
           </div>
           <Field label="Deal description" required>
-            <textarea
-              className="ef-textarea"
-              value={newDealText}
-              onChange={e => setNewDealText(e.target.value)}
-              placeholder="e.g. $3 drafts, half-off apps, $5 wells..."
-              rows={3}
-            />
+            <textarea className="ef-textarea" value={newDealText} onChange={e => setNewDealText(e.target.value)}
+              placeholder="e.g. $3 drafts, half-off apps, $5 wells..." rows={3} />
           </Field>
           <div className="ef-schedule-actions">
             <button className="ef-btn-save" onClick={addSchedule} disabled={savingNew}>
@@ -400,22 +341,23 @@ const [saving, setSaving]           = useState(false)
           </div>
         </div>
       ) : (
-<div className="ef-photo-row">
+        <div className="ef-photo-row">
           <button className="ef-btn-add-schedule" onClick={() => setAddingSchedule(true)} type="button">
             + Add schedule manually
           </button>
- <label className="ef-btn-photo" title="Upload a photo to auto-fill a new schedule">
+          <label className="ef-btn-photo">
             {photoLoading ? <span className="cf-spinner" /> : <span>📷 Scan photo</span>}
             <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
           </label>
         </div>
-        {photoError && <div className="ef-error-banner">{photoError}</div>}
-        {photoPreview && !addingSchedule && (
-          <div className="ef-photo-preview-row">
-            <img src={photoPreview} alt="scanned" className="cf-photo-thumb" />
-            <span className="cf-photo-ok">✓ Schedule filled from photo - review below</span>
-          </div>
-        )}
+      )}
+
+      {photoError && <div className="ef-error-banner">{photoError}</div>}
+      {photoPreview && !addingSchedule && (
+        <div className="ef-photo-preview-row">
+          <img src={photoPreview} alt="scanned" className="cf-photo-thumb" />
+          <span className="cf-photo-ok">Schedule filled from photo - review above</span>
+        </div>
       )}
     </div>
   )
