@@ -8,6 +8,7 @@ import BrowsePage from './pages/BrowsePage'
 import VenueDetailPage from './pages/VenueDetailPage'
 import SeoLandingPage from './pages/SeoLandingPage'
 import CrawlBuilderPage from './pages/CrawlBuilderPage'
+import NowPage from './pages/NowPage'
 import './styles.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
@@ -20,6 +21,7 @@ root.render(
             <Route path="/" element={<BrowsePage />} />
             <Route path="/venue/:id" element={<VenueDetailPage />} />
             <Route path="/crawl" element={<CrawlBuilderPage />} />
+            <Route path="/now" element={<NowPage />} />
             <Route path="/:city" element={<SeoLandingPage />} />
             <Route path="/:city/:slug" element={<SeoLandingPage />} />
           </Routes>

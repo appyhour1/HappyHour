@@ -101,7 +101,6 @@ input, textarea, select { font-family: inherit; }
 /* Hide links on very small screens */
 @media (max-width: 500px) {
   .shell-links { display: none; }
-  .shell-link--crawl { display: flex; }
   .shell-main { padding: 1rem 1rem 3.5rem; }
 }
 
@@ -1096,12 +1095,281 @@ input, textarea, select { font-family: inherit; }
   .crawl-actions { flex-direction: column; }
   .crawl-stop-btn { width: 40px; height: 40px; }
 }
-.crawl-nav-btn {
-  display: flex; align-items: center; gap: 5px;
-  height: 30px; padding: 0 12px; margin-right: 6px;
-  background: #FDF0EB; border: 1px solid #F5C6A8;
-  border-radius: 8px; font-size: 12px; font-weight: 500;
-  color: #D85A30; white-space: nowrap; text-decoration: none;
-  transition: all .15s;
+
+/* ═══════════════════════════════════════════════════════
+   BROWSE HERO
+═══════════════════════════════════════════════════════ */
+
+.browse-hero {
+  padding: 1.25rem 0 1rem;
+  margin-bottom: .5rem;
 }
-.crawl-nav-btn:hover { background: #D85A30; color: #fff; border-color: #D85A30; }
+.browse-hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px; font-weight: 700; letter-spacing: -.5px;
+  color: #1a1a1a; margin-bottom: 4px;
+}
+.browse-hero-sub {
+  font-size: 14px; color: #999; margin-bottom: 10px;
+}
+.browse-hero-stats {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.browse-hero-live {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500; color: #085041;
+  background: #E1F5EE; padding: 4px 12px; border-radius: 20px;
+  text-decoration: none; transition: opacity .15s;
+}
+.browse-hero-live:hover { opacity: .85; }
+.browse-hero-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #1D9E75;
+  animation: pulse-ring 1.8s ease-out infinite; flex-shrink: 0;
+}
+.browse-hero-stat {
+  font-size: 12px; color: #bbb;
+}
+
+/* ═══════════════════════════════════════════════════════
+   NOW PAGE
+═══════════════════════════════════════════════════════ */
+
+.now-page { max-width: 680px; }
+
+.now-hero { text-align: center; padding: 1.5rem 0 1.75rem; }
+
+.now-live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500; color: #777;
+  background: #f5f3ef; padding: 5px 14px; border-radius: 20px;
+  margin-bottom: 12px;
+}
+.now-live-badge.active { background: #E1F5EE; color: #085041; }
+.now-live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0;
+}
+.now-live-badge.active .now-live-dot {
+  background: #1D9E75; animation: pulse-ring 1.8s ease-out infinite;
+}
+
+.now-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 30px; font-weight: 700; letter-spacing: -.5px;
+  color: #1a1a1a; margin-bottom: 8px;
+}
+.now-sub { font-size: 15px; color: #777; line-height: 1.6; margin-bottom: 1.25rem; }
+
+.now-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.now-share-btn {
+  height: 38px; padding: 0 18px;
+  background: #3C3489; color: #EEEDFE; border: none; border-radius: 8px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: opacity .15s;
+}
+.now-share-btn:hover { opacity: .88; }
+.now-crawl-btn {
+  height: 38px; padding: 0 18px;
+  background: #fff; color: #D85A30;
+  border: 1px solid #F5C6A8; border-radius: 8px;
+  font-size: 13px; font-weight: 500; text-decoration: none;
+  display: inline-flex; align-items: center; transition: all .15s;
+}
+.now-crawl-btn:hover { background: #D85A30; color: #fff; border-color: #D85A30; }
+
+.now-upcoming { margin-top: 1.5rem; }
+.now-upcoming-title {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: .05em; color: #aaa; margin-bottom: 10px;
+}
+.now-upcoming-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px; background: #fff; border: 0.5px solid #e0ddd8;
+  border-radius: 10px; text-decoration: none; margin-bottom: 6px;
+  transition: box-shadow .15s;
+}
+.now-upcoming-row:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.now-upcoming-info { display: flex; flex-direction: column; gap: 2px; }
+.now-upcoming-name { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+.now-upcoming-hood { font-size: 12px; color: #999; }
+.now-upcoming-badge { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px; }
+
+.now-empty { text-align: center; padding: 3rem 1rem; }
+.now-empty-icon { font-size: 36px; margin-bottom: 12px; }
+.now-empty p { font-size: 14px; color: #999; margin-bottom: 12px; }
+.now-browse-link { color: #3C3489; font-size: 14px; font-weight: 500; }
+
+/* ═══════════════════════════════════════════════════════
+   EMAIL CAPTURE
+═══════════════════════════════════════════════════════ */
+
+.ec-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 600; padding: 0;
+}
+@media (min-width: 500px) {
+  .ec-overlay { align-items: center; padding: 1rem; }
+}
+
+.ec-modal {
+  background: #fff; border-radius: 14px 14px 0 0;
+  padding: 1.75rem 1.5rem 2rem;
+  width: 100%; max-width: 420px;
+  position: relative; text-align: center;
+  animation: slideUp .25s ease;
+}
+@media (min-width: 500px) {
+  .ec-modal { border-radius: 14px; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.ec-close {
+  position: absolute; top: 14px; right: 14px;
+  background: none; border: none; font-size: 18px;
+  color: #ccc; cursor: pointer; line-height: 1; padding: 4px;
+}
+.ec-close:hover { color: #888; }
+
+.ec-icon { font-size: 36px; margin-bottom: 10px; line-height: 1; }
+.ec-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px;
+}
+.ec-sub { font-size: 13px; color: #999; line-height: 1.6; margin-bottom: 1.25rem; }
+
+.ec-form { display: flex; flex-direction: column; gap: 8px; }
+.ec-input {
+  width: 100%; height: 42px; border: 1px solid #d0cdc8; border-radius: 8px;
+  padding: 0 14px; font-family: 'DM Sans', sans-serif; font-size: 15px;
+  background: #faf9f7; color: #1a1a1a; text-align: center;
+}
+.ec-input:focus { outline: none; border-color: #3C3489; }
+.ec-btn {
+  width: 100%; height: 42px; background: #D85A30; color: #fff;
+  border: none; border-radius: 8px;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+  cursor: pointer; transition: opacity .15s;
+}
+.ec-btn:hover { opacity: .88; }
+.ec-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.ec-success {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px; background: #E1F5EE; border-radius: 8px;
+  font-size: 15px; font-weight: 500; color: #085041; margin-bottom: .5rem;
+}
+.ec-success-icon { font-size: 18px; }
+
+.ec-skip {
+  background: none; border: none; font-size: 13px; color: #ccc;
+  cursor: pointer; margin-top: 12px; display: block; width: 100%;
+}
+.ec-skip:hover { color: #888; }
+
+/* ═══════════════════════════════════════════════════════
+   CONFIRM DEAL BUTTON
+═══════════════════════════════════════════════════════ */
+
+.detail-confirm-btn {
+  height: 30px; padding: 0 13px;
+  border: 1px solid #d0cdc8; border-radius: 20px;
+  background: #fff; font-family: 'DM Sans', sans-serif;
+  font-size: 12px; font-weight: 500; color: #555;
+  cursor: pointer; transition: all .15s;
+}
+.detail-confirm-btn:hover:not(:disabled) {
+  border-color: #1D9E75; color: #085041; background: #E1F5EE;
+}
+.detail-confirm-btn.confirmed {
+  background: #E1F5EE; border-color: #1D9E75; color: #085041; cursor: default;
+}
+.detail-confirm-btn:disabled { opacity: .7; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════════════
+   CLAIM VENUE
+═══════════════════════════════════════════════════════ */
+
+.detail-claim-banner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: #faf9f7;
+  border: 0.5px solid #e0ddd8; border-radius: 10px;
+  margin-bottom: 1.5rem;
+}
+.detail-claim-text { font-size: 13px; color: #777; }
+.detail-claim-btn {
+  font-size: 13px; font-weight: 500; color: #3C3489;
+  background: none; border: none; cursor: pointer;
+  padding: 0; transition: opacity .15s;
+}
+.detail-claim-btn:hover { opacity: .75; }
+
+.claim-form { }
+.claim-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.claim-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 700; color: #1a1a1a;
+}
+.claim-close {
+  background: none; border: none; font-size: 18px;
+  color: #ccc; cursor: pointer; padding: 4px;
+}
+
+.claim-benefits {
+  display: flex; flex-direction: column; gap: 5px;
+  background: #E1F5EE; border-radius: 8px; padding: 12px 14px;
+  margin-bottom: 1.25rem;
+}
+.claim-benefit { font-size: 13px; color: #085041; font-weight: 500; }
+
+.claim-error {
+  background: #FEF0EE; border: 0.5px solid #f5c6bb;
+  border-radius: 8px; padding: 8px 12px;
+  font-size: 13px; color: #c0392b; margin-bottom: 1rem;
+}
+
+.claim-field { margin-bottom: .875rem; }
+.claim-label {
+  display: block; font-size: 11px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: #999; margin-bottom: 5px;
+}
+.claim-input, .claim-select, .claim-textarea {
+  width: 100%; border: 0.5px solid #d0cdc8; border-radius: 8px;
+  padding: 8px 12px; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; background: #faf9f7; color: #1a1a1a;
+}
+.claim-input:focus, .claim-select:focus, .claim-textarea:focus {
+  outline: none; border-color: #3C3489;
+}
+.claim-textarea { min-height: 68px; resize: vertical; }
+
+.claim-submit-btn {
+  width: 100%; height: 42px; background: #1a1a1a; color: #fff;
+  border: none; border-radius: 8px;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+  cursor: pointer; margin-top: .5rem; transition: opacity .15s;
+}
+.claim-submit-btn:hover { opacity: .85; }
+.claim-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.claim-note { font-size: 12px; color: #aaa; text-align: center; margin-top: 8px; }
+
+.claim-success { text-align: center; padding: 1.5rem 1rem; }
+.claim-success-icon { font-size: 36px; margin-bottom: 10px; line-height: 1; }
+.claim-success-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 700; margin-bottom: 8px;
+}
+.claim-success-msg { font-size: 13px; color: #777; line-height: 1.6; margin-bottom: 1.25rem; }
+.claim-done-btn {
+  height: 36px; padding: 0 20px; border: 0.5px solid #d0cdc8;
+  border-radius: 8px; background: #fff; font-family: 'DM Sans', sans-serif;
+  font-size: 14px; color: #444; cursor: pointer;
+}
