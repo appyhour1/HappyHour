@@ -32,6 +32,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span className="shell-live-dot" />Live
           </Link>
           <Link to={`/${citySlug}`} className="shell-link">City Guide</Link>
+          <Link to="/crawl" className={`shell-link${location.pathname === '/crawl' ? ' active' : ''}`}>🍺 Bar Crawl</Link>
         </nav>
 
         <div className="shell-actions">
