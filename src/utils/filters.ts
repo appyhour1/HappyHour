@@ -97,10 +97,24 @@ export function filterVenues(
       if (!hasOverlap) return false
     }
 
-    if (filters.dealTypes.size > 0) {
-      const hasType = (venue.schedules || []).some(s =>
-        s.deals.some(d => filters.dealTypes.has(d.type as DealType))
-      )
+   if (filters.dealTypes.size > 0) {
+      const dealTypeKeywords: Record<string, string[]> = {
+        beer:     ['beer', 'draft', 'brew', 'lager', 'ale', 'pint'],
+        wine:     ['wine', 'vino', 'champagne', 'prosecco', 'bubbly'],
+        cocktail: ['cocktail', 'well', 'spirit', 'margarita', 'martini', 'mixed'],
+        food:     ['food', 'app', 'appetizer', 'bite', 'wing', 'burger', 'taco', 'pizza', 'snack', 'half-off', 'half off', 'menu'],
+        general:  [],
+      }
+      const hasType = (venue.schedules || []).some(s => {
+        // Check structured deals array first
+        if (s.deals.some(d => filters.dealTypes.has(d.type as DealType))) return true
+        // Fall back to keyword search in deal_text
+        const text = (s.deal_text || '').toLowerCase()
+        return [...filters.dealTypes].some(type => {
+          if (type === 'general') return true
+          return (dealTypeKeywords[type] || []).some(kw => text.includes(kw))
+        })
+      })
       if (!hasType) return false
     }
 
