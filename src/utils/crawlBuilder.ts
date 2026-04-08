@@ -267,10 +267,10 @@ export function parseCrawlFromUrl(
   if (venueIds.length === 0) return null
 
   const day: DayOfWeek = JS_DAY_TO_DOW[new Date().getDay()]
-  const stops: CrawlStop[] = venueIds
+ const stops: CrawlStop[] = venueIds
     .map((id, i) => {
       const venue = venues.find(v => v.id === id)
-      if (!venue) return null
+      if (!venue) return null as unknown as CrawlStop
       const slotHour = (startHour + i) % 24
       return {
         venue,
