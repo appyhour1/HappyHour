@@ -14,7 +14,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Analytics } from '../services/analytics'
+import { track } from '../services/analytics'
 
 const DISMISSED_KEY = 'hh_email_dismissed'
 
@@ -60,7 +60,7 @@ export function EmailCapture({ trigger, city = 'Cincinnati', onDismiss }: EmailC
         city,
         source: trigger,
       }])
-      Analytics.track('email_signup', { trigger, city })
+      track('email_signup', { trigger, city })
       setStatus('success')
       setDismissed()
       setTimeout(() => { setVisible(false); onDismiss?.() }, 2000)
