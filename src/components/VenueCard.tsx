@@ -24,7 +24,7 @@ import { DEAL_TYPE_COLORS, DEAL_TYPE_LABELS, CATEGORY_LABELS } from '../types'
 import { fmtTime, isVenueActiveNow } from '../utils/filters'
 import { getScheduleStatus, getVenueStatus, STATUS_VISUALS } from '../utils/happeningNow'
 import type { HappyHourStatus, ScheduleStatus } from '../utils/happeningNow'
-import { Analytics } from '../services/analytics'
+import { Analytics, track } from '../services/analytics'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
 
@@ -43,6 +43,22 @@ function HeartIcon({ filled }: { filled: boolean }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  )
+}
+
+// ─────────────────────────────────────────────
+// SHARE ICON
+// ─────────────────────────────────────────────
+
+function ShareIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="3" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="12" cy="13" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="3" cy="8" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <line x1="4.3" y1="7.2" x2="10.7" y2="3.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="4.3" y1="8.8" x2="10.7" y2="12.1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   )
 }
@@ -96,6 +112,18 @@ export const VenueCard = memo(function VenueCard({
   function handleFavorite(e: React.MouseEvent) {
     e.stopPropagation()
     onToggleFavorite(venue.id, venue.name)
+  }
+
+  function handleShare(e: React.MouseEvent) {
+    e.stopPropagation()
+    const url = `${window.location.origin}/venue/${venue.id}`
+    const text = `Check out happy hour at ${venue.name} 🍺`
+    if (navigator.share) {
+      navigator.share({ title: venue.name, text, url })
+    } else {
+      navigator.clipboard.writeText(url)
+    }
+    track('venue_shared', { venue_id: venue.id, venue_name: venue.name })
   }
 
   return (
@@ -197,9 +225,14 @@ export const VenueCard = memo(function VenueCard({
       {/* ── FOOTER: CTA ── */}
       <div className="vc__footer">
         <span className="vc__cta">View deals →</span>
-        {schedules.length > 1 && (
-          <span className="vc__sched-count">{schedules.length} schedules</span>
-        )}
+        <button
+          className="vc__share"
+          onClick={handleShare}
+          aria-label="Share this venue"
+          title="Share"
+        >
+          <ShareIcon />
+        </button>
       </div>
     </div>
   )
