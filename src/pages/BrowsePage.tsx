@@ -153,9 +153,9 @@ export default function BrowsePage() {
             >
               ♥ Saved{favorites.count > 0 && ` (${favorites.count})`}
             </button>
+            <Link to="/crawl" className="crawl-nav-btn">🍺 Crawl</Link>
           </div>
-          <div className="browse-topbar-right">
-            <Link to="/crawl" className="crawl-nav-btn">🍺 Bar Crawl</Link>
+<div className="browse-topbar-right">
             <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
           </div>
         </div>
