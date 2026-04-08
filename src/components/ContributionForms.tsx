@@ -66,8 +66,7 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
             max_tokens: 1000,
             messages: [{ role: 'user', content: [
               { type: 'image', source: { type: 'base64', media_type: file.type || 'image/jpeg', data: base64.split(',')[1] } },
-              { type: 'text', text: `Extract happy hour info from this image. Respond ONLY with JSON:
-{"name":"","neighborhood":"","schedule_description":"","deal_details":""}` }
+             { type: 'text', text: 'Extract happy hour info from this image. Respond ONLY with JSON: {"name":"","neighborhood":"","schedule_description":"","deal_details":""}' }
             ]}]
           })
         })
