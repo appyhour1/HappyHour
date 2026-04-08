@@ -13,6 +13,8 @@ import { getScheduleStatus, STATUS_VISUALS } from '../utils/happeningNow'
 import { DEAL_TYPE_COLORS, DEAL_TYPE_LABELS, CATEGORY_LABELS, DAYS_OF_WEEK } from '../types'
 import { Analytics } from '../services/analytics'
 import { SuggestEditForm } from '../components/ContributionForms'
+import { ClaimVenueForm } from '../components/ClaimVenueForm'
+import { useConfirmDeal } from '../hooks/useConfirmDeal'
 import { EditVenueForm } from '../components/EditVenueForm'
 import type { Venue, HappyHourStatus, ScheduleStatus } from '../types'
 
@@ -35,6 +37,8 @@ export default function VenueDetailPage() {
   const [loading, setLoading] = useState(true)
   const [showEditForm, setShowEditForm] = useState(false)
   const [showEditVenue, setShowEditVenue] = useState(false)
+  const [showClaimForm, setShowClaimForm] = useState(false)
+  const confirmDeal = useConfirmDeal()
   const [activeScheduleIdx, setActiveScheduleIdx] = useState(0)
 
   function refetchVenue() {
@@ -47,7 +51,11 @@ export default function VenueDetailPage() {
     const cached = allVenues.find(v => v.id === id)
     if (cached) { setVenue(cached); setLoading(false) }
     getVenueById(id).then(v => {
-      if (v) { setVenue(v); Analytics.venueDetailViewed(v.id, v.name) }
+      if (v) {
+        setVenue(v)
+        Analytics.venueDetailViewed(v.id, v.name)
+        confirmDeal.loadCountsForVenues([v.id])
+      }
       setLoading(false)
     })
   }, [id, allVenues])
@@ -280,6 +288,18 @@ export default function VenueDetailPage() {
             {venue.last_verified_at && (
               <span className="detail-verified-ago">{verifiedAgo(venue)}</span>
             )}
+            <button
+              className={`detail-confirm-btn${confirmDeal.hasConfirmed(venue.id) ? ' confirmed' : ''}`}
+              onClick={() => confirmDeal.confirmDeal(venue.id)}
+              disabled={confirmDeal.hasConfirmed(venue.id) || confirmDeal.confirming === venue.id}
+            >
+              {confirmDeal.hasConfirmed(venue.id)
+                ? `✓ You confirmed this`
+                : confirmDeal.confirming === venue.id
+                  ? 'Saving...'
+                  : `👍 Still accurate${(confirmDeal.confirmCounts[venue.id] ?? 0) > 0 ? ` (${confirmDeal.confirmCounts[venue.id]} this week)` : ''}`
+              }
+            </button>
             <button className="detail-suggest-btn" onClick={() => setShowEditForm(true)}>
               Suggest correction
             </button>
@@ -290,6 +310,20 @@ export default function VenueDetailPage() {
         {showEditForm && (
           <div className="detail-section">
             <SuggestEditForm venue={venue} onClose={() => setShowEditForm(false)} />
+          </div>
+        )}
+
+        {/* ── CLAIM VENUE ── */}
+        {!showClaimForm ? (
+          <div className="detail-claim-banner">
+            <span className="detail-claim-text">Is this your bar?</span>
+            <button className="detail-claim-btn" onClick={() => setShowClaimForm(true)}>
+              Claim it free →
+            </button>
+          </div>
+        ) : (
+          <div className="detail-section">
+            <ClaimVenueForm venue={venue} onClose={() => setShowClaimForm(false)} />
           </div>
         )}
 

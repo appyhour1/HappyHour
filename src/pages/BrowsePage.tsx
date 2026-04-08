@@ -24,8 +24,40 @@ import { BestPicksRow } from '../components/BestPicksRow'
 import type { Venue, HappyHourStatus, ScheduleStatus } from '../types'
 import { DAYS_OF_WEEK } from '../types'
 import { useNavigate, Link } from 'react-router-dom'
+import { EmailCapture, useEmailCapture } from '../components/EmailCapture'
+import { useConfirmDeal } from '../hooks/useConfirmDeal'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
+
+// ─────────────────────────────────────────────
+// BROWSE HERO — homepage header with live count + trust signals
+// ─────────────────────────────────────────────
+
+function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
+  const liveCount = venues.filter(v => isVenueActiveNow(v)).length
+  const totalDeals = venues.reduce((acc, v) => acc + (v.schedules?.length ?? 0), 0)
+
+  return (
+    <div className="browse-hero">
+      <div className="browse-hero-content">
+        <h1 className="browse-hero-title">Happy Hour in {city}</h1>
+        <p className="browse-hero-sub">
+          Real deals, verified by the community. Updated in real time.
+        </p>
+        <div className="browse-hero-stats">
+          {liveCount > 0 && (
+            <Link to="/now" className="browse-hero-live">
+              <span className="browse-hero-dot" />
+              {liveCount} happening now
+            </Link>
+          )}
+          <span className="browse-hero-stat">{venues.length} venues</span>
+          <span className="browse-hero-stat">{totalDeals} deal schedules</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function BrowsePage() {
   const { venues, loading, error, userLocation, requestLocation, locationPermission, favorites, city } = useAppContext()
@@ -38,6 +70,8 @@ export default function BrowsePage() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [, setTick] = useState(0)
   const venueCardRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
+  const confirmDeal = useConfirmDeal()
 
   // Refresh status badges every minute
   useEffect(() => {
@@ -86,6 +120,9 @@ export default function BrowsePage() {
       </Helmet>
 
       <div className="browse-page">
+        {/* ── HERO ── */}
+        <BrowseHero venues={venues} city={city} />
+
         {/* ── TOP BAR ── */}
         <div className="browse-topbar">
           <div className="browse-topbar-left">
@@ -103,10 +140,10 @@ export default function BrowsePage() {
               ♥ Saved{favorites.count > 0 && ` (${favorites.count})`}
             </button>
           </div>
-         <div className="browse-topbar-right">
-          <Link to="/crawl" className="crawl-nav-btn">🍺 Bar Crawl</Link>
-          <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
-        </div>
+          <div className="browse-topbar-right">
+            <Link to="/crawl" className="crawl-nav-btn">🍺 Bar Crawl</Link>
+            <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
+          </div>
         </div>
 
         {/* ── FILTER PANEL ── */}
@@ -190,6 +227,12 @@ export default function BrowsePage() {
               </div>
             )}
           </div>
+        )}
+      </div>
+
+        {/* ── EMAIL CAPTURE ── */}
+        {showCapture && (
+          <EmailCapture trigger={trigger} city={city} onDismiss={dismissEmail} />
         )}
       </div>
     </>
