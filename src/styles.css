@@ -101,6 +101,7 @@ input, textarea, select { font-family: inherit; }
 /* Hide links on very small screens */
 @media (max-width: 500px) {
   .shell-links { display: none; }
+  .shell-link--crawl { display: flex; }
   .shell-main { padding: 1rem 1rem 3.5rem; }
 }
 
