@@ -413,7 +413,7 @@ const [saving, setSaving]           = useState(false)
         {photoPreview && !addingSchedule && (
           <div className="ef-photo-preview-row">
             <img src={photoPreview} alt="scanned" className="cf-photo-thumb" />
-            <span className="cf-photo-ok">✓ Schedule filled from photo — review below</span>
+            <span className="cf-photo-ok">✓ Schedule filled from photo - review below</span>
           </div>
         )}
       )}
