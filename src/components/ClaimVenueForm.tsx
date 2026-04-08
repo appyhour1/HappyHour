@@ -14,7 +14,7 @@
 
 import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Analytics } from '../services/analytics'
+import { track } from '../services/analytics'
 import type { Venue } from '../types'
 
 interface ClaimVenueFormProps {
@@ -57,7 +57,7 @@ export function ClaimVenueForm({ venue, onClose }: ClaimVenueFormProps) {
         },
         created_at: new Date().toISOString(),
       }])
-      Analytics.track('venue_claim_submitted', { venue_id: venue.id, venue_name: venue.name })
+      track('venue_claim_submitted', { venue_id: venue.id, venue_name: venue.name })
       setStatus('success')
     } catch {
       setStatus('error')
