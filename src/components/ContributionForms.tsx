@@ -61,6 +61,51 @@ const EMPTY_NEW: Partial<NewVenueSubmission> = {
   schedule_description: '', deal_details: '', notes: '', submitter_email: '',
 }
 
+const [photoLoading, setPhotoLoading] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoError(null)
+    setPhotoLoading(true)
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string
+      setPhotoPreview(base64)
+      try {
+        const response = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            messages: [{ role: 'user', content: [
+              { type: 'image', source: { type: 'base64', media_type: file.type || 'image/jpeg', data: base64.split(',')[1] } },
+              { type: 'text', text: `Extract happy hour info. Respond ONLY with JSON:
+{"name":"","neighborhood":"","schedule_description":"","deal_details":""}` }
+            ]}]
+          })
+        })
+        const data = await response.json()
+        if (data.error) throw new Error(data.error.message)
+        const text = (data.content || []).map((c: any) => c.text || '').join('')
+        const parsed = JSON.parse(text.replace(/```json|```/g, '').trim())
+        setForm(f => ({
+          ...f,
+          name: parsed.name || f.name,
+          neighborhood: parsed.neighborhood || f.neighborhood,
+          schedule_description: parsed.schedule_description || f.schedule_description,
+          deal_details: parsed.deal_details || f.deal_details,
+        }))
+      } catch {
+        setPhotoError('Could not read the image. Try a clearer photo or fill in manually.')
+      }
+      setPhotoLoading(false)
+    }
+    reader.readAsDataURL(file)
+  }
 export function NewVenueForm({ onClose }: { onClose?: () => void }) {
   const [form, setForm] = useState<Partial<NewVenueSubmission>>(EMPTY_NEW)
   const [errors, setErrors] = useState<ValidationError[]>([])
