@@ -18,7 +18,7 @@ import { supabase } from '../lib/supabase'
 interface Photo {
   url: string
   name: string
-  created_at?: string
+  created_at?: string | null
 }
 
 interface PhotoGalleryProps {
