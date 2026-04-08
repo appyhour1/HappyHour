@@ -1683,3 +1683,12 @@ html.dark .detail-fav-btn { background: var(--surface); border-color: var(--bord
 html.dark .detail-fav-btn.saved { background: #2a1010; border-color: #E24B4A; color: #E24B4A; }
 html.dark .detail-back-btn { color: var(--purple); }
 html.dark .detail-edit-btn { background: var(--purple-lt); border-color: var(--purple); color: var(--purple); }
+.crawl-nav-btn {
+  display: flex !important; align-items: center !important; gap: 5px !important;
+  height: 34px !important; padding: 0 12px !important; margin-right: 0 !important;
+  background: #FDF0EB; border: 1px solid #F5C6A8;
+  border-radius: 8px; font-size: 12px; font-weight: 500;
+  color: #D85A30; white-space: nowrap; text-decoration: none;
+  transition: all .15s;
+}
+.crawl-nav-btn:hover { background: #D85A30; color: #fff; border-color: #D85A30; }
