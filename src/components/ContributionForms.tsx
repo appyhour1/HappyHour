@@ -148,4 +148,190 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
       <input id="cf-photo-input" type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
       <div className="cf-divider"><span>or fill in manually</span></div>
 
-      <Field label="Ba
+      <Field label="Bar / Restaurant name" required error={fieldError('name')}>
+        <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. The Eagle OTR" />
+      </Field>
+
+      <div className="cf-row">
+        <Field label="Neighborhood" required error={fieldError('neighborhood')}>
+          <Input value={form.neighborhood} onChange={e => set('neighborhood', e.target.value)} placeholder="e.g. OTR" />
+        </Field>
+        <Field label="City" error={fieldError('city')}>
+          <Input value={form.city} onChange={e => set('city', e.target.value)} placeholder="Cincinnati" />
+        </Field>
+      </div>
+
+      <Field label="Address" error={fieldError('address')}>
+        <Input value={form.address} onChange={e => set('address', e.target.value)} placeholder="1342 Vine St, Cincinnati, OH 45202" />
+      </Field>
+
+      <div className="cf-row">
+        <Field label="Website" error={fieldError('website')}>
+          <Input value={form.website} onChange={e => set('website', e.target.value)} placeholder="https://..." type="url" />
+        </Field>
+        <Field label="Phone" error={fieldError('phone')}>
+          <Input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="(513) 555-0100" type="tel" />
+        </Field>
+      </div>
+
+      <Field label="Happy hour schedule" error={fieldError('schedule_description')}>
+        <Input
+          value={form.schedule_description}
+          onChange={e => set('schedule_description', e.target.value)}
+          placeholder="e.g. Mon-Fri 4-7pm, Sat 2-5pm"
+        />
+      </Field>
+
+      <Field label="Deal details" required error={fieldError('deal_details')}>
+        <Textarea
+          value={form.deal_details}
+          onChange={e => set('deal_details', e.target.value)}
+          placeholder="e.g. $3 drafts, half-off appetizers, $5 well drinks"
+          rows={3}
+        />
+      </Field>
+
+      <Field label="Notes (optional)" error={fieldError('notes')}>
+        <Textarea
+          value={form.notes}
+          onChange={e => set('notes', e.target.value)}
+          placeholder="Anything else we should know"
+          rows={2}
+        />
+      </Field>
+
+      <Field label="Your email (optional)" error={fieldError('submitter_email')}>
+        <Input
+          value={form.submitter_email}
+          onChange={e => set('submitter_email', e.target.value)}
+          placeholder="you@example.com"
+          type="email"
+        />
+      </Field>
+
+      {status === 'error' && <div className="cf-error-banner">{resultMessage}</div>}
+
+      <div className="cf-actions">
+        {onClose && <button className="cf-btn-secondary" onClick={onClose}>Cancel</button>}
+        <button
+          className="cf-btn-primary"
+          onClick={handleSubmit}
+          disabled={status === 'submitting'}
+        >
+          {status === 'submitting' ? 'Submitting...' : 'Submit spot'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export function SuggestEditForm({ venue, onClose }: { venue: Venue; onClose?: () => void }) {
+  const [form, setForm] = useState<Partial<EditSuggestion>>({
+    flow: 'suggest_edit',
+    venue_id: venue.id,
+    venue_name: venue.name,
+    field_suggestions: '',
+    new_schedule: '',
+    new_deal_details: '',
+    notes: '',
+    submitter_email: '',
+  })
+  const [errors, setErrors] = useState<ValidationError[]>([])
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [resultMessage, setResultMessage] = useState('')
+
+  function fieldError(field: string) {
+    return errors.find(e => e.field === field)?.message
+  }
+
+  function set(field: keyof EditSuggestion, value: string) {
+    setForm(f => ({ ...f, [field]: value }))
+    setErrors(prev => prev.filter(e => e.field !== field))
+  }
+
+  async function handleSubmit() {
+    const errs = validateEditSuggestion(form)
+    if (errs.length > 0) { setErrors(errs); return }
+    setStatus('submitting')
+    const result = await submitContribution(form as EditSuggestion)
+    setResultMessage(result.message)
+    setStatus(result.success ? 'success' : 'error')
+  }
+
+  if (status === 'success') {
+    return (
+      <div className="cf-success">
+        <div className="cf-success-icon">✅</div>
+        <div className="cf-success-title">Thanks!</div>
+        <p className="cf-success-msg">{resultMessage}</p>
+        <button className="cf-btn-primary" onClick={onClose ?? (() => setStatus('idle'))}>Done</button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="cf-form">
+      <div className="cf-header">
+        <h2 className="cf-title">Suggest a correction</h2>
+        <p className="cf-subtitle">Something wrong with <strong>{venue.name}</strong>? Let us know.</p>
+      </div>
+
+      <Field label="What needs to change?" required error={fieldError('field_suggestions')}>
+        <Textarea
+          value={form.field_suggestions}
+          onChange={e => set('field_suggestions', e.target.value)}
+          placeholder="e.g. The happy hour ends at 7pm now, not 6pm."
+          rows={3}
+        />
+      </Field>
+
+      <Field label="Updated schedule (if changed)" error={fieldError('new_schedule')}>
+        <Input
+          value={form.new_schedule}
+          onChange={e => set('new_schedule', e.target.value)}
+          placeholder="e.g. Mon-Fri 4-7pm"
+        />
+      </Field>
+
+      <Field label="Updated deal details (if changed)" error={fieldError('new_deal_details')}>
+        <Textarea
+          value={form.new_deal_details}
+          onChange={e => set('new_deal_details', e.target.value)}
+          placeholder="e.g. $4 drafts, $6 cocktails"
+          rows={2}
+        />
+      </Field>
+
+      <Field label="Additional notes" error={fieldError('notes')}>
+        <Textarea
+          value={form.notes}
+          onChange={e => set('notes', e.target.value)}
+          placeholder="Any other context..."
+          rows={2}
+        />
+      </Field>
+
+      <Field label="Your email (optional)" error={fieldError('submitter_email')}>
+        <Input
+          value={form.submitter_email}
+          onChange={e => set('submitter_email', e.target.value)}
+          placeholder="you@example.com"
+          type="email"
+        />
+      </Field>
+
+      {status === 'error' && <div className="cf-error-banner">{resultMessage}</div>}
+
+      <div className="cf-actions">
+        {onClose && <button className="cf-btn-secondary" onClick={onClose}>Cancel</button>}
+        <button
+          className="cf-btn-primary"
+          onClick={handleSubmit}
+          disabled={status === 'submitting'}
+        >
+          {status === 'submitting' ? 'Submitting...' : 'Send suggestion'}
+        </button>
+      </div>
+    </div>
+  )
+}
