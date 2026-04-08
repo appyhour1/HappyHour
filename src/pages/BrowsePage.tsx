@@ -125,7 +125,7 @@ export default function BrowsePage() {
 
         {/* ── TOP BAR ── */}
         <div className="browse-topbar">
-          <div className="browse-topbar-left">
+<div className="browse-topbar-left">
             <button
               className={`mobile-filter-btn${filterOpen ? ' active' : ''}${fs.activeCount > 0 ? ' has-filters' : ''}`}
               onClick={() => setFilterOpen(v => !v)}
@@ -139,9 +139,9 @@ export default function BrowsePage() {
             >
               ♥ Saved{favorites.count > 0 && ` (${favorites.count})`}
             </button>
+            <Link to="/crawl" className="crawl-nav-btn">🍺 Crawl</Link>
           </div>
           <div className="browse-topbar-right">
-            <Link to="/crawl" className="crawl-nav-btn">🍺 Bar Crawl</Link>
             <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
           </div>
         </div>
