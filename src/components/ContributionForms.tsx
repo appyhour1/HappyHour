@@ -214,9 +214,7 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
       </div>
       {photoError && <div className="cf-error-banner">{photoError}</div>}
       <input id="cf-photo-input" type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
-      <div className="cf-divider"><span>or fill in manually</span></div>
-
-      <Field label="Bar / Restaurant name"
+     <div className="cf-divider"><span>or fill in manually</span></div>
       <Field label="Bar / Restaurant name" required error={fieldError('name')}>
         <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. The Eagle OTR" />
       </Field>
