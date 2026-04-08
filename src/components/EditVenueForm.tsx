@@ -134,9 +134,51 @@ export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
   const [phone, setPhone]             = useState(venue.phone ?? '')
   const [priceTier, setPriceTier]     = useState(venue.price_tier ?? '')
 
-  const [saving, setSaving]           = useState(false)
+const [saving, setSaving]           = useState(false)
   const [error, setError]             = useState<string | null>(null)
   const [success, setSuccess]         = useState(false)
+  const [photoLoading, setPhotoLoading] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photoError, setPhotoError]     = useState<string | null>(null)
+
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoError(null)
+    setPhotoLoading(true)
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      const base64 = event.target?.result as string
+      setPhotoPreview(base64)
+      try {
+        const response = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            messages: [{ role: 'user', content: [
+              { type: 'image', source: { type: 'base64', media_type: file.type || 'image/jpeg', data: base64.split(',')[1] } },
+              { type: 'text', text: 'Extract happy hour info from this image. Respond ONLY with JSON: {"deal_text":"","start_time":"16:00","end_time":"19:00","days":["Mon","Tue","Wed","Thu","Fri"]}' }
+            ]}]
+          })
+        })
+        const data = await response.json()
+        if (data.error) throw new Error(data.error.message)
+        const text = (data.content || []).map((c: any) => c.text || '').join('')
+        const parsed = JSON.parse(text.replace(/```json|```/g, '').trim())
+        if (parsed.deal_text) setNewDealText(parsed.deal_text)
+        if (parsed.start_time) setNewStart(parsed.start_time)
+        if (parsed.end_time) setNewEnd(parsed.end_time)
+        if (parsed.days?.length) setNewDays(parsed.days)
+        setAddingSchedule(true)
+      } catch {
+        setPhotoError('Could not read the image. Try a clearer photo or fill in manually.')
+      }
+      setPhotoLoading(false)
+    }
+    reader.readAsDataURL(file)
+  }
 
   // Which schedule is being edited
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null)
@@ -358,9 +400,22 @@ export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
           </div>
         </div>
       ) : (
-        <button className="ef-btn-add-schedule" onClick={() => setAddingSchedule(true)} type="button">
-          + Add schedule
-        </button>
+<div className="ef-photo-row">
+          <button className="ef-btn-add-schedule" onClick={() => setAddingSchedule(true)} type="button">
+            + Add schedule manually
+          </button>
+          <label className="ef-btn-photo" title="Upload a photo to auto-fill a new schedule">
+            {photoLoading ? <span className="cf-spinner" /> : '📷 Scan photo'}
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
+          </label>
+        </div>
+        {photoError && <div className="ef-error-banner">{photoError}</div>}
+        {photoPreview && !addingSchedule && (
+          <div className="ef-photo-preview-row">
+            <img src={photoPreview} alt="scanned" className="cf-photo-thumb" />
+            <span className="cf-photo-ok">✓ Schedule filled from photo — review below</span>
+          </div>
+        )}
       )}
     </div>
   )
