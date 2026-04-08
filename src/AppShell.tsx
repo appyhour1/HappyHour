@@ -9,7 +9,7 @@ import { useAppContext } from './contexts/AppContext'
 import { NewVenueForm } from './components/ContributionForms'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { city, favorites } = useAppContext()
+  const { city, favorites, dark, toggleDark } = useAppContext()
   const location = useLocation()
   const navigate = useNavigate()
   const [showAddForm, setShowAddForm] = useState(false)
@@ -39,6 +39,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {favorites.count > 0 && (
             <span className="shell-fav-count" title="Saved venues">♥ {favorites.count}</span>
           )}
+          <button
+            className="shell-dark-btn"
+            onClick={toggleDark}
+            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={dark ? 'Light mode' : 'Dark mode'}
+          >
+            {dark ? '☀️' : '🌙'}
+          </button>
           <button className="shell-add-btn" onClick={() => setShowAddForm(true)}>
             + Add a spot
           </button>
