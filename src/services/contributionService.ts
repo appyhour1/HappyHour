@@ -115,9 +115,9 @@ export async function submitContribution(contribution: Contribution): Promise<Su
       if (venueErr) throw venueErr
 
       // Insert schedule
-      await supabase.from('happy_hour_schedules').insert([{
+await supabase.from('happy_hour_schedules').insert([{
         venue_id: venueData.id,
-        days: '["Mon","Tue","Wed","Thu","Fri"]',
+        days: ['Mon','Tue','Wed','Thu','Fri'],
         start_time: '16:00',
         end_time: '19:00',
         is_all_day: false,
