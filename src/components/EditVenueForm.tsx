@@ -25,6 +25,7 @@ function ScheduleEditor({ schedule, onSave, onDelete, onCancel }: {
   const [startTime, setStart]   = useState(schedule.start_time)
   const [endTime, setEnd]       = useState(schedule.end_time)
   const [dealText, setDealText] = useState(schedule.deal_text)
+  const [dogFriendly, setDogFriendly]   = useState((venue as any).dog_friendly ?? false)
   const [saving, setSaving]     = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -164,7 +165,8 @@ export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
           address: address.trim() || null,
           website: website.trim() || null,
           phone: phone.trim() || null,
-          price_tier: priceTier || null,
+price_tier: priceTier || null,
+          dog_friendly: dogFriendly,
           updated_at: new Date().toISOString(),
         })
         .eq('id', venue.id)
@@ -259,7 +261,7 @@ export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
         </Field>
       </div>
 
-      <Field label="Price tier">
+<Field label="Price tier">
         <select className="ef-select" value={priceTier} onChange={e => setPriceTier(e.target.value)}>
           <option value="">Select...</option>
           <option value="$">$ - Budget</option>
@@ -268,6 +270,17 @@ export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
           <option value="$$$$">$$$$ - Fine Dining</option>
         </select>
       </Field>
+
+      <div className="ef-field">
+        <label className="ef-label">Dog friendly</label>
+        <button
+          type="button"
+          className={`ef-dog-btn${dogFriendly ? ' active' : ''}`}
+          onClick={() => setDogFriendly(v => !v)}
+        >
+          🐾 {dogFriendly ? 'Yes - dog friendly!' : 'Mark as dog friendly'}
+        </button>
+      </div>
 
       <button className="ef-btn-save" onClick={saveVenue} disabled={saving}>
         {saving ? 'Saving...' : 'Save venue details'}
