@@ -7,6 +7,7 @@ import React, { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAppContext } from './contexts/AppContext'
 import { NewVenueForm } from './components/ContributionForms'
+import { BottomNav } from './components/BottomNav'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { city, favorites, dark, toggleDark } = useAppContext()
@@ -67,6 +68,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="shell-main">
         {children}
       </main>
+      <BottomNav />
     </div>
   )
 }
