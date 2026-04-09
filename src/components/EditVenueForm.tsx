@@ -95,7 +95,7 @@ export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
   const [website, setWebsite]           = useState(venue.website ?? '')
   const [phone, setPhone]               = useState(venue.phone ?? '')
   const [priceTier, setPriceTier]       = useState(venue.price_tier ?? '')
-  const [dogFriendly, setDogFriendly]   = useState((venue as any).dog_friendly ?? false)
+ const [dogFriendly, setDogFriendly]   = useState(venue.dog_friendly ?? false)
   const [saving, setSaving]             = useState(false)
   const [error, setError]               = useState<string | null>(null)
   const [success, setSuccess]           = useState(false)
