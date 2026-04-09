@@ -159,7 +159,7 @@ setOpenNow,
         {liveCount > 0 && <span className="fp-now-count">{liveCount}</span>}
       </button>
 
-      <button
+<button
         className={`fp-now-toggle${(filters as any).dogFriendly ? ' active' : ''}`}
         onClick={() => setDogFriendly(!(filters as any).dogFriendly)}
       >
