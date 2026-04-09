@@ -1954,3 +1954,10 @@ html.dark .browse-hero-compact-title { color: #f0eff4; }
   flex-shrink: 0;
 }
 .crawl-nav-btn {
+white-space: nowrap !important;
+  font-size: 11px !important;
+  padding: 0 9px !important;
+}
+@media (max-width: 400px) {
+  .crawl-nav-btn { display: none !important; }
+}
