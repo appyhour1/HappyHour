@@ -1,8 +1,3 @@
-/**
- * VenueDetailPage.tsx
- * Route: /venue/:id
- */
-
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
@@ -12,16 +7,16 @@ import { supabase } from '../lib/supabase'
 import { fmtTime, isVenueActiveNow, getVenueActiveDays, verifiedAgo } from '../utils/filters'
 import { getScheduleStatus, STATUS_VISUALS } from '../utils/happeningNow'
 import { DEAL_TYPE_COLORS, DEAL_TYPE_LABELS, CATEGORY_LABELS, DAYS_OF_WEEK } from '../types'
-import { Analytics } from '../services/analytics'
+import { Analytics, track } from '../services/analytics'
 import { SuggestEditForm } from '../components/ContributionForms'
 import { ClaimVenueForm } from '../components/ClaimVenueForm'
 import { useConfirmDeal } from '../hooks/useConfirmDeal'
 import { EditVenueForm } from '../components/EditVenueForm'
 import { PhotoGallery } from '../components/PhotoGallery'
-import { track } from '../services/analytics'
 import type { Venue, HappyHourStatus, ScheduleStatus } from '../types'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
+const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -35,7 +30,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 export default function VenueDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { favorites, venues: allVenues, userLocation } = useAppContext()
+  const { favorites, venues: allVenues } = useAppContext()
   const [venue, setVenue] = useState<Venue | null>(null)
   const [loading, setLoading] = useState(true)
   const [showEditForm, setShowEditForm] = useState(false)
@@ -79,16 +74,25 @@ export default function VenueDetailPage() {
   if (!venue) return (
     <div className="detail-not-found">
       <p>Venue not found.</p>
-      <Link to="/">← Back to browse</Link>
+      <Link to="/">Back to browse</Link>
     </div>
   )
 
   const schedules = venue.schedules ?? []
+
+  // Sort schedules by their earliest day Mon -> Sun
+  const sortedSchedules = [...schedules].sort((a, b) => {
+    const aMin = Math.min(...a.days.map(d => DAY_ORDER.indexOf(d)).filter(i => i >= 0))
+    const bMin = Math.min(...b.days.map(d => DAY_ORDER.indexOf(d)).filter(i => i >= 0))
+    return aMin - bMin
+  })
+
+  const safeIdx = Math.min(activeScheduleIdx, sortedSchedules.length - 1)
+  const curSchedule = sortedSchedules[safeIdx] ?? null
+
   const isOpen = isVenueActiveNow(venue)
-  const activeDays = getVenueActiveDays(venue)
   const isFav = favorites.isFavorite(venue.id)
 
-  // Best status
   const venueStatus: ScheduleStatus | null = (() => {
     const statuses = schedules.map(s => getScheduleStatus(s)).filter((s): s is ScheduleStatus => s !== null)
     if (!statuses.length) return null
@@ -96,21 +100,11 @@ export default function VenueDetailPage() {
   })()
 
   const vis = venueStatus ? STATUS_VISUALS[venueStatus.status] : null
-const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-  const sortedSchedules = [...schedules].sort((a, b) => {
-    const aMin = Math.min(...a.days.map(d => DAY_ORDER.indexOf(d)))
-    const bMin = Math.min(...b.days.map(d => DAY_ORDER.indexOf(d)))
-    return aMin - bMin
-  })
-  const activeIdx = Math.min(activeScheduleIdx, sortedSchedules.length - 1)
-  const curSchedule = sortedSchedules[activeIdx]
 
-  // Related venues (same neighborhood, different venue)
   const related = allVenues
     .filter(v => v.id !== venue.id && v.neighborhood === venue.neighborhood)
     .slice(0, 3)
 
-  // JSON-LD structured data for SEO
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'BarOrCafe',
@@ -133,29 +127,24 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
   return (
     <>
       <Helmet>
-        <title>{venue.name} Happy Hour — {venue.neighborhood}, {venue.city}</title>
+        <title>{venue.name} Happy Hour - {venue.neighborhood}, {venue.city}</title>
         <meta name="description" content={`${venue.name} happy hour deals in ${venue.neighborhood}, ${venue.city}. ${schedules[0]?.deal_text ?? 'See current specials and hours.'}`} />
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
 
       <div className="detail-page">
-        {/* ── BACK NAV ── */}
         <nav className="detail-nav">
-          <button className="detail-back-btn" onClick={() => navigate(-1)}>← Back</button>
+          <button className="detail-back-btn" onClick={() => navigate(-1)}>Back</button>
           <div className="detail-nav-actions">
-            <button
-              className="detail-edit-btn"
-              onClick={() => setShowEditVenue(v => !v)}
-            >
-              {showEditVenue ? '✕ Close editor' : '✏️ Edit venue'}
+            <button className="detail-edit-btn" onClick={() => setShowEditVenue(v => !v)}>
+              {showEditVenue ? 'Close editor' : 'Edit venue'}
             </button>
-            <button className="detail-share-btn" onClick={handleShare} aria-label="Share">
-              🔗 Share
+            <button className="detail-share-btn" onClick={handleShare}>
+              Share
             </button>
             <button
               className={`detail-fav-btn${isFav ? ' saved' : ''}`}
               onClick={() => favorites.toggleFavorite(venue.id, venue.name)}
-              aria-label={isFav ? 'Remove from favorites' : 'Save'}
             >
               <HeartIcon filled={isFav} />
               {isFav ? 'Saved' : 'Save'}
@@ -163,7 +152,6 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
           </div>
         </nav>
 
-        {/* ── INLINE EDIT FORM ── */}
         {showEditVenue && (
           <div className="detail-edit-panel">
             <EditVenueForm
@@ -174,20 +162,20 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
           </div>
         )}
 
-        {/* ── HERO ── */}
         <div className="detail-hero">
           {venue.image_url && (
             <div className="detail-hero-img" style={{ backgroundImage: `url(${venue.image_url})` }} />
           )}
           <div className="detail-hero-content">
             <div className="detail-badges">
-              {venue.is_featured && <span className="detail-badge detail-badge--featured">⭐ Featured</span>}
+              {venue.is_featured && <span className="detail-badge detail-badge--featured">Featured</span>}
               {venueStatus && vis && (
                 <span className="detail-badge detail-badge--status" style={{ background: vis.bg, color: vis.text, borderColor: vis.border }}>
                   <span className={`status-dot${vis.pulse ? ' pulse' : ''}`} style={{ background: vis.dot }} />
                   {venueStatus.badge}
                 </span>
               )}
+              {venue.dog_friendly && <span className="detail-badge" style={{ background: '#E8F5EE', color: '#085041' }}>Dog Friendly</span>}
             </div>
             <h1 className="detail-name">{venue.name}</h1>
             <div className="detail-meta">
@@ -204,7 +192,6 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
           </div>
         </div>
 
-        {/* ── CONTACT ── */}
         {(venue.address || venue.website || venue.phone) && (
           <div className="detail-section">
             <h2 className="detail-section-title">Info</h2>
@@ -212,13 +199,10 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
               {venue.address && (
                 <div className="detail-info-row">
                   <span className="detail-info-label">Address</span>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="detail-info-link"
-                    onClick={() => Analytics.getDirectionsClicked(venue.id, venue.name)}
-                  >
-                    {venue.address} ↗
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
+                    target="_blank" rel="noopener noreferrer" className="detail-info-link"
+                    onClick={() => Analytics.getDirectionsClicked(venue.id, venue.name)}>
+                    {venue.address} 
                   </a>
                 </div>
               )}
@@ -227,7 +211,7 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
                   <span className="detail-info-label">Website</span>
                   <a href={venue.website} target="_blank" rel="noopener noreferrer" className="detail-info-link"
                     onClick={() => Analytics.outboundWebsiteClicked(venue.id, venue.website!)}>
-                    Visit website ↗
+                    Visit website
                   </a>
                 </div>
               )}
@@ -241,21 +225,21 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
           </div>
         )}
 
-        {/* ── HAPPY HOUR SCHEDULES ── */}
         <div className="detail-section">
           <h2 className="detail-section-title">Happy Hour Deals</h2>
 
-          {schedules.length > 1 && (
+          {sortedSchedules.length > 1 && (
             <div className="detail-schedule-tabs">
-              {schedules.map((s, i) => {
+              {sortedSchedules.map((s, i) => {
                 const st = getScheduleStatus(s)
+                const sortedDays = [...s.days].sort((a, b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b))
                 return (
                   <button
                     key={s.id}
-                    className={`detail-tab${activeScheduleIdx === i ? ' active' : ''}`}
+                    className={`detail-tab${safeIdx === i ? ' active' : ''}`}
                     onClick={() => setActiveScheduleIdx(i)}
                   >
-{s.days.length === 7 ? 'All week' : [...s.days].sort((a, b) => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(a) - ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(b)).slice(0,3).join(', ')}
+                    {s.days.length === 7 ? 'All week' : sortedDays.slice(0, 3).join(', ')}
                     {st && (st.status === 'live_now' || st.status === 'ends_soon') && (
                       <span className="tab-live-dot" />
                     )}
@@ -271,7 +255,7 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
               <div className="detail-schedule">
                 <div className="detail-schedule-header">
                   <span className="detail-time">
-                    {curSchedule.is_all_day ? 'All day' : `${fmtTime(curSchedule.start_time)} – ${fmtTime(curSchedule.end_time)}`}
+                    {curSchedule.is_all_day ? 'All day' : `${fmtTime(curSchedule.start_time)} - ${fmtTime(curSchedule.end_time)}`}
                   </span>
                   {st && (
                     <span className="detail-schedule-status" style={vis ? { background: vis.bg, color: vis.text } : {}}>
@@ -304,16 +288,14 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
           })()}
         </div>
 
-        {/* ── PHOTO GALLERY ── */}
         <div className="detail-section">
           <PhotoGallery venueId={venue.id} venueName={venue.name} />
         </div>
 
-        {/* ── VERIFICATION ── */}
         <div className="detail-section detail-section--trust">
           <div className="detail-trust-row">
             <span className={`detail-verification detail-verification--${venue.verification_status}`}>
-              {venue.verification_status === 'verified' || venue.verification_status === 'claimed' ? '✓ Verified' : '○ Unverified'}
+              {venue.verification_status === 'verified' || venue.verification_status === 'claimed' ? 'Verified' : 'Unverified'}
             </span>
             {venue.last_verified_at && (
               <span className="detail-verified-ago">{verifiedAgo(venue)}</span>
@@ -324,41 +306,39 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
               disabled={confirmDeal.hasConfirmed(venue.id) || confirmDeal.confirming === venue.id}
             >
               {confirmDeal.hasConfirmed(venue.id)
-                ? `✓ You confirmed this`
+                ? 'You confirmed this'
                 : confirmDeal.confirming === venue.id
                   ? 'Saving...'
-                  : `👍 Still accurate${(confirmDeal.confirmCounts[venue.id] ?? 0) > 0 ? ` (${confirmDeal.confirmCounts[venue.id]} this week)` : ''}`
+                  : `Still accurate${(confirmDeal.confirmCounts[venue.id] ?? 0) > 0 ? ` (${confirmDeal.confirmCounts[venue.id]} this week)` : ''}`
               }
             </button>
             <button className="detail-suggest-btn" onClick={() => setShowEditForm(true)}>
               Suggest correction
             </button>
             <button
-          className="detail-delete-btn"
-          onClick={async () => {
-            if (!window.confirm(`Delete ${venue.name}? This cannot be undone.`)) return
-            await supabase.from('venues').delete().eq('id', venue.id)
-            navigate('/')
-          }}
-        >
-          Delete venue
-        </button>
+              className="detail-delete-btn"
+              onClick={async () => {
+                if (!window.confirm(`Delete ${venue.name}? This cannot be undone.`)) return
+                await supabase.from('venues').delete().eq('id', venue.id)
+                navigate('/')
+              }}
+            >
+              Delete venue
+            </button>
           </div>
         </div>
 
-        {/* ── EDIT SUGGESTION FORM ── */}
         {showEditForm && (
           <div className="detail-section">
             <SuggestEditForm venue={venue} onClose={() => setShowEditForm(false)} />
           </div>
         )}
 
-        {/* ── CLAIM VENUE ── */}
         {!showClaimForm ? (
           <div className="detail-claim-banner">
             <span className="detail-claim-text">Is this your bar?</span>
             <button className="detail-claim-btn" onClick={() => setShowClaimForm(true)}>
-              Claim it free →
+              Claim it free
             </button>
           </div>
         ) : (
@@ -367,7 +347,6 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
           </div>
         )}
 
-        {/* ── RELATED VENUES ── */}
         {related.length > 0 && (
           <div className="detail-section">
             <h2 className="detail-section-title">More in {venue.neighborhood}</h2>
@@ -375,7 +354,7 @@ const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
               {related.map(v => (
                 <Link key={v.id} to={`/venue/${v.id}`} className="detail-related-card">
                   <div className="detail-related-name">{v.name}</div>
-                  <div className="detail-related-meta">{v.neighborhood} · {v.price_tier ?? '—'}</div>
+                  <div className="detail-related-meta">{v.neighborhood} · {v.price_tier ?? '-'}</div>
                   {isVenueActiveNow(v) && <span className="detail-related-live">Open now</span>}
                 </Link>
               ))}
