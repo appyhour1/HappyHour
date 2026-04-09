@@ -88,37 +88,69 @@ export async function submitContribution(contribution: Contribution): Promise<Su
   Analytics.submissionStarted(contribution.flow)
 
   try {
-    const payload = {
-      flow: contribution.flow,
-      data: contribution,
-      status: 'pending',
-      created_at: new Date().toISOString(),
+    // DIRECT SAVE MODE — bypasses review queue, saves straight to venues table
+    if (contribution.flow === 'new_venue') {
+      const c = contribution as NewVenueSubmission
+
+      // Insert venue
+      const { data: venueData, error: venueErr } = await supabase
+        .from('venues')
+        .insert([{
+          name: c.name.trim(),
+          neighborhood: c.neighborhood.trim() || 'Unknown',
+          city: c.city.trim() || 'Cincinnati',
+          state: 'OH',
+          address: c.address?.trim() || null,
+          website: c.website?.trim() || null,
+          phone: c.phone?.trim() || null,
+          verification_status: 'community',
+          data_source: 'user_submitted',
+          is_featured: false,
+          upvote_count: 0,
+          dog_friendly: c.notes?.includes('Dog friendly') ?? false,
+        }])
+        .select('id')
+        .single()
+
+      if (venueErr) throw venueErr
+
+      // Insert schedule
+      await supabase.from('happy_hour_schedules').insert([{
+        venue_id: venueData.id,
+        days: '["Mon","Tue","Wed","Thu","Fri"]',
+        start_time: '16:00',
+        end_time: '19:00',
+        is_all_day: false,
+        deal_text: c.deal_details?.trim() || c.schedule_description?.trim() || 'See bar for details',
+        deals: [],
+      }])
+
+      Analytics.submissionCompleted(contribution.flow, venueData.id)
+      return {
+        success: true,
+        message: 'Added! The venue is now live on the app.',
+        id: venueData.id,
+      }
     }
 
+    // For edit suggestions — still goes to contributions table for review
     const { data, error } = await supabase
       .from('contributions')
-      .insert([payload])
+      .insert([{ flow: contribution.flow, data: contribution, status: 'pending', created_at: new Date().toISOString() }])
       .select('id')
       .single()
 
     if (error) {
-      // Table might not exist yet — log and return success anyway for MVP
-      console.warn('contributions table not found, logging locally:', contribution)
-      Analytics.submissionCompleted(contribution.flow)
-      return {
-        success: true,
-        message: 'Thanks! Your submission has been received and will be reviewed soon.',
-      }
+      console.warn('contributions table not found:', contribution)
     }
 
     Analytics.submissionCompleted(contribution.flow, (contribution as EditSuggestion).venue_id)
     return {
       success: true,
-      message: contribution.flow === 'new_venue'
-        ? 'Thanks for adding a new spot! We\'ll review and publish it soon.'
-        : 'Thanks for the correction! We\'ll review it and update the listing.',
+      message: 'Thanks for the correction! We will review and update the listing.',
       id: data?.id,
     }
+
   } catch (e: any) {
     return {
       success: false,
