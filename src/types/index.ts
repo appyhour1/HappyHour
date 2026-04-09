@@ -125,7 +125,8 @@ export interface FilterState {
   neighborhoods: Set<string>
   priceTiers: Set<PriceTier>
   openNow: boolean
-  timeWindow: TimeWindow | null   // null = no time filter
+  dogFriendly: boolean
+  timeWindow: TimeWindow | null
   city: string | null
 }
 
@@ -137,6 +138,7 @@ export const DEFAULT_FILTERS: FilterState = {
   neighborhoods: new Set(),
   priceTiers: new Set(),
   openNow: false,
+  dogFriendly: false,
   timeWindow: null,
   city: null,
 }
