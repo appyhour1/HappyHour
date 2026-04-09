@@ -114,15 +114,36 @@ export async function submitContribution(contribution: Contribution): Promise<Su
 
       if (venueErr) throw venueErr
 
-      // Insert schedule
-await supabase.from('happy_hour_schedules').insert([{
+// Parse deal text into structured deals using Claude
+      const dealText = c.deal_details?.trim() || c.schedule_description?.trim() || 'See bar for details'
+      let parsedDeals: any[] = []
+      try {
+        const aiResponse = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 500,
+            messages: [{ role: 'user', content: `Parse this happy hour deal text into structured JSON. Return ONLY a JSON array, nothing else. Each item must have "type" (one of: beer, wine, cocktail, food, general), "description" (string), and optionally "price" (number). Deal text: "${dealText}" Example output: [{"type":"beer","description":"$3 draft beer","price":3},{"type":"food","description":"Half-off appetizers"}]` }]
+          })
+        })
+        const aiData = await aiResponse.json()
+        const aiText = (aiData.content || []).map((c: any) => c.text || '').join('').replace(/```json|```/g, '').trim()
+        parsedDeals = JSON.parse(aiText)
+      } catch {
+        // If AI parsing fails, fall back to empty deals array
+        parsedDeals = []
+      }
+
+      // Insert schedule with parsed deals
+      await supabase.from('happy_hour_schedules').insert([{
         venue_id: venueData.id,
         days: ['Mon','Tue','Wed','Thu','Fri'],
         start_time: '16:00',
         end_time: '19:00',
         is_all_day: false,
-        deal_text: c.deal_details?.trim() || c.schedule_description?.trim() || 'See bar for details',
-        deals: [],
+        deal_text: dealText,
+        deals: parsedDeals,
       }])
 
       Analytics.submissionCompleted(contribution.flow, venueData.id)
