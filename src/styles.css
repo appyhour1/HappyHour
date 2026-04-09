@@ -1683,42 +1683,137 @@ html.dark .detail-fav-btn { background: var(--surface); border-color: var(--bord
 html.dark .detail-fav-btn.saved { background: #2a1010; border-color: #E24B4A; color: #E24B4A; }
 html.dark .detail-back-btn { color: var(--purple); }
 html.dark .detail-edit-btn { background: var(--purple-lt); border-color: var(--purple); color: var(--purple); }
-.crawl-nav-btn {
-  display: flex !important; align-items: center !important; gap: 5px !important;
-  height: 34px !important; padding: 0 12px !important; margin-right: 0 !important;
-  background: #FDF0EB; border: 1px solid #F5C6A8;
-  border-radius: 8px; font-size: 12px; font-weight: 500;
-  color: #D85A30; white-space: nowrap; text-decoration: none;
-  transition: all .15s;
+
+/* ═══════════════════════════════════════════════════════
+   COMPACT CARD REDESIGN
+   Overrides existing .vc rules for tighter, more modern cards
+═══════════════════════════════════════════════════════ */
+
+/* Card base — tighter padding */
+.vc {
+  padding: 12px 14px 10px !important;
+  border-radius: 12px !important;
+  margin-bottom: 8px !important;
 }
-.crawl-nav-btn:hover { background: #D85A30; color: #fff; border-color: #D85A30; }
-.cf-dog-btn {
-  height: 36px; padding: 0 16px;
-  border: 1.5px solid #d0cdc8; border-radius: 20px;
-  background: #fff; font-family: 'DM Sans', sans-serif;
-  font-size: 13px; font-weight: 500; color: #777;
-  cursor: pointer; transition: all .15s;
+
+/* Top row — tighter */
+.vc__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
 }
-.cf-dog-btn.active { background: #E8F5EE; border-color: #1D9E75; color: #085041; }
-.cf-dog-btn:hover { border-color: #1D9E75; color: #085041; }
-.ef-dog-btn {
-  height: 36px; padding: 0 16px;
-  border: 1.5px solid #d0cdc8; border-radius: 20px;
-  background: #fff; font-family: 'DM Sans', sans-serif;
-  font-size: 13px; font-weight: 500; color: #777;
-  cursor: pointer; transition: all .15s;
+.vc__badges-left { display: flex; align-items: center; gap: 5px; }
+
+/* Status badge — smaller */
+.vc__badge--status {
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+  height: auto !important;
+  line-height: 1.6 !important;
 }
-.ef-dog-btn.active { background: #E8F5EE; border-color: #1D9E75; color: #085041; }
-.ef-dog-btn:hover { border-color: #1D9E75; color: #085041; }
-.vc__dog-friendly {
-  font-size: 16px;
-  line-height: 1;
+
+/* Name — tighter margin */
+.vc__name {
+  font-size: 17px !important;
+  margin-bottom: 2px !important;
+  line-height: 1.25 !important;
+}
+
+/* Meta row */
+.vc__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px !important;
+  margin-bottom: 4px !important;
+  color: #999;
+}
+.vc__neighborhood { color: #888; }
+.vc__price { color: #aaa; }
+.vc__distance { color: #bbb; }
+.vc__dog-friendly { font-size: 12px; line-height: 1; }
+.vc__verified { color: #1D9E75; font-size: 11px; font-weight: 600; }
+
+/* Time — smaller */
+.vc__time {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #D85A30 !important;
+  margin-bottom: 7px !important;
+}
+
+/* DEAL PILLS — horizontal compact chips */
+.vc__deals {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin-bottom: 8px !important;
+}
+
+.vc__deal-pill {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 180px;
 }
-.detail-delete-btn {
-  background: none; border: none; font-size: 12px;
-  color: #ccc; cursor: pointer; text-decoration: underline;
-  margin-left: auto; padding: 0;
+
+.vc__pill-type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  opacity: .75;
 }
-.detail-delete-btn:hover { color: #c0392b; }
+
+.vc__pill-price {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.vc__pill-desc {
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc__more-deals {
+  font-size: 11px;
+  color: #bbb;
+  align-self: center;
+}
+
+/* Deal text fallback */
+.vc__deal-text {
+  font-size: 12px !important;
+  color: #777 !important;
+  margin-bottom: 8px !important;
+  line-height: 1.4 !important;
+}
+
+/* Footer — tighter */
+.vc__footer {
+  padding-top: 8px !important;
+  margin-top: 0 !important;
+}
+
+.vc__cta {
+  font-size: 12px !important;
+}
+
+/* Remove old stacked deal styles */
+.vc__deal { display: none !important; }
+.vc__deal-type { display: none !important; }
+.vc__deal-desc { display: none !important; }
+.vc__deal-price { display: none !important; }
+
+/* Dark mode compact pills */
+html.dark .vc__deal-pill { opacity: .92; }
+
