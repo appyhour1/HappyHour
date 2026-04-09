@@ -97,7 +97,8 @@ export function FilterPanel({
   toggleNeighborhood,
   togglePriceTier,
   setTimeWindow,
-  setOpenNow,
+setOpenNow,
+  setDogFriendly,
   setSearch,
   clearAll,
 }: FilterPanelProps) {
@@ -158,6 +159,13 @@ export function FilterPanel({
         {liveCount > 0 && <span className="fp-now-count">{liveCount}</span>}
       </button>
 
+      <button
+        className={`fp-now-toggle${(filters as any).dogFriendly ? ' active' : ''}`}
+        onClick={() => setDogFriendly(!(filters as any).dogFriendly)}
+      >
+        <span>🐾</span>
+        <span>Dog Friendly Only</span>
+      </button>
       {/* ── DAY ── */}
       <div className="fp-section">
         <SectionLabel>Day</SectionLabel>
