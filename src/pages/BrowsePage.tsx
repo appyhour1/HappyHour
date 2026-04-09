@@ -1,16 +1,10 @@
-/**
- * BrowsePage.tsx
- *
- * Main browse experience. Replaces the old App.tsx render.
- * Uses AppContext for venues/favorites, owns its own filter/sort state.
- */
-
 import React, { useState, useRef, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
+import { Link } from 'react-router-dom'
 import { useAppContext } from '../contexts/AppContext'
 import { useFilterState } from '../hooks/useFilterState'
 import { useViewMode } from '../hooks/useViewMode'
-import { filterVenues, getNeighborhoods, isVenueActiveNow, getVenueActiveDays, distanceMiles, fmtDistance } from '../utils/filters'
+import { filterVenues, getNeighborhoods, isVenueActiveNow, distanceMiles, fmtDistance } from '../utils/filters'
 import { sortVenuesByMode } from '../utils/scoring'
 import { buildBestPicksSections } from '../utils/bestPicks'
 import { Analytics } from '../services/analytics'
@@ -20,14 +14,8 @@ import { MapView } from '../components/MapView'
 import { ViewToggle } from '../components/ViewToggle'
 import { VenueCard } from '../components/VenueCard'
 import { BestPicksRow } from '../components/BestPicksRow'
-import type { Venue } from '../types'
-import { Link } from 'react-router-dom'
 import { EmailCapture, useEmailCapture } from '../components/EmailCapture'
-
-
-// ─────────────────────────────────────────────
-// BROWSE HERO — homepage header with live count + trust signals
-// ─────────────────────────────────────────────
+import type { Venue } from '../types'
 
 function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
   const liveCount = venues.filter(v => isVenueActiveNow(v)).length
@@ -56,7 +44,7 @@ function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
 }
 
 export default function BrowsePage() {
-  const { venues, loading, error, userLocation, requestLocation, locationPermission, favorites, city } = useAppContext()
+  const { venues, loading, error, userLocation, requestLocation, favorites, city } = useAppContext()
   const fs = useFilterState()
   const vm = useViewMode()
 
@@ -67,12 +55,10 @@ export default function BrowsePage() {
   const venueCardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
 
-  // Smart default: auto-enable "open now" between 3pm-9pm on first visit
   useEffect(() => {
     const hour = new Date().getHours()
     const isHappyHourTime = hour >= 15 && hour < 21
     if (isHappyHourTime && fs.activeCount === 0 && !fs.filters.openNow) {
-      // Only auto-enable if user hasn't touched filters yet
       const key = 'hh_smart_default_applied'
       if (!sessionStorage.getItem(key)) {
         fs.setOpenNow(true)
@@ -81,7 +67,6 @@ export default function BrowsePage() {
     }
   }, []) // eslint-disable-line
 
-  // Refresh status badges every minute
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60_000)
     return () => clearInterval(id)
@@ -123,15 +108,13 @@ export default function BrowsePage() {
   return (
     <>
       <Helmet>
-        <title>Happy Hour {city} — Deals Happening Now</title>
+        <title>Happy Hour {city} - Deals Happening Now</title>
         <meta name="description" content={`Find the best happy hour deals in ${city}. Live prices, verified schedules, and deals happening right now.`} />
       </Helmet>
 
       <div className="browse-page">
-        {/* ── HERO ── */}
         <BrowseHero venues={venues} city={city} />
 
-        {/* ── TOP BAR ── */}
         <div className="browse-topbar">
           <div className="browse-topbar-left">
             <button
@@ -149,17 +132,15 @@ export default function BrowsePage() {
             </button>
             <Link to="/crawl" className="crawl-nav-btn">🍺 Crawl</Link>
           </div>
-<div className="browse-topbar-right">
+          <div className="browse-topbar-right">
             <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
           </div>
         </div>
 
-        {/* ── FILTER PANEL ── */}
         <div className={`filter-panel-wrap${filterOpen ? ' open' : ''}`}>
           <FilterPanel {...fs} venues={venues} neighborhoods={neighborhoods} />
         </div>
 
-        {/* ── SORT BAR ── */}
         <SortBar
           sort={fs.sort}
           onSort={fs.setSort}
@@ -169,9 +150,8 @@ export default function BrowsePage() {
         />
 
         {loading && <p className="loading-msg">Loading deals...</p>}
-        {error && !loading && <p className="error-msg">Using sample data — {error}</p>}
+        {error && !loading && <p className="error-msg">Using sample data - {error}</p>}
 
-        {/* ── BEST PICKS (shown when no filters active) ── */}
         {!loading && showBestPicks && bestPicksSections.length > 0 && (
           <div className="best-picks-area">
             {bestPicksSections.map(section => (
@@ -188,7 +168,6 @@ export default function BrowsePage() {
           </div>
         )}
 
-        {/* ── MAIN CONTENT ── */}
         {!loading && (
           <div className={`content-area${vm.isSplit ? ' split' : ''}`}>
             {vm.isMap && (
@@ -234,7 +213,9 @@ export default function BrowsePage() {
                 ))}
               </div>
             )}
-         {/* ── EMAIL CAPTURE ── */}
+          </div>
+        )}
+
         {showCapture && (
           <EmailCapture trigger={trigger} city={city} onDismiss={dismissEmail} />
         )}
