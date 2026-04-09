@@ -14,8 +14,8 @@ function getInitial(): boolean {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved !== null) return saved === 'true'
-    // Respect OS preference on first visit
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
+    // Default to light mode regardless of OS preference
+    return false
   } catch {
     return false
   }
