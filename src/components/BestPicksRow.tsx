@@ -43,7 +43,10 @@ export function BestPicksRow({ section, favorites, userLocation }: BestPicksRowP
           const status = getVenueStatus(venue)
           const vis = STATUS_VISUALS[status.status]
           const isOpen = isVenueActiveNow(venue)
-          const topDeal = venue.schedules?.[0]?.deals?.[0]
+          const DEAL_ORDER = ['beer', 'cocktail', 'food', 'wine', 'general']
+          const allDeals = venue.schedules?.[0]?.deals ?? []
+          const sortedDeals = [...allDeals].sort((a, b) => DEAL_ORDER.indexOf(a.type) - DEAL_ORDER.indexOf(b.type))
+          const topDeal = sortedDeals[0]
           const distLabel = userLocation && venue.latitude && venue.longitude
             ? fmtDistance(distanceMiles(userLocation.lat, userLocation.lng, venue.latitude, venue.longitude))
             : null
