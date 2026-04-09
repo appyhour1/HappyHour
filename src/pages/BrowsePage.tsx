@@ -180,14 +180,7 @@ export default function BrowsePage() {
             >
               ♥ Saved{favorites.count > 0 && ` (${favorites.count})`}
             </button>
-          </div>
-.browse-topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.crawl-nav-btn {
+</div>
   white-space: nowrap !important;
   font-size: 11px !important;
   padding: 0 9px !important;
