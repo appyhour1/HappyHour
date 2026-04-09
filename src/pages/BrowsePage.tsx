@@ -270,9 +270,7 @@ export default function BrowsePage() {
             )}
           </div>
         )}
-      </div>
-
-        {/* ── EMAIL CAPTURE ── */}
+     {/* ── EMAIL CAPTURE ── */}
         {showCapture && (
           <EmailCapture trigger={trigger} city={city} onDismiss={dismissEmail} />
         )}
