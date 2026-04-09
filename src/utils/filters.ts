@@ -81,6 +81,7 @@ export function filterVenues(
   return venues.filter(venue => {
     if (filters.city && venue.city !== filters.city) return false
     if (filters.openNow && !isVenueActiveNow(venue)) return false
+    if ((filters as any).dogFriendly && !venue.dog_friendly) return false
 
     if (filters.days.size > 0) {
       const venueDays = getVenueActiveDays(venue)
