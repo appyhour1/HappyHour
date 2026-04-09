@@ -1692,3 +1692,12 @@ html.dark .detail-edit-btn { background: var(--purple-lt); border-color: var(--p
   transition: all .15s;
 }
 .crawl-nav-btn:hover { background: #D85A30; color: #fff; border-color: #D85A30; }
+.cf-dog-btn {
+  height: 36px; padding: 0 16px;
+  border: 1.5px solid #d0cdc8; border-radius: 20px;
+  background: #fff; font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 500; color: #777;
+  cursor: pointer; transition: all .15s;
+}
+.cf-dog-btn.active { background: #E8F5EE; border-color: #1D9E75; color: #085041; }
+.cf-dog-btn:hover { border-color: #1D9E75; color: #085041; }
