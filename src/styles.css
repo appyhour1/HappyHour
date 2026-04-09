@@ -1817,3 +1817,132 @@ html.dark .detail-edit-btn { background: var(--purple-lt); border-color: var(--p
 /* Dark mode compact pills */
 html.dark .vc__deal-pill { opacity: .92; }
 
+
+/* ═══════════════════════════════════════════════════════
+   BOTTOM NAVIGATION BAR
+═══════════════════════════════════════════════════════ */
+
+.bottom-nav {
+  display: none; /* shown only on mobile via media query below */
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: #fff;
+  border-top: 0.5px solid #e0ddd8;
+  z-index: 500;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.bn-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  height: 100%;
+  text-decoration: none;
+  color: #aaa;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color .15s;
+  padding: 0;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.bn-tab.active { color: #D85A30; }
+.bn-tab--live.active { color: #1D9E75; }
+.bn-tab--add { color: #3C3489; }
+.bn-tab--add:hover { color: #3C3489; opacity: .8; }
+
+.bn-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .01em;
+  line-height: 1;
+}
+
+.bn-live-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bn-live-dot {
+  position: absolute;
+  top: -2px; right: -4px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #1D9E75;
+  border: 2px solid #fff;
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+
+/* Push page content up so bottom nav doesn't cover it */
+@media (max-width: 768px) {
+  .bottom-nav { display: flex; }
+  .shell-main { padding-bottom: 72px !important; }
+  /* Hide top nav links on mobile since bottom nav covers them */
+  .shell-links { display: none !important; }
+  /* Hide + Add a spot from top nav on mobile */
+  .shell-add-btn { display: none !important; }
+}
+
+/* Dark mode bottom nav */
+html.dark .bottom-nav {
+  background: #13131a;
+  border-top-color: #2a2a30;
+}
+html.dark .bn-tab { color: #555565; }
+html.dark .bn-tab.active { color: #e8714a; }
+html.dark .bn-tab--live.active { color: #22b882; }
+html.dark .bn-live-dot { border-color: #13131a; }
+
+/* ═══════════════════════════════════════════════════════
+   COLLAPSIBLE HERO
+═══════════════════════════════════════════════════════ */
+
+.browse-hero-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.browse-hero-collapse {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #ccc;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 4px;
+  border-radius: 4px;
+}
+.browse-hero-collapse:hover { color: #888; background: #f0ede8; }
+
+/* Compact collapsed hero */
+.browse-hero--compact {
+  padding: 8px 0 6px !important;
+}
+.browse-hero-compact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.browse-hero-compact-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+html.dark .browse-hero-compact-title { color: #f0eff4; }
