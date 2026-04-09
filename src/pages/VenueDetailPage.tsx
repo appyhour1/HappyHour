@@ -98,11 +98,12 @@ export default function VenueDetailPage() {
   const vis = venueStatus ? STATUS_VISUALS[venueStatus.status] : null
 const DAY_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
   const sortedSchedules = [...schedules].sort((a, b) => {
-    const aDay = DAY_ORDER.indexOf(a.days[0]) 
-    const bDay = DAY_ORDER.indexOf(b.days[0])
-    return aDay - bDay
+    const aMin = Math.min(...a.days.map(d => DAY_ORDER.indexOf(d)))
+    const bMin = Math.min(...b.days.map(d => DAY_ORDER.indexOf(d)))
+    return aMin - bMin
   })
-  const curSchedule = sortedSchedules[activeScheduleIdx]
+  const activeIdx = Math.min(activeScheduleIdx, sortedSchedules.length - 1)
+  const curSchedule = sortedSchedules[activeIdx]
 
   // Related venues (same neighborhood, different venue)
   const related = allVenues
