@@ -43,7 +43,6 @@ setOpenNow: (on: boolean) => void
   setDogFriendly: (df: boolean) => void
   setSearch: (q: string) => void
   setSort: (mode: SortMode) => void
-  setDogFriendly: (df: boolean) => void
   clearAll: () => void
 }
 
