@@ -173,6 +173,9 @@ export const VenueCard = memo(function VenueCard({
         {(venue.verification_status === 'verified' || venue.verification_status === 'claimed') && (
           <span className="vc__verified">✓ Verified</span>
         )}
+        {venue.dog_friendly && (
+          <span className="vc__dog-friendly" title="Dog friendly">🐾</span>
+        )}
       </div>
 
       {/* ── TIME RANGE ── */}
