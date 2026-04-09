@@ -247,7 +247,7 @@ export default function VenueDetailPage() {
                     className={`detail-tab${activeScheduleIdx === i ? ' active' : ''}`}
                     onClick={() => setActiveScheduleIdx(i)}
                   >
-                    {s.days.length === 7 ? 'All week' : s.days.slice(0,3).join(', ')}
+{s.days.length === 7 ? 'All week' : [...s.days].sort((a, b) => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(a) - ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(b)).slice(0,3).join(', ')}
                     {st && (st.status === 'live_now' || st.status === 'ends_soon') && (
                       <span className="tab-live-dot" />
                     )}
