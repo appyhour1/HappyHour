@@ -157,7 +157,7 @@ export function getScheduleStatus(
       label: startsSoon
         ? `Starts in ${fmtDuration(until)}`
         : `Starts at ${fmtTimeFromMins(startMins)}`,
-      badge: startsSoon ? `Starts in ${fmtDuration(until)}` : 'Later Today',
+      badge: startsSoon ? `Starts in ${fmtDuration(until)}` : `Starts at ${fmtTimeFromMins(startMins)}`,
     }
   }
 
