@@ -13,7 +13,6 @@ import { useViewMode } from '../hooks/useViewMode'
 import { filterVenues, getNeighborhoods, isVenueActiveNow, getVenueActiveDays, distanceMiles, fmtDistance } from '../utils/filters'
 import { sortVenuesByMode } from '../utils/scoring'
 import { buildBestPicksSections } from '../utils/bestPicks'
-import { getVenuesStartingNext, getScheduleStatus, STATUS_VISUALS } from '../utils/happeningNow'
 import { Analytics } from '../services/analytics'
 import { FilterPanel } from '../components/FilterPanel'
 import { SortBar } from '../components/SortBar'
@@ -21,13 +20,10 @@ import { MapView } from '../components/MapView'
 import { ViewToggle } from '../components/ViewToggle'
 import { VenueCard } from '../components/VenueCard'
 import { BestPicksRow } from '../components/BestPicksRow'
-import type { Venue, HappyHourStatus, ScheduleStatus } from '../types'
-import { DAYS_OF_WEEK } from '../types'
-import { useNavigate, Link } from 'react-router-dom'
+import type { Venue } from '../types'
+import { Link } from 'react-router-dom'
 import { EmailCapture, useEmailCapture } from '../components/EmailCapture'
-import { useConfirmDeal } from '../hooks/useConfirmDeal'
 
-const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
 
 // ─────────────────────────────────────────────
 // BROWSE HERO — homepage header with live count + trust signals
@@ -63,7 +59,6 @@ export default function BrowsePage() {
   const { venues, loading, error, userLocation, requestLocation, locationPermission, favorites, city } = useAppContext()
   const fs = useFilterState()
   const vm = useViewMode()
-  const navigate = useNavigate()
 
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null)
@@ -71,7 +66,6 @@ export default function BrowsePage() {
   const [, setTick] = useState(0)
   const venueCardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
-  const confirmDeal = useConfirmDeal()
 
   // Smart default: auto-enable "open now" between 3pm-9pm on first visit
   useEffect(() => {
@@ -240,10 +234,7 @@ export default function BrowsePage() {
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {/* ── EMAIL CAPTURE ── */}
+         {/* ── EMAIL CAPTURE ── */}
         {showCapture && (
           <EmailCapture trigger={trigger} city={city} onDismiss={dismissEmail} />
         )}
