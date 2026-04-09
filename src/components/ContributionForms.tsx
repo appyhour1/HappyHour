@@ -67,7 +67,8 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
             ]}]
           })
         })
-        const data = await response.json() if (data.error) throw new Error(data.error.message)
+        const data = await response.json()
+        if (data.error) throw new Error(data.error.message)
         const text = (data.content || []).map((c: any) => c.text || '').join('')
         const parsed = JSON.parse(text.replace(/```json|```/g, '').trim())
         setForm(f => ({
