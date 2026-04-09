@@ -181,10 +181,20 @@ export default function BrowsePage() {
               ♥ Saved{favorites.count > 0 && ` (${favorites.count})`}
             </button>
           </div>
-          <div className="browse-topbar-right">
-            <Link to="/crawl" className="crawl-nav-btn">🍺 Bar Crawl</Link>
-            <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
-          </div>
+.browse-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.crawl-nav-btn {
+  white-space: nowrap !important;
+  font-size: 11px !important;
+  padding: 0 9px !important;
+}
+@media (max-width: 400px) {
+  .crawl-nav-btn { display: none !important; }
+}
         </div>
 
         {/* ── FILTER PANEL ── */}
