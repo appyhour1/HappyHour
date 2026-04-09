@@ -94,9 +94,10 @@ export interface Venue {
   data_source: DataSource
   claimed_by_user_id: string | null
 
-  // Platform
+// Platform
   is_featured: boolean
   upvote_count: number
+  dog_friendly: boolean
 
   // Timestamps
   created_at: string
