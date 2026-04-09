@@ -1710,3 +1710,9 @@ html.dark .detail-edit-btn { background: var(--purple-lt); border-color: var(--p
 }
 .ef-dog-btn.active { background: #E8F5EE; border-color: #1D9E75; color: #085041; }
 .ef-dog-btn:hover { border-color: #1D9E75; color: #085041; }
+.vc__dog-friendly {
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
