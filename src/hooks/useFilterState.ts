@@ -39,7 +39,8 @@ export interface UseFilterStateReturn {
   toggleNeighborhood: (n: string) => void
   togglePriceTier: (p: PriceTier) => void
   setTimeWindow: (tw: TimeWindow | null) => void
-  setOpenNow: (on: boolean) => void
+setOpenNow: (on: boolean) => void
+  setDogFriendly: (df: boolean) => void
   setSearch: (q: string) => void
   setSort: (mode: SortMode) => void
   setDogFriendly: (df: boolean) => void
@@ -130,7 +131,7 @@ export function useFilterState(): UseFilterStateReturn {
     toggleNeighborhood: (n) => toggleInSet<string>('neighborhoods', n),
     togglePriceTier:    (p) => toggleInSet<PriceTier>('priceTiers', p),
     setTimeWindow:      (tw) => setFilter('timeWindow', tw),
-    setOpenNow:         (on) => setFilter('openNow', on),
+setOpenNow:         (on) => setFilter('openNow', on),
     setDogFriendly:     (df: boolean) => setFilter('dogFriendly' as any, df),
     setSearch:          (q)  => setFilter('search', q),
     setSort,
