@@ -54,7 +54,11 @@ export const VenueCard = memo(function VenueCard({
   })()
 
   const bestSchedule = venueStatus?.schedule ?? schedules[0]
-  const topDeals = (bestSchedule?.deals ?? []).slice(0, 4)
+ const DEAL_ORDER = ['beer', 'cocktail', 'food', 'wine', 'general']
+  const topDeals = (bestSchedule?.deals ?? [])
+    .slice()
+    .sort((a, b) => DEAL_ORDER.indexOf(a.type) - DEAL_ORDER.indexOf(b.type))
+    .slice(0, 4)
   const vis = venueStatus ? STATUS_VISUALS[venueStatus.status] : null
 
   function handleCardClick() {
