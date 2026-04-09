@@ -25,8 +25,7 @@ function ScheduleEditor({ schedule, onSave, onDelete, onCancel }: {
   const [startTime, setStart]   = useState(schedule.start_time)
   const [endTime, setEnd]       = useState(schedule.end_time)
   const [dealText, setDealText] = useState(schedule.deal_text)
-  const [dogFriendly, setDogFriendly]   = useState((venue as any).dog_friendly ?? false)
-  const [saving, setSaving]     = useState(false)
+const [saving, setSaving]     = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   function toggleDay(day: DayOfWeek) {
