@@ -8,6 +8,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useAppContext } from '../contexts/AppContext'
 import { getVenueById } from '../services/venueService'
+import { supabase } from '../lib/supabase'
 import { fmtTime, isVenueActiveNow, getVenueActiveDays, verifiedAgo } from '../utils/filters'
 import { getScheduleStatus, STATUS_VISUALS } from '../utils/happeningNow'
 import { DEAL_TYPE_COLORS, DEAL_TYPE_LABELS, CATEGORY_LABELS, DAYS_OF_WEEK } from '../types'
@@ -325,6 +326,16 @@ export default function VenueDetailPage() {
             <button className="detail-suggest-btn" onClick={() => setShowEditForm(true)}>
               Suggest correction
             </button>
+            <button
+          className="detail-delete-btn"
+          onClick={async () => {
+            if (!window.confirm(`Delete ${venue.name}? This cannot be undone.`)) return
+            await supabase.from('venues').delete().eq('id', venue.id)
+            navigate('/')
+          }}
+        >
+          Delete venue
+        </button>
           </div>
         </div>
 
