@@ -1946,3 +1946,11 @@ html.dark .bn-live-dot { border-color: #13131a; }
   color: #1a1a1a;
 }
 html.dark .browse-hero-compact-title { color: #f0eff4; }
+</div>
+.browse-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.crawl-nav-btn {
