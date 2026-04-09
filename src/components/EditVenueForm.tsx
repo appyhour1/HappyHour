@@ -25,7 +25,7 @@ function ScheduleEditor({ schedule, onSave, onDelete, onCancel }: {
   const [startTime, setStart]   = useState(schedule.start_time)
   const [endTime, setEnd]       = useState(schedule.end_time)
   const [dealText, setDealText] = useState(schedule.deal_text)
-const [saving, setSaving]     = useState(false)
+  const [saving, setSaving]     = useState(false)
   const [deleting, setDeleting] = useState(false)
 
   function toggleDay(day: DayOfWeek) {
@@ -95,6 +95,7 @@ export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
   const [website, setWebsite]           = useState(venue.website ?? '')
   const [phone, setPhone]               = useState(venue.phone ?? '')
   const [priceTier, setPriceTier]       = useState(venue.price_tier ?? '')
+  const [dogFriendly, setDogFriendly]   = useState((venue as any).dog_friendly ?? false)
   const [saving, setSaving]             = useState(false)
   const [error, setError]               = useState<string | null>(null)
   const [success, setSuccess]           = useState(false)
@@ -105,50 +106,8 @@ export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
   const [newEnd, setNewEnd]             = useState('19:00')
   const [newDealText, setNewDealText]   = useState('')
   const [savingNew, setSavingNew]       = useState(false)
-  const [photoLoading, setPhotoLoading] = useState(false)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [photoError, setPhotoError]     = useState<string | null>(null)
 
   const schedules = venue.schedules ?? []
-
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPhotoError(null)
-    setPhotoLoading(true)
-    const reader = new FileReader()
-    reader.onload = async (event) => {
-      const base64 = event.target?.result as string
-      setPhotoPreview(base64)
-      try {
-        const response = await fetch('/api/scan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 1000,
-            messages: [{ role: 'user', content: [
-              { type: 'image', source: { type: 'base64', media_type: file.type || 'image/jpeg', data: base64.split(',')[1] } },
-              { type: 'text', text: 'Extract happy hour info from this image. Respond ONLY with JSON: {"deal_text":"","start_time":"16:00","end_time":"19:00","days":["Mon","Tue","Wed","Thu","Fri"]}' }
-            ]}]
-          })
-        })
-        const data = await response.json()
-        if (data.error) throw new Error(data.error.message)
-        const text = (data.content || []).map((c: any) => c.text || '').join('')
-        const parsed = JSON.parse(text.replace(/```json|```/g, '').trim())
-        if (parsed.deal_text) setNewDealText(parsed.deal_text)
-        if (parsed.start_time) setNewStart(parsed.start_time)
-        if (parsed.end_time) setNewEnd(parsed.end_time)
-        if (parsed.days && parsed.days.length) setNewDays(parsed.days)
-        setAddingSchedule(true)
-      } catch {
-        setPhotoError('Could not read the image. Try a clearer photo or fill in manually.')
-      }
-      setPhotoLoading(false)
-    }
-    reader.readAsDataURL(file)
-  }
 
   async function saveVenue() {
     if (!name.trim()) { setError('Venue name is required'); return }
@@ -164,7 +123,7 @@ export function EditVenueForm({ venue, onClose, onSaved }: EditVenueFormProps) {
           address: address.trim() || null,
           website: website.trim() || null,
           phone: phone.trim() || null,
-price_tier: priceTier || null,
+          price_tier: priceTier || null,
           dog_friendly: dogFriendly,
           updated_at: new Date().toISOString(),
         })
@@ -213,7 +172,6 @@ price_tier: priceTier || null,
         }])
       if (err) throw err
       setAddingSchedule(false)
-      setPhotoPreview(null)
       setNewDays([]); setNewStart('16:00'); setNewEnd('19:00'); setNewDealText('')
       onSaved()
     } catch (e: any) {
@@ -226,7 +184,7 @@ price_tier: priceTier || null,
     <div className="ef-form">
       <div className="ef-header">
         <h2 className="ef-title">Edit venue</h2>
-        <button className="ef-close-btn" onClick={onClose} type="button">X</button>
+        <button className="ef-close-btn" onClick={onClose} type="button">✕</button>
       </div>
 
       {success && <div className="ef-success-banner">Saved successfully!</div>}
@@ -260,7 +218,7 @@ price_tier: priceTier || null,
         </Field>
       </div>
 
-<Field label="Price tier">
+      <Field label="Price tier">
         <select className="ef-select" value={priceTier} onChange={e => setPriceTier(e.target.value)}>
           <option value="">Select...</option>
           <option value="$">$ - Budget</option>
@@ -275,7 +233,7 @@ price_tier: priceTier || null,
         <button
           type="button"
           className={`ef-dog-btn${dogFriendly ? ' active' : ''}`}
-          onClick={() => setDogFriendly(v => !v)}
+          onClick={() => setDogFriendly((v: boolean) => !v)}
         >
           🐾 {dogFriendly ? 'Yes - dog friendly!' : 'Mark as dog friendly'}
         </button>
@@ -353,23 +311,9 @@ price_tier: priceTier || null,
           </div>
         </div>
       ) : (
-        <div className="ef-photo-row">
-          <button className="ef-btn-add-schedule" onClick={() => setAddingSchedule(true)} type="button">
-            + Add schedule manually
-          </button>
-          <label className="ef-btn-photo">
-            {photoLoading ? <span className="cf-spinner" /> : <span>📷 Scan photo</span>}
-            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
-          </label>
-        </div>
-      )}
-
-      {photoError && <div className="ef-error-banner">{photoError}</div>}
-      {photoPreview && !addingSchedule && (
-        <div className="ef-photo-preview-row">
-          <img src={photoPreview} alt="scanned" className="cf-photo-thumb" />
-          <span className="cf-photo-ok">Schedule filled from photo - review above</span>
-        </div>
+        <button className="ef-btn-add-schedule" onClick={() => setAddingSchedule(true)} type="button">
+          + Add schedule
+        </button>
       )}
     </div>
   )
