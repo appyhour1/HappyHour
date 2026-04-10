@@ -113,7 +113,7 @@ export default function BrowsePage() {
   }
 
   const bestPicksSections = buildBestPicksSections(venues, userLocation)
-  const showBestPicks = !fs.filters.openNow && fs.activeCount === 0 && !showFavoritesOnly
+const showBestPicks = !showFavoritesOnly
 
   function handleViewDetails(venueId: string) {
     setSelectedVenueId(venueId)
