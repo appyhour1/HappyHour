@@ -333,10 +333,10 @@ export interface StatusVisual {
 }
 
 export const STATUS_VISUALS: Record<HappyHourStatus, StatusVisual> = {
-  live_now:    { bg: '#E1F5EE', text: '#085041', border: '#1D9E75', dot: '#1D9E75', pulse: true  },
-  ends_soon:   { bg: '#FEF3E2', text: '#633806', border: '#BA7517', dot: '#EF9F27', pulse: true  },
-  starts_soon: { bg: '#EEEDFE', text: '#3C3489', border: '#7F77DD', dot: '#7F77DD', pulse: false },
-  later_today: { bg: '#F0EDE8', text: '#555555', border: '#d0cdc8', dot: '#aaa',    pulse: false },
+  live_now:    { bg: '#DCFCE7', text: '#15803D', border: '#22C55E', dot: '#22C55E', pulse: true  },
+  ends_soon:   { bg: '#DCFCE7', text: '#15803D', border: '#22C55E', dot: '#22C55E', pulse: true  },
+  starts_soon: { bg: '#DBEAFE', text: '#1D4ED8', border: '#3B82F6', dot: '#3B82F6', pulse: false },
+  later_today: { bg: '#DBEAFE', text: '#1D4ED8', border: '#3B82F6', dot: '#3B82F6', pulse: false },
   ended:       { bg: '#F5F3EF', text: '#aaaaaa', border: '#e0ddd8', dot: '#ccc',    pulse: false },
   not_today:   { bg: '#F5F3EF', text: '#aaaaaa', border: '#e0ddd8', dot: '#ccc',    pulse: false },
 }
