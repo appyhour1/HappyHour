@@ -245,7 +245,6 @@ export default function BrowsePage() {
             )}
           </div>
         )}
-      </div>
 
         {/* ── EMAIL CAPTURE ── */}
         {showCapture && (
