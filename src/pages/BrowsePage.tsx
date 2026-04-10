@@ -87,7 +87,7 @@ export default function BrowsePage() {
         sessionStorage.setItem(key, '1')
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line
   }, [])
 
   // Refresh status badges every minute
