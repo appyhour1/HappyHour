@@ -2234,3 +2234,83 @@ html.dark .vc__expiry-warning {
   border-color: rgba(253,230,138,.2);
   color: #FCD34D;
 }
+
+/* ═══════════════════════════════════════════════════════
+   GOOGLE PLACES SEARCH
+═══════════════════════════════════════════════════════ */
+
+.places-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.places-input-row {
+  display: flex; align-items: center; gap: 8px;
+  border: 1.5px solid var(--border-2);
+  border-radius: 10px;
+  padding: 0 12px;
+  height: 40px;
+  background: var(--surface);
+  transition: border-color .15s;
+}
+.places-input-row:focus-within {
+  border-color: var(--blue);
+}
+
+.places-search-icon { font-size: 14px; flex-shrink: 0; opacity: .6; }
+
+.places-input {
+  flex: 1; border: none; background: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; color: var(--ink);
+  outline: none;
+}
+.places-input::placeholder { color: var(--ink-4); }
+
+.places-loading { font-size: 12px; color: var(--ink-4); }
+
+.places-error {
+  font-size: 12px; color: #c0392b;
+  background: #fdf0ee; border-radius: 6px;
+  padding: 6px 10px; margin-top: 6px;
+}
+
+.places-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.1);
+  z-index: 300;
+  overflow: hidden;
+}
+
+.places-suggestion {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 10px 14px;
+  background: none; border: none;
+  text-align: left; cursor: pointer;
+  transition: background .1s;
+  border-bottom: 0.5px solid var(--border);
+}
+.places-suggestion:last-of-type { border-bottom: none; }
+.places-suggestion:hover { background: var(--surface); }
+
+.places-suggestion-icon { font-size: 14px; flex-shrink: 0; }
+.places-suggestion-text { font-size: 13px; color: var(--ink); line-height: 1.4; }
+
+.places-powered {
+  font-size: 10px; color: var(--ink-4);
+  text-align: right; padding: 5px 10px;
+  background: var(--surface);
+}
+
+.cf-places-hint {
+  font-size: 11px; color: var(--ink-4);
+  margin-top: 5px;
+}
+
+html.dark .places-dropdown { background: #1E1E1E; border-color: #2E2E2E; }
+html.dark .places-suggestion:hover { background: #252525; }
+html.dark .places-input-row { background: #1E1E1E; border-color: #2E2E2E; }
+html.dark .places-input { color: #F0EEE8; }
