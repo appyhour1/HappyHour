@@ -1,5 +1,17 @@
+/**
+ * ContributionForms.tsx
+ *
+ * Two forms:
+ *   1. NewVenueForm  — submit a new bar/restaurant
+ *   2. SuggestEditForm — suggest a correction to existing venue data
+ *
+ * Both use the contributionService layer, which can be swapped to any backend.
+ */
+
 import React, { useState } from 'react'
+import { PlacesSearch, type PlaceResult } from './PlacesSearch'
 import type { Venue } from '../types'
+import { DAYS_OF_WEEK } from '../types'
 import {
   submitContribution,
   validateNewVenue,
@@ -9,12 +21,23 @@ import {
   type ValidationError,
 } from '../services/contributionService'
 
-function Field({ label, required, error, children }: {
-  label: string; required?: boolean; error?: string; children: React.ReactNode
+// ─────────────────────────────────────────────
+// SHARED FIELD COMPONENT
+// ─────────────────────────────────────────────
+
+function Field({
+  label, required, error, children,
+}: {
+  label: string
+  required?: boolean
+  error?: string
+  children: React.ReactNode
 }) {
   return (
     <div className="cf-field">
-      <label className="cf-label">{label}{required && <span className="cf-required"> *</span>}</label>
+      <label className="cf-label">
+        {label}{required && <span className="cf-required"> *</span>}
+      </label>
       {children}
       {error && <span className="cf-error">{error}</span>}
     </div>
@@ -29,6 +52,10 @@ function Textarea({ ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement
   return <textarea className="cf-textarea" {...props} />
 }
 
+// ─────────────────────────────────────────────
+// NEW VENUE FORM
+// ─────────────────────────────────────────────
+
 const EMPTY_NEW: Partial<NewVenueSubmission> = {
   flow: 'new_venue', name: '', address: '', neighborhood: '',
   city: 'Cincinnati', website: '', phone: '',
@@ -36,54 +63,21 @@ const EMPTY_NEW: Partial<NewVenueSubmission> = {
 }
 
 export function NewVenueForm({ onClose }: { onClose?: () => void }) {
-  const [photoLoading, setPhotoLoading] = useState(false)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [photoError, setPhotoError] = useState<string | null>(null)
-  const [dogFriendly, setDogFriendly] = useState(false)
   const [form, setForm] = useState<Partial<NewVenueSubmission>>(EMPTY_NEW)
   const [errors, setErrors] = useState<ValidationError[]>([])
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [resultMessage, setResultMessage] = useState('')
 
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPhotoError(null)
-    setPhotoLoading(true)
-    const reader = new FileReader()
-    reader.onload = async (event) => {
-      const base64 = event.target?.result as string
-      setPhotoPreview(base64)
-      try {
-        const response = await fetch('/api/scan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 1000,
-            messages: [{ role: 'user', content: [
-              { type: 'image', source: { type: 'base64', media_type: file.type || 'image/jpeg', data: base64.split(',')[1] } },
-              { type: 'text', text: 'Extract happy hour info from this image. Respond ONLY with JSON: {"name":"","neighborhood":"","schedule_description":"","deal_details":""}' }
-            ]}]
-          })
-        })
-        const data = await response.json()
-        if (data.error) throw new Error(data.error.message)
-        const text = (data.content || []).map((c: any) => c.text || '').join('')
-        const parsed = JSON.parse(text.replace(/```json|```/g, '').trim())
-        setForm(f => ({
-          ...f,
-          name: parsed.name || f.name,
-          neighborhood: parsed.neighborhood || f.neighborhood,
-          schedule_description: parsed.schedule_description || f.schedule_description,
-          deal_details: parsed.deal_details || f.deal_details,
-        }))
-      } catch {
-        setPhotoError('Could not read the image. Try a clearer photo or fill in manually.')
-      }
-      setPhotoLoading(false)
-    }
-    reader.readAsDataURL(file)
+  function handlePlaceSelect(place: PlaceResult) {
+    setForm(f => ({
+      ...f,
+      name: place.name || f.name,
+      address: place.address || f.address,
+      phone: place.phone || f.phone,
+      website: place.website || f.website,
+      neighborhood: place.neighborhood || f.neighborhood,
+      city: 'Cincinnati',
+    }))
   }
 
   function fieldError(field: string) {
@@ -98,12 +92,9 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
   async function handleSubmit() {
     const errs = validateNewVenue(form)
     if (errs.length > 0) { setErrors(errs); return }
+
     setStatus('submitting')
-    const submissionData = {
-      ...form,
-      notes: (dogFriendly ? '🐾 Dog friendly. ' : '') + (form.notes || ''),
-    }
-    const result = await submitContribution(submissionData as NewVenueSubmission)
+    const result = await submitContribution(form as NewVenueSubmission)
     setResultMessage(result.message)
     setStatus(result.success ? 'success' : 'error')
   }
@@ -125,29 +116,6 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
         <h2 className="cf-title">Add a new spot</h2>
         <p className="cf-subtitle">Help the community find great happy hours.</p>
       </div>
-
-      <div className="cf-photo-zone" onClick={() => document.getElementById('cf-photo-input')?.click()}>
-        {photoLoading ? (
-          <div className="cf-photo-loading"><div className="cf-spinner" /><span>Reading image...</span></div>
-        ) : photoPreview ? (
-          <div className="cf-photo-preview">
-            <img src={photoPreview} alt="uploaded" className="cf-photo-thumb" />
-            <div>
-              <div className="cf-photo-ok">Form filled from photo</div>
-              <div className="cf-photo-retry">Tap to use a different photo</div>
-            </div>
-          </div>
-        ) : (
-          <div className="cf-photo-placeholder">
-            <span className="cf-photo-icon">📷</span>
-            <span className="cf-photo-title">Upload a photo to auto-fill</span>
-            <span className="cf-photo-sub">Chalkboard sign, menu, or flyer</span>
-          </div>
-        )}
-      </div>
-      {photoError && <div className="cf-error-banner">{photoError}</div>}
-      <input id="cf-photo-input" type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
-      <div className="cf-divider"><span>or fill in manually</span></div>
 
       <Field label="Bar / Restaurant name" required error={fieldError('name')}>
         <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. The Eagle OTR" />
@@ -179,7 +147,7 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
         <Input
           value={form.schedule_description}
           onChange={e => set('schedule_description', e.target.value)}
-          placeholder="e.g. Mon-Fri 4-7pm, Sat 2-5pm"
+          placeholder="e.g. Mon–Fri 4–7pm, Sat 2–5pm"
         />
       </Field>
 
@@ -192,22 +160,11 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
         />
       </Field>
 
-      <div className="cf-field">
-        <label className="cf-label">Dog friendly?</label>
-        <button
-          type="button"
-          className={`cf-dog-btn${dogFriendly ? ' active' : ''}`}
-          onClick={() => setDogFriendly(v => !v)}
-        >
-          🐾 {dogFriendly ? 'Yes - dog friendly!' : 'Mark as dog friendly'}
-        </button>
-      </div>
-
       <Field label="Notes (optional)" error={fieldError('notes')}>
         <Textarea
           value={form.notes}
           onChange={e => set('notes', e.target.value)}
-          placeholder="Anything else we should know - patio seating, good for groups, etc."
+          placeholder="Anything else we should know — patio seating, good for groups, etc."
           rows={2}
         />
       </Field>
@@ -216,7 +173,7 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
         <Input
           value={form.submitter_email}
           onChange={e => set('submitter_email', e.target.value)}
-          placeholder="you@example.com - only used to follow up if needed"
+          placeholder="you@example.com — only used to follow up if needed"
           type="email"
         />
       </Field>
@@ -237,6 +194,10 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
   )
 }
 
+// ─────────────────────────────────────────────
+// SUGGEST EDIT FORM
+// ─────────────────────────────────────────────
+
 export function SuggestEditForm({ venue, onClose }: { venue: Venue; onClose?: () => void }) {
   const [form, setForm] = useState<Partial<EditSuggestion>>({
     flow: 'suggest_edit',
@@ -251,6 +212,18 @@ export function SuggestEditForm({ venue, onClose }: { venue: Venue; onClose?: ()
   const [errors, setErrors] = useState<ValidationError[]>([])
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [resultMessage, setResultMessage] = useState('')
+
+  function handlePlaceSelect(place: PlaceResult) {
+    setForm(f => ({
+      ...f,
+      name: place.name || f.name,
+      address: place.address || f.address,
+      phone: place.phone || f.phone,
+      website: place.website || f.website,
+      neighborhood: place.neighborhood || f.neighborhood,
+      city: 'Cincinnati',
+    }))
+  }
 
   function fieldError(field: string) {
     return errors.find(e => e.field === field)?.message
@@ -292,7 +265,7 @@ export function SuggestEditForm({ venue, onClose }: { venue: Venue; onClose?: ()
         <Textarea
           value={form.field_suggestions}
           onChange={e => set('field_suggestions', e.target.value)}
-          placeholder="e.g. The happy hour ends at 7pm now, not 6pm."
+          placeholder="e.g. The happy hour ends at 7pm now, not 6pm. The $3 beer deal is no longer available."
           rows={3}
         />
       </Field>
@@ -301,7 +274,7 @@ export function SuggestEditForm({ venue, onClose }: { venue: Venue; onClose?: ()
         <Input
           value={form.new_schedule}
           onChange={e => set('new_schedule', e.target.value)}
-          placeholder="e.g. Mon-Fri 4-7pm"
+          placeholder="e.g. Mon–Fri 4–7pm"
         />
       </Field>
 
