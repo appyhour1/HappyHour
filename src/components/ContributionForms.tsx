@@ -68,18 +68,17 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [resultMessage, setResultMessage] = useState('')
 
-  function handlePlaceSelect(place: PlaceResult) {
+function handlePlaceSelect(place: PlaceResult) {
     setForm(f => ({
       ...f,
-      name: place.name || f.name,
-      address: place.address || f.address,
-      phone: place.phone || f.phone,
-      website: place.website || f.website,
-      neighborhood: place.neighborhood || f.neighborhood,
+      ...(place.name ? { name: place.name } : {}),
+      ...(place.address ? { address: place.address } : {}),
+      ...(place.phone ? { phone: place.phone } : {}),
+      ...(place.website ? { website: place.website } : {}),
+      ...(place.neighborhood ? { neighborhood: place.neighborhood } : {}),
       city: 'Cincinnati',
     }))
   }
-
   function fieldError(field: string) {
     return errors.find(e => e.field === field)?.message
   }
