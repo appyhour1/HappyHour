@@ -1,19 +1,12 @@
-/**
- * BrowsePage.tsx
- *
- * Main browse experience. Replaces the old App.tsx render.
- * Uses AppContext for venues/favorites, owns its own filter/sort state.
- */
-
 import React, { useState, useRef, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
+import { Link } from 'react-router-dom'
 import { useAppContext } from '../contexts/AppContext'
 import { useFilterState } from '../hooks/useFilterState'
 import { useViewMode } from '../hooks/useViewMode'
-import { filterVenues, getNeighborhoods, isVenueActiveNow, getVenueActiveDays, distanceMiles, fmtDistance } from '../utils/filters'
+import { filterVenues, getNeighborhoods, isVenueActiveNow, distanceMiles, fmtDistance } from '../utils/filters'
 import { sortVenuesByMode } from '../utils/scoring'
 import { buildBestPicksSections } from '../utils/bestPicks'
-import { getVenuesStartingNext, getScheduleStatus, STATUS_VISUALS } from '../utils/happeningNow'
 import { Analytics } from '../services/analytics'
 import { FilterPanel } from '../components/FilterPanel'
 import { SortBar } from '../components/SortBar'
@@ -21,17 +14,8 @@ import { MapView } from '../components/MapView'
 import { ViewToggle } from '../components/ViewToggle'
 import { VenueCard } from '../components/VenueCard'
 import { BestPicksRow } from '../components/BestPicksRow'
-import type { Venue, HappyHourStatus, ScheduleStatus } from '../types'
-import { DAYS_OF_WEEK } from '../types'
-import { useNavigate, Link } from 'react-router-dom'
 import { EmailCapture, useEmailCapture } from '../components/EmailCapture'
-import { useConfirmDeal } from '../hooks/useConfirmDeal'
-
-const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
-
-// ─────────────────────────────────────────────
-// BROWSE HERO — homepage header with live count + trust signals
-// ─────────────────────────────────────────────
+import type { Venue } from '../types'
 
 function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
   const liveCount = venues.filter(v => isVenueActiveNow(v)).length
@@ -62,10 +46,9 @@ function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
 }
 
 export default function BrowsePage() {
-  const { venues, loading, error, userLocation, requestLocation, locationPermission, favorites, city } = useAppContext()
+  const { venues, loading, error, userLocation, requestLocation, favorites, city } = useAppContext()
   const fs = useFilterState()
   const vm = useViewMode()
-  const navigate = useNavigate()
 
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null)
@@ -73,24 +56,19 @@ export default function BrowsePage() {
   const [, setTick] = useState(0)
   const venueCardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
-  const confirmDeal = useConfirmDeal()
 
-  // Smart default: auto-enable "open now" between 3pm-9pm on first visit
   useEffect(() => {
     const hour = new Date().getHours()
     const isHappyHourTime = hour >= 15 && hour < 21
     if (isHappyHourTime && fs.activeCount === 0 && !fs.filters.openNow) {
-      // Only auto-enable if user hasn't touched filters yet
       const key = 'hh_smart_default_applied'
       if (!sessionStorage.getItem(key)) {
         fs.setOpenNow(true)
         sessionStorage.setItem(key, '1')
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []) // eslint-disable-line
 
-  // Refresh status badges every minute
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60_000)
     return () => clearInterval(id)
@@ -113,7 +91,7 @@ export default function BrowsePage() {
   }
 
   const bestPicksSections = buildBestPicksSections(venues, userLocation)
-  const showBestPicks = !fs.filters.openNow && fs.activeCount === 0 && !showFavoritesOnly
+  const showBestPicks = !showFavoritesOnly
 
   function handleViewDetails(venueId: string) {
     setSelectedVenueId(venueId)
@@ -132,15 +110,14 @@ export default function BrowsePage() {
   return (
     <>
       <Helmet>
-        <title>Happy Hour {city} — Deals Happening Now</title>
+        <title>Appy Hour {city} - Happy Hour Deals Happening Now</title>
         <meta name="description" content={`Find the best happy hour deals in ${city}. Live prices, verified schedules, and deals happening right now.`} />
       </Helmet>
 
       <div className="browse-page">
-        {/* ── HERO ── */}
+
         <BrowseHero venues={venues} city={city} />
 
-        {/* ── TOP BAR ── */}
         {/* ── SEARCH BAR ── */}
         <div className="browse-search-bar">
           <div className="browse-search-icon">🔍</div>
@@ -156,6 +133,7 @@ export default function BrowsePage() {
           )}
         </div>
 
+        {/* ── TOP BAR ── */}
         <div className="browse-topbar">
           <div className="browse-topbar-left">
             <button
@@ -173,7 +151,7 @@ export default function BrowsePage() {
             </button>
           </div>
           <div className="browse-topbar-right">
-            <Link to="/crawl" className="crawl-nav-btn">🍺 Bar Crawl</Link>
+            <Link to="/crawl" className="crawl-nav-btn">🍺 Build a Crawl</Link>
             <ViewToggle view={vm.view} onSet={v => { vm.setView(v); Analytics.viewModeChanged(v) }} />
           </div>
         </div>
@@ -193,9 +171,9 @@ export default function BrowsePage() {
         />
 
         {loading && <p className="loading-msg">Loading deals...</p>}
-        {error && !loading && <p className="error-msg">Using sample data — {error}</p>}
+        {error && !loading && <p className="error-msg">Using sample data - {error}</p>}
 
-        {/* ── BEST PICKS (shown when no filters active) ── */}
+        {/* ── BEST PICKS ── */}
         {!loading && showBestPicks && bestPicksSections.length > 0 && (
           <div className="best-picks-area">
             {bestPicksSections.map(section => (
@@ -260,12 +238,12 @@ export default function BrowsePage() {
             )}
           </div>
         )}
-      </div>
 
         {/* ── EMAIL CAPTURE ── */}
         {showCapture && (
           <EmailCapture trigger={trigger} city={city} onDismiss={dismissEmail} />
         )}
+
       </div>
     </>
   )
