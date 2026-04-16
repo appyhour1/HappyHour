@@ -54,12 +54,14 @@ export const VenueCard = memo(function VenueCard({
   })()
 
   const bestSchedule = venueStatus?.schedule ?? schedules[0]
- const DEAL_ORDER = ['beer', 'cocktail', 'food', 'wine', 'general']
-  const topDeals = (bestSchedule?.deals ?? [])
-    .slice()
-    .sort((a, b) => DEAL_ORDER.indexOf(a.type) - DEAL_ORDER.indexOf(b.type))
-    .slice(0, 4)
+  const topDeals = (bestSchedule?.deals ?? []).slice(0, 4)
   const vis = venueStatus ? STATUS_VISUALS[venueStatus.status] : null
+
+  // Deal expiry warning — show if last verified > 30 days ago
+  const daysSinceVerified = venue.last_verified_at
+    ? Math.floor((Date.now() - new Date(venue.last_verified_at).getTime()) / 86_400_000)
+    : null
+  const showExpiryWarning = daysSinceVerified !== null && daysSinceVerified > 30
 
   function handleCardClick() {
     Analytics.venueCardClicked(venue.id, venue.name, isOpen)
@@ -156,6 +158,13 @@ export const VenueCard = memo(function VenueCard({
       ) : bestSchedule?.deal_text ? (
         <div className="vc__deal-text">{bestSchedule.deal_text}</div>
       ) : null}
+
+      {/* ── EXPIRY WARNING ── */}
+      {showExpiryWarning && (
+        <div className="vc__expiry-warning">
+          ⚠️ Last confirmed {daysSinceVerified}d ago — verify before heading out
+        </div>
+      )}
 
       {/* ── FOOTER ── */}
       <div className="vc__footer">
