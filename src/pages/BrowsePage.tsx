@@ -87,7 +87,7 @@ export default function BrowsePage() {
         sessionStorage.setItem(key, '1')
       }
     }
-  // eslint-disable-next-line
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Refresh status badges every minute
@@ -113,7 +113,7 @@ export default function BrowsePage() {
   }
 
   const bestPicksSections = buildBestPicksSections(venues, userLocation)
-const showBestPicks = !showFavoritesOnly
+  const showBestPicks = !fs.filters.openNow && fs.activeCount === 0 && !showFavoritesOnly
 
   function handleViewDetails(venueId: string) {
     setSelectedVenueId(venueId)
@@ -141,6 +141,21 @@ const showBestPicks = !showFavoritesOnly
         <BrowseHero venues={venues} city={city} />
 
         {/* ── TOP BAR ── */}
+        {/* ── SEARCH BAR ── */}
+        <div className="browse-search-bar">
+          <div className="browse-search-icon">🔍</div>
+          <input
+            className="browse-search-input"
+            value={fs.filters.search}
+            onChange={e => fs.setSearch(e.target.value)}
+            placeholder="Search bars, deals, neighborhoods..."
+            aria-label="Search"
+          />
+          {fs.filters.search && (
+            <button className="browse-search-clear" onClick={() => fs.setSearch('')}>✕</button>
+          )}
+        </div>
+
         <div className="browse-topbar">
           <div className="browse-topbar-left">
             <button
@@ -245,6 +260,7 @@ const showBestPicks = !showFavoritesOnly
             )}
           </div>
         )}
+      </div>
 
         {/* ── EMAIL CAPTURE ── */}
         {showCapture && (
