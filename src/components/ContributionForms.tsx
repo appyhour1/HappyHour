@@ -212,18 +212,6 @@ export function SuggestEditForm({ venue, onClose }: { venue: Venue; onClose?: ()
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [resultMessage, setResultMessage] = useState('')
 
-  function handlePlaceSelect(place: PlaceResult) {
-    setForm(f => ({
-      ...f,
-      name: place.name || f.name,
-      address: place.address || f.address,
-      phone: place.phone || f.phone,
-      website: place.website || f.website,
-      neighborhood: place.neighborhood || f.neighborhood,
-      city: 'Cincinnati',
-    }))
-  }
-
   function fieldError(field: string) {
     return errors.find(e => e.field === field)?.message
   }
