@@ -57,6 +57,16 @@ function CrawlIcon({ active }: { active: boolean }) {
   )
 }
 
+function TonightIcon({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+        fill={active ? 'currentColor' : 'none'}
+        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
 function AddIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -75,9 +85,10 @@ export function BottomNav() {
   const liveCount = venues.filter(v => isVenueActiveNow(v)).length
   const isLive = liveCount > 0
 
-  const isHome  = location.pathname === '/'
-  const isNow   = location.pathname === '/now'
-  const isCrawl = location.pathname === '/crawl'
+  const isHome    = location.pathname === '/'
+  const isNow     = location.pathname === '/now'
+  const isTonight = location.pathname === '/tonight'
+  const isCrawl   = location.pathname === '/crawl'
 
   return (
     <>
@@ -93,6 +104,11 @@ export function BottomNav() {
             {isLive && <span className="bn-live-dot" />}
           </div>
           <span className="bn-label">Live{liveCount > 0 ? ` (${liveCount})` : ''}</span>
+        </Link>
+
+        <Link to="/tonight" className={`bn-tab${isTonight ? ' active' : ''}`}>
+          <TonightIcon active={isTonight} />
+          <span className="bn-label">Tonight</span>
         </Link>
 
         <Link to="/crawl" className={`bn-tab${isCrawl ? ' active' : ''}`}>
