@@ -73,6 +73,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </main>
       <AgeVerification />
       <InstallPrompt />
+      <div className="shell-footer">
+        <Link to="/privacy" className="shell-footer-link">Privacy Policy</Link>
+        <span className="shell-footer-dot">·</span>
+        <Link to="/terms" className="shell-footer-link">Terms</Link>
+        <span className="shell-footer-dot">·</span>
+        <span className="shell-footer-copy">© 2026 Appy Hour</span>
+      </div>
       <BottomNav />
     </div>
   )
