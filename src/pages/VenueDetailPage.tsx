@@ -18,7 +18,7 @@ import { useConfirmDeal } from '../hooks/useConfirmDeal'
 import { EditVenueForm } from '../components/EditVenueForm'
 import { PhotoGallery } from '../components/PhotoGallery'
 import { track } from '../services/analytics'
-import type { Venue, HappyHourStatus, ScheduleStatus } from '../types'
+import type { Venue, HappyHourSchedule, HappyHourStatus, ScheduleStatus } from '../types'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
 
