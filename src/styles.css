@@ -2710,3 +2710,12 @@ html.dark .detail-map-directions { background: #2A2A2A; color: #F0EEE8; }
 .age-gate-legal-link {
   color: var(--ink-4); text-decoration: underline;
 }
+.shell-footer {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 16px; font-size: 11px; color: var(--ink-4);
+  border-top: 1px solid var(--border);
+  margin-bottom: 72px;
+}
+.shell-footer-link { color: var(--ink-4); text-decoration: underline; }
+.shell-footer-link:hover { color: var(--coral); }
+.shell-footer-dot { color: var(--border); }
