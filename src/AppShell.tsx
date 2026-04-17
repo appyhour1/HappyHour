@@ -8,6 +8,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAppContext } from './contexts/AppContext'
 import { NewVenueForm } from './components/ContributionForms'
 import { BottomNav } from './components/BottomNav'
+import { InstallPrompt } from './components/InstallPrompt'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { city, favorites, dark, toggleDark } = useAppContext()
@@ -32,6 +33,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <Link to="/now" className="shell-link shell-link--live">
             <span className="shell-live-dot" />Live
           </Link>
+          <Link to="/tonight" className={`shell-link${location.pathname === '/tonight' ? ' active' : ''}`}>Tonight</Link>
           <Link to={`/${citySlug}`} className="shell-link">City Guide</Link>
           <Link to="/crawl" className={`shell-link${location.pathname === '/crawl' ? ' active' : ''}`}>🍺 Bar Crawl</Link>
         </nav>
@@ -68,6 +70,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="shell-main">
         {children}
       </main>
+      <InstallPrompt />
       <BottomNav />
     </div>
   )
