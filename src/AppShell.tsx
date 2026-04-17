@@ -9,6 +9,7 @@ import { useAppContext } from './contexts/AppContext'
 import { NewVenueForm } from './components/ContributionForms'
 import { BottomNav } from './components/BottomNav'
 import { InstallPrompt } from './components/InstallPrompt'
+import { AgeVerification } from './components/AgeVerification'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { city, favorites, dark, toggleDark } = useAppContext()
@@ -70,6 +71,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="shell-main">
         {children}
       </main>
+      <AgeVerification />
       <InstallPrompt />
       <BottomNav />
     </div>
