@@ -35,6 +35,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span className="shell-live-dot" />Live
           </Link>
           <Link to="/tonight" className={`shell-link${location.pathname === '/tonight' ? ' active' : ''}`}>Tonight</Link>
+          <Link to="/about" className={`shell-link${location.pathname === '/about' ? ' active' : ''}`}>About</Link>
           <Link to={`/${citySlug}`} className="shell-link">City Guide</Link>
           <Link to="/crawl" className={`shell-link${location.pathname === '/crawl' ? ' active' : ''}`}>🍺 Bar Crawl</Link>
         </nav>
@@ -73,13 +74,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </main>
       <AgeVerification />
       <InstallPrompt />
-      <div className="shell-footer">
-        <Link to="/privacy" className="shell-footer-link">Privacy Policy</Link>
-        <span className="shell-footer-dot">·</span>
-        <Link to="/terms" className="shell-footer-link">Terms</Link>
-        <span className="shell-footer-dot">·</span>
-        <span className="shell-footer-copy">© 2026 Appy Hour</span>
-      </div>
       <BottomNav />
     </div>
   )

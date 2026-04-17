@@ -12,6 +12,7 @@ import NowPage from './pages/NowPage'
 import EmailPreviewPage from './pages/EmailPreviewPage'
 import TonightPage from './pages/TonightPage'
 import PrivacyPage from './pages/PrivacyPage'
+import AboutPage from './pages/AboutPage'
 import TermsPage from './pages/TermsPage'
 import './styles.css'
 
@@ -36,6 +37,7 @@ root.render(
             <Route path="/tonight" element={<TonightPage />} />
             <Route path="/admin/email-preview" element={<EmailPreviewPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/:city" element={<SeoLandingPage />} />
             <Route path="/:city/:slug" element={<SeoLandingPage />} />
