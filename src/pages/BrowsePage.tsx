@@ -58,18 +58,6 @@ export default function BrowsePage() {
   const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
 
   useEffect(() => {
-    const hour = new Date().getHours()
-    const isHappyHourTime = hour >= 15 && hour < 21
-    if (isHappyHourTime && fs.activeCount === 0 && !fs.filters.openNow) {
-      const key = 'hh_smart_default_applied'
-      if (!sessionStorage.getItem(key)) {
-        fs.setOpenNow(true)
-        sessionStorage.setItem(key, '1')
-      }
-    }
-  }, []) // eslint-disable-line
-
-  useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60_000)
     return () => clearInterval(id)
   }, [])
@@ -118,7 +106,6 @@ export default function BrowsePage() {
 
         <BrowseHero venues={venues} city={city} />
 
-        {/* ── SEARCH BAR ── */}
         <div className="browse-search-bar">
           <div className="browse-search-icon">🔍</div>
           <input
@@ -133,7 +120,6 @@ export default function BrowsePage() {
           )}
         </div>
 
-        {/* ── TOP BAR ── */}
         <div className="browse-topbar">
           <div className="browse-topbar-left">
             <button
@@ -156,12 +142,10 @@ export default function BrowsePage() {
           </div>
         </div>
 
-        {/* ── FILTER PANEL ── */}
         <div className={`filter-panel-wrap${filterOpen ? ' open' : ''}`}>
           <FilterPanel {...fs} venues={venues} neighborhoods={neighborhoods} />
         </div>
 
-        {/* ── SORT BAR ── */}
         <SortBar
           sort={fs.sort}
           onSort={fs.setSort}
@@ -173,7 +157,6 @@ export default function BrowsePage() {
         {loading && <p className="loading-msg">Loading deals...</p>}
         {error && !loading && <p className="error-msg">Using sample data - {error}</p>}
 
-        {/* ── BEST PICKS ── */}
         {!loading && showBestPicks && bestPicksSections.length > 0 && (
           <div className="best-picks-area">
             {bestPicksSections.map(section => (
@@ -190,7 +173,6 @@ export default function BrowsePage() {
           </div>
         )}
 
-        {/* ── MAIN CONTENT ── */}
         {!loading && (
           <div className={`content-area${vm.isSplit ? ' split' : ''}`}>
             {vm.isMap && (
@@ -239,7 +221,6 @@ export default function BrowsePage() {
           </div>
         )}
 
-        {/* ── EMAIL CAPTURE ── */}
         {showCapture && (
           <EmailCapture trigger={trigger} city={city} onDismiss={dismissEmail} />
         )}
