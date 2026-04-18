@@ -42,6 +42,132 @@ function Textarea({ ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement
   return <textarea className="cf-textarea" {...props} />
 }
 
+
+// ─────────────────────────────────────────────
+// PHOTO SCAN — uses Claude AI to read deal photos
+// ─────────────────────────────────────────────
+
+interface ScannedDeal {
+  type: DealType
+  description: string
+  price: string
+}
+
+interface ScanResult {
+  deals: ScannedDeal[]
+  schedule?: string
+  dealText?: string
+}
+
+async function scanMenuPhoto(base64: string): Promise<ScanResult> {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: 'image/jpeg', data: base64 }
+          },
+          {
+            type: 'text',
+            text: `Look at this happy hour menu or chalkboard sign. Extract all the deals you can see.
+
+Return ONLY valid JSON in this exact format, nothing else:
+{
+  "deals": [
+    {"type": "beer|cocktail|food|wine|general", "description": "deal description", "price": "number or empty string"},
+    ...
+  ],
+  "schedule": "days and times if visible, e.g. Mon-Fri 4-7pm",
+  "dealText": "one line summary of all deals"
+}
+
+Rules:
+- type must be exactly: beer, cocktail, food, wine, or general
+- price should be a number like "3" or "5.50" or empty string "" if not specified or percentage off
+- description should be concise, e.g. "$3 draft beer" or "Half-off appetizers"
+- include ALL deals you can see`
+          }
+        ]
+      }]
+    })
+  })
+  const data = await response.json()
+  const text = data.content?.[0]?.text ?? ''
+  const clean = text.replace(/```json|```/g, '').trim()
+  return JSON.parse(clean)
+}
+
+function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
+  const [scanning, setScanning] = useState(false)
+  const [error, setError] = useState('')
+  const [preview, setPreview] = useState<string | null>(null)
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError('')
+    setScanning(true)
+
+    try {
+      const base64 = await new Promise<string>((res, rej) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const result = reader.result as string
+          setPreview(result)
+          res(result.split(',')[1])
+        }
+        reader.onerror = rej
+        reader.readAsDataURL(file)
+      })
+
+      const result = await scanMenuPhoto(base64)
+      onScanned(result)
+    } catch {
+      setError('Could not read the photo. Try a clearer image or fill in manually.')
+    }
+    setScanning(false)
+  }
+
+  return (
+    <div className="cf-photo-scan">
+      <label className="cf-photo-label">
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFile}
+          style={{ display: 'none' }}
+        />
+        <div className="cf-photo-btn">
+          {scanning ? (
+            <>
+              <span className="cf-spinner" />
+              Reading your photo...
+            </>
+          ) : (
+            <>
+              📷 Scan happy hour menu or sign
+            </>
+          )}
+        </div>
+      </label>
+      {preview && !scanning && (
+        <div className="cf-photo-preview">
+          <img src={preview} alt="Menu preview" style={{ width: '100%', borderRadius: 8, maxHeight: 160, objectFit: 'cover' }} />
+          <div className="cf-photo-success">✓ Deals extracted — review below</div>
+        </div>
+      )}
+      {error && <div className="cf-error">{error}</div>}
+    </div>
+  )
+}
+
 // ─────────────────────────────────────────────
 // DEAL TYPE COLORS
 // ─────────────────────────────────────────────
@@ -86,6 +212,18 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
   const [deals, setDeals] = useState<DealItem[]>([
     { type: 'beer', description: '', price: '' }
   ])
+
+  function handlePhotoScan(result: ScanResult) {
+    if (result.deals && result.deals.length > 0) {
+      setDeals(result.deals.map(d => ({
+        type: d.type as DealType,
+        description: d.description,
+        price: d.price,
+      })))
+    }
+    if (result.dealText) setDealText(result.dealText)
+    if (result.schedule && !startTime) setStartTime('16:00')
+  }
 
   function handlePlaceSelect(place: PlaceResult) {
     if (place.name) setName(place.name)
@@ -279,6 +417,8 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
       <div className="cf-divider"><span>Deals</span></div>
 
       {/* Structured deals */}
+      <PhotoScan onScanned={handlePhotoScan} />
+
       <Field label="Deal items" hint="Add each deal separately for best display">
         {deals.map((deal, i) => (
           <div key={i} className="cf-deal-row" style={{ borderColor: DEAL_COLORS[deal.type].border, background: DEAL_COLORS[deal.type].bg }}>
