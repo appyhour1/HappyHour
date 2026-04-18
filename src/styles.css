@@ -1410,7 +1410,7 @@ html.dark {
 }
 
 html.dark body {
-  background: #ffffff;
+  background: var(--bg);
   color: var(--ink);
 }
 
@@ -2969,3 +2969,90 @@ html.dark .detail-map-directions { background: #2A2A2A; color: #F0EEE8; }
   flex-shrink: 0;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── DARK MODE POLISH ── */
+html.dark .browse-page { background: var(--bg); }
+html.dark .browse-hero-card { background: #2A2620; }
+html.dark .browse-search-bar { background: var(--surface); border-color: var(--border-2); }
+html.dark .browse-search-input { color: var(--ink); background: transparent; }
+html.dark .browse-topbar { background: var(--bg); }
+
+/* Venue cards dark */
+html.dark .vc { background: var(--surface) !important; border-color: var(--border) !important; }
+html.dark .vc--open { border-color: var(--green) !important; border-top-color: var(--green) !important; }
+html.dark .vc__name { color: var(--ink) !important; }
+html.dark .vc__neighborhood { color: var(--ink-3) !important; }
+html.dark .vc__time { color: var(--coral) !important; }
+html.dark .vc__cta { color: var(--ink-2) !important; }
+html.dark .vc__footer { border-top-color: var(--border) !important; }
+html.dark .vc__deal-text { color: var(--ink-3) !important; }
+html.dark .vc__more-deals { color: var(--ink-4) !important; }
+html.dark .vc__expiry-warning { background: rgba(254,243,199,.08); border-color: rgba(253,230,138,.15); color: #FCD34D; }
+
+/* Best picks dark */
+html.dark .bp-row { background: var(--bg); }
+html.dark .bp-title { color: var(--ink) !important; }
+html.dark .bp-subtitle { color: var(--ink-3) !important; }
+html.dark .bp-card { background: var(--surface) !important; border-color: var(--border) !important; }
+html.dark .bp-name { color: var(--ink) !important; }
+html.dark .bp-meta { color: var(--ink-3) !important; }
+html.dark .bp-status { opacity: .9; }
+html.dark .all-venues-divider { border-color: var(--border); color: var(--ink-3); }
+html.dark .all-venues-divider span { background: var(--bg); }
+
+/* Deal pills dark — boost contrast */
+html.dark .vc__deal-pill { opacity: .95; filter: brightness(1.15); }
+html.dark .tonight-pill { opacity: .95; filter: brightness(1.15); }
+
+/* Sort + filter dark */
+html.dark .mobile-filter-btn { background: var(--surface) !important; border-color: var(--border-2) !important; color: var(--ink-2) !important; }
+html.dark .mobile-filter-btn.active { background: var(--ink) !important; color: var(--bg) !important; }
+html.dark .fav-toggle-btn { background: var(--surface) !important; border-color: var(--border-2) !important; color: var(--ink-3) !important; }
+html.dark .crawl-nav-btn { background: var(--surface) !important; border-color: var(--border-2) !important; color: var(--ink-3) !important; }
+
+/* Shell dark */
+html.dark .shell-main { background: var(--bg); }
+html.dark .shell-logo-appy { color: var(--ink) !important; }
+html.dark .shell-link { color: var(--ink-3); }
+html.dark .shell-link:hover, html.dark .shell-link.active { background: var(--surface); color: var(--ink); }
+
+/* Tonight page dark */
+html.dark .tonight-page { background: var(--bg); }
+html.dark .tonight-slot-header { border-color: var(--border); }
+html.dark .tonight-slot-time { color: var(--ink) !important; }
+html.dark .tonight-slot-count { background: var(--surface); color: var(--ink-3); }
+html.dark .tonight-card { background: var(--surface) !important; border-color: var(--border) !important; }
+html.dark .tonight-card-name { color: var(--ink) !important; }
+html.dark .tonight-card-meta { color: var(--ink-3) !important; }
+html.dark .tonight-card-time { color: var(--coral) !important; }
+html.dark .tonight-cal-btn { background: rgba(59,130,246,.15) !important; color: #90C8FF !important; }
+
+/* About / legal pages dark */
+html.dark .about-page, html.dark .legal-page { background: var(--bg); }
+html.dark .about-section { background: var(--surface) !important; border-color: var(--border) !important; }
+html.dark .about-section-title { color: var(--ink) !important; }
+html.dark .about-section-body { color: var(--ink-2) !important; }
+html.dark .about-card { background: var(--bg) !important; border-color: var(--border) !important; }
+html.dark .about-card-title { color: var(--ink) !important; }
+html.dark .about-card-body { color: var(--ink-3) !important; }
+html.dark .legal-title { color: var(--ink) !important; }
+html.dark .legal-section h2 { color: var(--ink) !important; }
+html.dark .legal-section p, html.dark .legal-section li { color: var(--ink-2) !important; }
+html.dark .shell-footer { border-color: var(--border); }
+
+/* Now page dark */
+html.dark .now-page { background: var(--bg); }
+html.dark .now-title { color: var(--ink) !important; }
+html.dark .now-sub { color: var(--ink-3) !important; }
+
+/* Contribution forms dark */
+html.dark .cf-form { background: var(--bg); }
+html.dark .cf-deal-row { border-color: var(--border-2) !important; }
+html.dark .cf-deal-desc, html.dark .cf-deal-price, html.dark .cf-deal-type { color: var(--ink) !important; }
+html.dark .cf-day-btn { background: var(--surface) !important; border-color: var(--border-2) !important; color: var(--ink-2) !important; }
+html.dark .cf-day-btn.active { background: var(--ink) !important; color: var(--bg) !important; }
+html.dark .places-input-row { background: var(--surface) !important; border-color: var(--border-2) !important; }
+html.dark .places-input { color: var(--ink) !important; }
+html.dark .places-dropdown { background: var(--surface) !important; border-color: var(--border) !important; }
+html.dark .places-suggestion:hover { background: var(--bg) !important; }
+html.dark .places-suggestion-text { color: var(--ink) !important; }
