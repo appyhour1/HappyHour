@@ -59,9 +59,7 @@ export function PlacesSearch({ onSelect, placeholder = 'Search for a bar or rest
     if (!input.trim() || !API_KEY) return
     setLoading(true)
     try {
-      const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input + ' Cincinnati')}&types=establishment&key=${API_KEY}`
-      // Use a CORS proxy since browser can't call Places API directly
-      const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`)
+      const res = await fetch(`/api/places-autocomplete?input=${encodeURIComponent(input)}`)
       const data = await res.json()
       if (data.predictions) {
         setSuggestions(data.predictions.slice(0, 5).map((p: any) => ({
@@ -81,9 +79,7 @@ export function PlacesSearch({ onSelect, placeholder = 'Search for a bar or rest
     setFetching(true)
     setError(null)
     try {
-      const fields = 'name,formatted_address,formatted_phone_number,website,geometry,address_components'
-      const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${API_KEY}`
-      const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`)
+      const res = await fetch(`/api/places-details?place_id=${encodeURIComponent(placeId)}`)
       const data = await res.json()
       const r = data.result
 

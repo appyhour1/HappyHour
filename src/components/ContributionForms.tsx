@@ -59,43 +59,11 @@ interface ScanResult {
   dealText?: string
 }
 
-async function scanMenuPhoto(base64: string): Promise<ScanResult> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+async function scanMenuPhoto(base64: string, mediaType: string): Promise<ScanResult> {
+  const response = await fetch('/api/scan-menu', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: 'image/jpeg', data: base64 }
-          },
-          {
-            type: 'text',
-            text: `Look at this happy hour menu or chalkboard sign. Extract all the deals you can see.
-
-Return ONLY valid JSON in this exact format, nothing else:
-{
-  "deals": [
-    {"type": "beer|cocktail|food|wine|general", "description": "deal description", "price": "number or empty string"},
-    ...
-  ],
-  "schedule": "days and times if visible, e.g. Mon-Fri 4-7pm",
-  "dealText": "one line summary of all deals"
-}
-
-Rules:
-- type must be exactly: beer, cocktail, food, wine, or general
-- price should be a number like "3" or "5.50" or empty string "" if not specified or percentage off
-- description should be concise, e.g. "$3 draft beer" or "Half-off appetizers"
-- include ALL deals you can see`
-          }
-        ]
-      }]
-    })
+    body: JSON.stringify({ base64, mediaType }),
   })
   const data = await response.json()
   const text = data.content?.[0]?.text ?? ''
@@ -115,18 +83,19 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
     setScanning(true)
 
     try {
-      const base64 = await new Promise<string>((res, rej) => {
+      const { base64, mediaType } = await new Promise<{base64: string, mediaType: string}>((res, rej) => {
         const reader = new FileReader()
         reader.onload = () => {
           const result = reader.result as string
           setPreview(result)
-          res(result.split(',')[1])
+          const mimeType = result.split(';')[0].split(':')[1] || 'image/jpeg'
+          res({ base64: result.split(',')[1], mediaType: mimeType })
         }
         reader.onerror = rej
         reader.readAsDataURL(file)
       })
 
-      const result = await scanMenuPhoto(base64)
+      const result = await scanMenuPhoto(base64, mediaType)
       onScanned(result)
     } catch {
       setError('Could not read the photo. Try a clearer image or fill in manually.')
@@ -140,7 +109,7 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
         <input
           type="file"
           accept="image/*"
-
+          capture="environment"
           onChange={handleFile}
           style={{ display: 'none' }}
         />
