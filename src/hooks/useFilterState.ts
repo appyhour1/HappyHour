@@ -46,9 +46,8 @@ setOpenNow: (on: boolean) => void
   clearAll: () => void
 }
 
-/** Default filter state with today pre-selected */
 function defaultFiltersWithToday(): FilterState {
-  return { ...DEFAULT_FILTERS, days: new Set([getTodayDOW()]) }
+  return { ...DEFAULT_FILTERS }
 }
 
 export function useFilterState(): UseFilterStateReturn {
