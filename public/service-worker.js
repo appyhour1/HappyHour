@@ -1,5 +1,5 @@
 /* service-worker.js — Appy Hour PWA */
-const CACHE = 'appy-hour-v1'
+const CACHE = 'appy-hour-v2'
 const STATIC = [
   '/',
   '/static/js/main.chunk.js',
