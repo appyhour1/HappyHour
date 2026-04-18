@@ -2926,3 +2926,46 @@ html.dark .detail-map-directions { background: #2A2A2A; color: #F0EEE8; }
 .cf-divider::before, .cf-divider::after {
   content: ''; flex: 1; height: 1px; background: var(--border);
 }
+
+/* ═══════════════════════════════════════════════════════
+   PHOTO SCAN — AI menu reader
+═══════════════════════════════════════════════════════ */
+
+.cf-photo-scan {
+  margin-bottom: 14px;
+}
+
+.cf-photo-label { display: block; cursor: pointer; }
+
+.cf-photo-btn {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; width: 100%;
+  padding: 14px;
+  background: var(--charcoal);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 14px; font-weight: 700;
+  transition: opacity .15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.cf-photo-btn:hover { opacity: .85; }
+
+.cf-photo-preview { margin-top: 10px; }
+
+.cf-photo-success {
+  font-size: 12px; font-weight: 700;
+  color: var(--green-dk); background: var(--green-lt);
+  border-radius: 8px; padding: 6px 12px;
+  margin-top: 6px; text-align: center;
+}
+
+.cf-spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
