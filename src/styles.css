@@ -2839,3 +2839,90 @@ html.dark .detail-map-directions { background: #2A2A2A; color: #F0EEE8; }
   color: var(--ink-4); text-decoration: underline;
 }
 .about-legal-link:hover { color: var(--coral); }
+
+/* ═══════════════════════════════════════════════════════
+   CONTRIBUTION FORM — DEAL FIELDS + DAYS PICKER
+═══════════════════════════════════════════════════════ */
+
+.cf-hint {
+  font-size: 11px; color: var(--ink-4);
+  margin-bottom: 5px; margin-top: -2px;
+}
+
+.cf-days {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px;
+}
+.cf-day-btn {
+  height: 32px; padding: 0 10px;
+  border: 1.5px solid var(--border-2);
+  border-radius: 8px; background: #fff;
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-2); cursor: pointer;
+  transition: all .15s; font-family: 'DM Sans', sans-serif;
+}
+.cf-day-btn.active {
+  background: var(--charcoal); border-color: var(--charcoal); color: #fff;
+}
+
+.cf-deal-row {
+  display: flex; align-items: center; gap: 8px;
+  border: 1.5px solid #E8E4DC;
+  border-radius: 10px; padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.cf-deal-type {
+  border: none; background: transparent;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; padding: 0; min-width: 100px;
+  font-family: 'DM Sans', sans-serif;
+}
+.cf-deal-desc {
+  flex: 1; border: none; outline: none;
+  font-size: 13px; font-family: 'DM Sans', sans-serif;
+  color: var(--ink);
+}
+.cf-deal-desc::placeholder { color: var(--ink-4); }
+.cf-deal-price {
+  width: 56px; border: none; outline: none;
+  font-size: 13px; font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--ink);
+}
+.cf-deal-price::placeholder { color: var(--ink-4); }
+.cf-deal-remove {
+  background: none; border: none;
+  font-size: 13px; color: var(--ink-4);
+  cursor: pointer; padding: 2px 4px;
+  border-radius: 4px; flex-shrink: 0;
+}
+.cf-deal-remove:hover { color: #c0392b; background: #fee; }
+
+.cf-add-deal-btn {
+  width: 100%; padding: 9px;
+  border: 1.5px dashed var(--border-2);
+  border-radius: 10px; background: none;
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-3); cursor: pointer;
+  transition: all .15s; font-family: 'DM Sans', sans-serif;
+}
+.cf-add-deal-btn:hover {
+  border-color: var(--coral); color: var(--coral); background: var(--coral-lt);
+}
+
+.cf-checkbox-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; font-size: 13px;
+  font-weight: 500; color: var(--ink-2);
+  cursor: pointer;
+}
+.cf-checkbox-row input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--coral); }
+
+.cf-divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 16px 0 12px; font-size: 11px;
+  font-weight: 700; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.cf-divider::before, .cf-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
