@@ -140,7 +140,7 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
         <input
           type="file"
           accept="image/*"
-          capture="environment"
+
           onChange={handleFile}
           style={{ display: 'none' }}
         />
