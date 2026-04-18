@@ -22,7 +22,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { FilterState, SortMode, DayOfWeek, DealType, VenueCategory, PriceTier, TimeWindow } from '../types'
 import { DEFAULT_FILTERS } from '../types'
-import { getTodayDOW } from '../utils/filters'
 import { filtersToParams, paramsToFilters, countActiveFilters, isDefaultState } from '../utils/filterUrl'
 
 export interface UseFilterStateReturn {
