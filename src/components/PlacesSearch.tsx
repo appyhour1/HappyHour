@@ -1,15 +1,3 @@
-/**
- * PlacesSearch.tsx
- *
- * Google Places autocomplete search box.
- * Type a bar/restaurant name and city, get back:
- *   - name, address, phone, website, lat/lng, neighborhood
- *
- * Used in both ContributionForms (Add a spot) and EditVenueForm.
- *
- * SETUP: requires REACT_APP_GOOGLE_PLACES_KEY in environment.
- */
-
 import React, { useState, useRef, useEffect } from 'react'
 
 export interface PlaceResult {
@@ -32,8 +20,6 @@ interface Suggestion {
   description: string
 }
 
-const API_KEY = process.env.REACT_APP_GOOGLE_PLACES_KEY
-
 export function PlacesSearch({ onSelect, placeholder = 'Search for a bar or restaurant...' }: PlacesSearchProps) {
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
@@ -44,7 +30,6 @@ export function PlacesSearch({ onSelect, placeholder = 'Search for a bar or rest
   const debounceRef = useRef<NodeJS.Timeout>()
   const wrapRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
@@ -56,7 +41,7 @@ export function PlacesSearch({ onSelect, placeholder = 'Search for a bar or rest
   }, [])
 
   async function fetchSuggestions(input: string) {
-    if (!input.trim() || !API_KEY) return
+    if (!input.trim()) return
     setLoading(true)
     try {
       const res = await fetch(`/api/places-autocomplete?input=${encodeURIComponent(input)}`)
@@ -69,13 +54,12 @@ export function PlacesSearch({ onSelect, placeholder = 'Search for a bar or rest
         setOpen(true)
       }
     } catch {
-      // Silently fail — user can still type manually
+      // silently fail
     }
     setLoading(false)
   }
 
   async function fetchPlaceDetails(placeId: string, description: string) {
-    if (!API_KEY) return
     setFetching(true)
     setError(null)
     try {
@@ -85,7 +69,6 @@ export function PlacesSearch({ onSelect, placeholder = 'Search for a bar or rest
 
       if (!r) throw new Error('No result')
 
-      // Extract neighborhood from address components
       const comps = r.address_components ?? []
       const neighborhood =
         comps.find((c: any) => c.types.includes('neighborhood'))?.long_name ||
@@ -123,8 +106,6 @@ export function PlacesSearch({ onSelect, placeholder = 'Search for a bar or rest
       setOpen(false)
     }
   }
-
-  if (!API_KEY) return null
 
   return (
     <div className="places-wrap" ref={wrapRef}>
