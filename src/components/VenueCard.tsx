@@ -89,6 +89,7 @@ export const VenueCard = memo(function VenueCard({
       ref={cardRef}
       className={`vc${isOpen ? ' vc--open' : ''}${isSelected ? ' vc--selected' : ''}${venue.is_featured ? ' vc--featured' : ''}`}
       style={{
+        background: '#F8F6F1',
         border: isOpen ? '2px solid #22C55E' : '2px solid #1A1612',
         boxShadow: isOpen ? '0 0 0 1px #22C55E' : 'none',
       }}
