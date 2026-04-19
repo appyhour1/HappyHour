@@ -1,8 +1,7 @@
 /**
  * ContributionForms.tsx
- *
- * NewVenueForm — saves directly to Supabase venues + schedules tables
- * SuggestEditForm — sends correction suggestions to contributions table
+ * NewVenueForm — saves directly to Supabase with multiple schedules support
+ * SuggestEditForm — sends correction suggestions
  */
 
 import React, { useState } from 'react'
@@ -16,10 +15,6 @@ import {
   type EditSuggestion,
   type ValidationError,
 } from '../services/contributionService'
-
-// ─────────────────────────────────────────────
-// SHARED COMPONENTS
-// ─────────────────────────────────────────────
 
 function Field({ label, required, error, hint, children }: {
   label: string; required?: boolean; error?: string; hint?: string; children: React.ReactNode
@@ -42,22 +37,12 @@ function Textarea({ ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement
   return <textarea className="cf-textarea" {...props} />
 }
 
+// ─── PHOTO SCAN ───────────────────────────────
 
-// ─────────────────────────────────────────────
-// PHOTO SCAN — uses Claude AI to read deal photos
-// ─────────────────────────────────────────────
+type DealType = 'beer' | 'cocktail' | 'food' | 'wine' | 'general'
 
-interface ScannedDeal {
-  type: DealType
-  description: string
-  price: string
-}
-
-interface ScanResult {
-  deals: ScannedDeal[]
-  schedule?: string
-  dealText?: string
-}
+interface ScannedDeal { type: DealType; description: string; price: string }
+interface ScanResult { deals: ScannedDeal[]; schedule?: string; dealText?: string }
 
 async function scanMenuPhoto(base64: string, mediaType: string): Promise<ScanResult> {
   const response = await fetch('/api/scan-menu', {
@@ -81,9 +66,8 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
     if (!file) return
     setError('')
     setScanning(true)
-
     try {
-      const { base64, mediaType } = await new Promise<{base64: string, mediaType: string}>((res, rej) => {
+      const { base64, mediaType } = await new Promise<{ base64: string; mediaType: string }>((res, rej) => {
         const reader = new FileReader()
         reader.onload = () => {
           const result = reader.result as string
@@ -94,7 +78,6 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
         reader.onerror = rej
         reader.readAsDataURL(file)
       })
-
       const result = await scanMenuPhoto(base64, mediaType)
       onScanned(result)
     } catch {
@@ -106,23 +89,9 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
   return (
     <div className="cf-photo-scan">
       <label className="cf-photo-label">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFile}
-          style={{ display: 'none' }}
-        />
+        <input type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
         <div className="cf-photo-btn">
-          {scanning ? (
-            <>
-              <span className="cf-spinner" />
-              Reading your photo...
-            </>
-          ) : (
-            <>
-              📷 Scan happy hour menu or sign
-            </>
-          )}
+          {scanning ? <><span className="cf-spinner" />Reading your photo...</> : <>📷 Scan happy hour menu or sign</>}
         </div>
       </label>
       {preview && !scanning && (
@@ -136,11 +105,7 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
   )
 }
 
-// ─────────────────────────────────────────────
-// DEAL TYPE COLORS
-// ─────────────────────────────────────────────
-
-type DealType = 'beer' | 'cocktail' | 'food' | 'wine' | 'general'
+// ─── DEAL TYPE COLORS ───────────────────────────────
 
 const DEAL_COLORS: Record<DealType, { bg: string; color: string; border: string }> = {
   beer:     { bg: '#FFF8E8', color: '#7A5000', border: '#F5D88A' },
@@ -152,46 +117,149 @@ const DEAL_COLORS: Record<DealType, { bg: string; color: string; border: string 
 
 interface DealItem { type: DealType; description: string; price: string }
 
-// ─────────────────────────────────────────────
-// NEW VENUE FORM — saves directly to Supabase
-// ─────────────────────────────────────────────
+// ─── SCHEDULE BLOCK ───────────────────────────────
+
+interface ScheduleBlock {
+  id: number
+  days: DayOfWeek[]
+  startTime: string
+  endTime: string
+  isAllDay: boolean
+  dealText: string
+  deals: DealItem[]
+}
+
+function ScheduleEditor({
+  block, index, total,
+  onUpdate, onRemove,
+}: {
+  block: ScheduleBlock
+  index: number
+  total: number
+  onUpdate: (updated: ScheduleBlock) => void
+  onRemove: () => void
+}) {
+  function toggleDay(day: DayOfWeek) {
+    onUpdate({ ...block, days: block.days.includes(day) ? block.days.filter(d => d !== day) : [...block.days, day] })
+  }
+
+  function addDeal() {
+    onUpdate({ ...block, deals: [...block.deals, { type: 'beer', description: '', price: '' }] })
+  }
+
+  function removeDeal(i: number) {
+    onUpdate({ ...block, deals: block.deals.filter((_, idx) => idx !== i) })
+  }
+
+  function updateDeal(i: number, field: keyof DealItem, value: string) {
+    onUpdate({ ...block, deals: block.deals.map((d, idx) => idx === i ? { ...d, [field]: value } : d) })
+  }
+
+  return (
+    <div className="cf-schedule-block">
+      <div className="cf-schedule-block-header">
+        <span className="cf-schedule-block-title">Schedule {index + 1}</span>
+        {total > 1 && (
+          <button type="button" className="cf-schedule-remove" onClick={onRemove}>✕ Remove</button>
+        )}
+      </div>
+
+      <Field label="Days" required>
+        <div className="cf-days">
+          {DAYS_OF_WEEK.map(d => (
+            <button
+              key={d} type="button"
+              className={`cf-day-btn${block.days.includes(d) ? ' active' : ''}`}
+              onClick={() => toggleDay(d)}
+            >{d}</button>
+          ))}
+        </div>
+      </Field>
+
+      <div className="cf-checkbox-row" style={{ marginBottom: 10 }}>
+        <input type="checkbox" id={`allday-${block.id}`} checked={block.isAllDay}
+          onChange={e => onUpdate({ ...block, isAllDay: e.target.checked })} />
+        <label htmlFor={`allday-${block.id}`}>All day special</label>
+      </div>
+
+      {!block.isAllDay && (
+        <div className="cf-row">
+          <Field label="Start time">
+            <input className="cf-input" type="time" value={block.startTime}
+              onChange={e => onUpdate({ ...block, startTime: e.target.value })} />
+          </Field>
+          <Field label="End time">
+            <input className="cf-input" type="time" value={block.endTime}
+              onChange={e => onUpdate({ ...block, endTime: e.target.value })} />
+          </Field>
+        </div>
+      )}
+
+      <Field label="Deal items" hint="Add each deal separately">
+        {block.deals.map((deal, i) => (
+          <div key={i} className="cf-deal-row"
+            style={{ borderColor: DEAL_COLORS[deal.type].border, background: DEAL_COLORS[deal.type].bg }}>
+            <select className="cf-deal-type" value={deal.type}
+              onChange={e => updateDeal(i, 'type', e.target.value)}
+              style={{ color: DEAL_COLORS[deal.type].color }}>
+              <option value="beer">🍺 Beer</option>
+              <option value="cocktail">🍸 Cocktail</option>
+              <option value="food">🍔 Food</option>
+              <option value="wine">🍷 Wine</option>
+              <option value="general">⭐ General</option>
+            </select>
+            <input className="cf-deal-desc" value={deal.description}
+              onChange={e => updateDeal(i, 'description', e.target.value)}
+              placeholder="e.g. $3 draft beer" style={{ background: 'transparent' }} />
+            <input className="cf-deal-price" value={deal.price}
+              onChange={e => updateDeal(i, 'price', e.target.value)}
+              placeholder="$" type="number" min="0" step="0.5"
+              style={{ background: 'transparent' }} />
+            {block.deals.length > 1 && (
+              <button type="button" className="cf-deal-remove" onClick={() => removeDeal(i)}>✕</button>
+            )}
+          </div>
+        ))}
+        <button type="button" className="cf-add-deal-btn" onClick={addDeal}>+ Add another deal</button>
+      </Field>
+
+      <Field label="Deal summary (optional)" hint="Short description shown on the card">
+        <Textarea value={block.dealText}
+          onChange={e => onUpdate({ ...block, dealText: e.target.value })}
+          placeholder="e.g. $3 drafts, half-off apps" rows={2} />
+      </Field>
+    </div>
+  )
+}
+
+// ─── NEW VENUE FORM ───────────────────────────────
+
+let scheduleIdCounter = 1
+
+function makeSchedule(): ScheduleBlock {
+  return {
+    id: scheduleIdCounter++,
+    days: [],
+    startTime: '16:00',
+    endTime: '19:00',
+    isAllDay: false,
+    dealText: '',
+    deals: [{ type: 'beer', description: '', price: '' }],
+  }
+}
 
 export function NewVenueForm({ onClose }: { onClose?: () => void }) {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
-  // Venue fields
-  const [name, setName]               = useState('')
+  const [name, setName] = useState('')
   const [neighborhood, setNeighborhood] = useState('')
-  const [city]                        = useState('Cincinnati')
-  const [address, setAddress]         = useState('')
-  const [website, setWebsite]         = useState('')
-  const [phone, setPhone]             = useState('')
+  const [city] = useState('Cincinnati')
+  const [address, setAddress] = useState('')
+  const [website, setWebsite] = useState('')
+  const [phone, setPhone] = useState('')
   const [dogFriendly, setDogFriendly] = useState(false)
-
-  // Schedule fields
-  const [days, setDays]               = useState<DayOfWeek[]>([])
-  const [startTime, setStartTime]     = useState('16:00')
-  const [endTime, setEndTime]         = useState('19:00')
-  const [isAllDay, setIsAllDay]       = useState(false)
-  const [dealText, setDealText]       = useState('')
-
-  // Deals
-  const [deals, setDeals] = useState<DealItem[]>([
-    { type: 'beer', description: '', price: '' }
-  ])
-
-  function handlePhotoScan(result: ScanResult) {
-    if (result.deals && result.deals.length > 0) {
-      setDeals(result.deals.map(d => ({
-        type: d.type as DealType,
-        description: d.description,
-        price: d.price,
-      })))
-    }
-    if (result.dealText) setDealText(result.dealText)
-    if (result.schedule && !startTime) setStartTime('16:00')
-  }
+  const [schedules, setSchedules] = useState<ScheduleBlock[]>([makeSchedule()])
 
   function handlePlaceSelect(place: PlaceResult) {
     if (place.name) setName(place.name)
@@ -201,87 +269,80 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
     if (place.neighborhood) setNeighborhood(place.neighborhood)
   }
 
-  function toggleDay(day: DayOfWeek) {
-    setDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day])
+  function handlePhotoScan(result: ScanResult) {
+    // Apply scan result to the first schedule
+    setSchedules(prev => prev.map((s, i) => {
+      if (i !== 0) return s
+      return {
+        ...s,
+        deals: result.deals?.length ? result.deals.map(d => ({
+          type: d.type as DealType,
+          description: d.description,
+          price: d.price,
+        })) : s.deals,
+        dealText: result.dealText || s.dealText,
+      }
+    }))
   }
 
-  function addDeal() {
-    setDeals(prev => [...prev, { type: 'beer', description: '', price: '' }])
+  function addSchedule() {
+    setSchedules(prev => [...prev, makeSchedule()])
   }
 
-  function removeDeal(i: number) {
-    setDeals(prev => prev.filter((_, idx) => idx !== i))
+  function updateSchedule(index: number, updated: ScheduleBlock) {
+    setSchedules(prev => prev.map((s, i) => i === index ? updated : s))
   }
 
-  function updateDeal(i: number, field: keyof DealItem, value: string) {
-    setDeals(prev => prev.map((d, idx) => idx === i ? { ...d, [field]: value } : d))
+  function removeSchedule(index: number) {
+    setSchedules(prev => prev.filter((_, i) => i !== index))
   }
 
   async function handleSubmit() {
     if (!name.trim()) { setErrorMsg('Venue name is required'); return }
     if (!neighborhood.trim()) { setErrorMsg('Neighborhood is required'); return }
-    if (days.length === 0) { setErrorMsg('Select at least one day'); return }
-    if (!dealText.trim() && deals.every(d => !d.description.trim())) {
-      setErrorMsg('Add at least one deal or a deal description'); return
-    }
+    if (schedules.every(s => s.days.length === 0)) { setErrorMsg('Select at least one day on each schedule'); return }
 
     setStatus('submitting')
     setErrorMsg('')
 
     try {
-      // 1. Create venue
       const { data: venue, error: venueErr } = await supabase
         .from('venues')
         .insert([{
-          name: name.trim(),
-          neighborhood: neighborhood.trim(),
-          city,
-          state: 'OH',
+          name: name.trim(), neighborhood: neighborhood.trim(),
+          city, state: 'OH',
           address: address.trim() || null,
           website: website.trim() || null,
           phone: phone.trim() || null,
           dog_friendly: dogFriendly,
-          categories: [],
-          price_tier: null,
-          image_url: null,
-          verification_status: 'community',
-          data_source: 'user_submitted',
-          claimed_by_user_id: null,
-          is_featured: false,
-          upvote_count: 0,
+          categories: [], price_tier: null, image_url: null,
+          verification_status: 'community', data_source: 'user_submitted',
+          claimed_by_user_id: null, is_featured: false, upvote_count: 0,
           last_verified_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
         }])
-        .select()
-        .single()
+        .select().single()
 
       if (venueErr) throw new Error(venueErr.message)
 
-      // 2. Build structured deals
-      const structuredDeals = deals
-        .filter(d => d.description.trim())
-        .map(d => ({
-          type: d.type,
-          description: d.description.trim(),
-          price: d.price ? parseFloat(d.price) : null,
+      // Insert all schedules
+      const scheduleRows = schedules
+        .filter(s => s.days.length > 0)
+        .map(s => ({
+          venue_id: venue.id,
+          days: s.days,
+          start_time: s.isAllDay ? '00:00' : s.startTime,
+          end_time: s.isAllDay ? '23:59' : s.endTime,
+          is_all_day: s.isAllDay,
+          deal_text: s.dealText.trim() || s.deals.filter(d => d.description).map(d => `${d.description}${d.price ? ' $' + d.price : ''}`).join(', '),
+          deals: s.deals.filter(d => d.description.trim()).map(d => ({
+            type: d.type, description: d.description.trim(),
+            price: d.price ? parseFloat(d.price) : null,
+          })),
+          created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
         }))
 
-      // 3. Create schedule
-      const { error: schedErr } = await supabase
-        .from('happy_hour_schedules')
-        .insert([{
-          venue_id: venue.id,
-          days,
-          start_time: isAllDay ? '00:00' : startTime,
-          end_time: isAllDay ? '23:59' : endTime,
-          is_all_day: isAllDay,
-          deal_text: dealText.trim() || deals.filter(d => d.description).map(d => `${d.description}${d.price ? ' $' + d.price : ''}`).join(', '),
-          deals: structuredDeals,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }])
-
+      const { error: schedErr } = await supabase.from('happy_hour_schedules').insert(scheduleRows)
       if (schedErr) throw new Error(schedErr.message)
 
       setStatus('success')
@@ -309,7 +370,6 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
         <p className="cf-subtitle">Publishes immediately to the app.</p>
       </div>
 
-      {/* Google Places auto-fill */}
       <Field label="Find on Google" hint="Type the bar name to auto-fill details">
         <PlacesSearch onSelect={handlePlaceSelect} placeholder="Search for a bar or restaurant..." />
       </Field>
@@ -347,95 +407,26 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
         <label htmlFor="dog-friendly">🐾 Dog friendly</label>
       </div>
 
-      <div className="cf-divider"><span>Happy hour schedule</span></div>
-
-      {/* Days */}
-      <Field label="Days" required>
-        <div className="cf-days">
-          {DAYS_OF_WEEK.map(d => (
-            <button
-              key={d}
-              type="button"
-              className={`cf-day-btn${days.includes(d) ? ' active' : ''}`}
-              onClick={() => toggleDay(d)}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-      </Field>
-
-      {/* Times */}
-      <div className="cf-checkbox-row" style={{ marginBottom: 10 }}>
-        <input type="checkbox" id="all-day" checked={isAllDay} onChange={e => setIsAllDay(e.target.checked)} />
-        <label htmlFor="all-day">All day special</label>
-      </div>
-
-      {!isAllDay && (
-        <div className="cf-row">
-          <Field label="Start time">
-            <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
-          </Field>
-          <Field label="End time">
-            <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
-          </Field>
-        </div>
-      )}
-
-      <div className="cf-divider"><span>Deals</span></div>
-
-      {/* Structured deals */}
+      <div className="cf-divider"><span>Scan deals from a photo</span></div>
       <PhotoScan onScanned={handlePhotoScan} />
 
-      <Field label="Deal items" hint="Add each deal separately for best display">
-        {deals.map((deal, i) => (
-          <div key={i} className="cf-deal-row" style={{ borderColor: DEAL_COLORS[deal.type].border, background: DEAL_COLORS[deal.type].bg }}>
-            <select
-              className="cf-deal-type"
-              value={deal.type}
-              onChange={e => updateDeal(i, 'type', e.target.value)}
-              style={{ color: DEAL_COLORS[deal.type].color }}
-            >
-              <option value="beer">🍺 Beer</option>
-              <option value="cocktail">🍸 Cocktail</option>
-              <option value="food">🍔 Food</option>
-              <option value="wine">🍷 Wine</option>
-              <option value="general">⭐ General</option>
-            </select>
-            <input
-              className="cf-deal-desc"
-              value={deal.description}
-              onChange={e => updateDeal(i, 'description', e.target.value)}
-              placeholder="e.g. $3 draft beer"
-              style={{ background: 'transparent' }}
-            />
-            <input
-              className="cf-deal-price"
-              value={deal.price}
-              onChange={e => updateDeal(i, 'price', e.target.value)}
-              placeholder="$"
-              type="number"
-              min="0"
-              step="0.5"
-              style={{ background: 'transparent' }}
-            />
-            {deals.length > 1 && (
-              <button type="button" className="cf-deal-remove" onClick={() => removeDeal(i)}>✕</button>
-            )}
-          </div>
-        ))}
-        <button type="button" className="cf-add-deal-btn" onClick={addDeal}>+ Add another deal</button>
-      </Field>
+      <div className="cf-divider"><span>Happy hour schedules</span></div>
+      <p className="cf-hint" style={{ marginBottom: 12 }}>Add a separate schedule for each day or group of days with different deals.</p>
 
-      {/* Deal text summary */}
-      <Field label="Deal summary (optional)" hint="A short description shown on the card">
-        <Textarea
-          value={dealText}
-          onChange={e => setDealText(e.target.value)}
-          placeholder="e.g. $3 drafts, half-off appetizers, $5 well drinks"
-          rows={2}
+      {schedules.map((block, index) => (
+        <ScheduleEditor
+          key={block.id}
+          block={block}
+          index={index}
+          total={schedules.length}
+          onUpdate={updated => updateSchedule(index, updated)}
+          onRemove={() => removeSchedule(index)}
         />
-      </Field>
+      ))}
+
+      <button type="button" className="cf-add-schedule-btn" onClick={addSchedule}>
+        + Add another day's schedule
+      </button>
 
       {(status === 'error' || errorMsg) && (
         <div className="cf-error-banner">{errorMsg}</div>
@@ -443,11 +434,7 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
 
       <div className="cf-actions">
         {onClose && <button className="cf-btn-secondary" onClick={onClose}>Cancel</button>}
-        <button
-          className="cf-btn-primary"
-          onClick={handleSubmit}
-          disabled={status === 'submitting'}
-        >
+        <button className="cf-btn-primary" onClick={handleSubmit} disabled={status === 'submitting'}>
           {status === 'submitting' ? 'Publishing...' : '🍺 Publish spot'}
         </button>
       </div>
@@ -455,29 +442,18 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
   )
 }
 
-// ─────────────────────────────────────────────
-// SUGGEST EDIT FORM
-// ─────────────────────────────────────────────
+// ─── SUGGEST EDIT FORM ───────────────────────────────
 
 export function SuggestEditForm({ venue, onClose }: { venue: Venue; onClose?: () => void }) {
   const [form, setForm] = useState<Partial<EditSuggestion>>({
-    flow: 'suggest_edit',
-    venue_id: venue.id,
-    venue_name: venue.name,
-    field_suggestions: '',
-    new_schedule: '',
-    new_deal_details: '',
-    notes: '',
-    submitter_email: '',
+    flow: 'suggest_edit', venue_id: venue.id, venue_name: venue.name,
+    field_suggestions: '', new_schedule: '', new_deal_details: '', notes: '', submitter_email: '',
   })
   const [errors, setErrors] = useState<ValidationError[]>([])
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [resultMessage, setResultMessage] = useState('')
 
-  function fieldError(field: string) {
-    return errors.find(e => e.field === field)?.message
-  }
-
+  function fieldError(field: string) { return errors.find(e => e.field === field)?.message }
   function set(field: keyof EditSuggestion, value: string) {
     setForm(f => ({ ...f, [field]: value }))
     setErrors(prev => prev.filter(e => e.field !== field))
@@ -509,36 +485,26 @@ export function SuggestEditForm({ venue, onClose }: { venue: Venue; onClose?: ()
         <h2 className="cf-title">Suggest a correction</h2>
         <p className="cf-subtitle">For {venue.name}</p>
       </div>
-
       <div className="cf-field">
         <label className="cf-label">What needs to change? <span className="cf-required">*</span></label>
-        <textarea
-          className="cf-textarea"
-          value={form.field_suggestions}
+        <textarea className="cf-textarea" value={form.field_suggestions}
           onChange={e => set('field_suggestions', e.target.value)}
-          placeholder="e.g. Happy hour ends at 7pm not 6pm, beer specials changed to $4"
-          rows={3}
-        />
+          placeholder="e.g. Happy hour ends at 7pm not 6pm, beer specials changed to $4" rows={3} />
         {fieldError('field_suggestions') && <span className="cf-error">{fieldError('field_suggestions')}</span>}
       </div>
-
       <div className="cf-field">
         <label className="cf-label">Updated schedule (optional)</label>
         <input className="cf-input" value={form.new_schedule} onChange={e => set('new_schedule', e.target.value)} placeholder="e.g. Mon–Fri 3–7pm" />
       </div>
-
       <div className="cf-field">
         <label className="cf-label">Updated deal details (optional)</label>
         <textarea className="cf-textarea" value={form.new_deal_details} onChange={e => set('new_deal_details', e.target.value)} placeholder="e.g. $4 drafts, $6 cocktails" rows={2} />
       </div>
-
       <div className="cf-field">
         <label className="cf-label">Your email (optional)</label>
         <input className="cf-input" value={form.submitter_email} onChange={e => set('submitter_email', e.target.value)} placeholder="only used to follow up if needed" type="email" />
       </div>
-
       {status === 'error' && <div className="cf-error-banner">{resultMessage}</div>}
-
       <div className="cf-actions">
         {onClose && <button className="cf-btn-secondary" onClick={onClose}>Cancel</button>}
         <button className="cf-btn-primary" onClick={handleSubmit} disabled={status === 'submitting'}>
