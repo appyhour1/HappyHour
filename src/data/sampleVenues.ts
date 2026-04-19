@@ -1,5 +1,10 @@
 import type { Venue } from '../types'
 
+/**
+ * Sample venues for development and testing.
+ * Structure matches the production Venue type exactly.
+ * To seed your Supabase database, run the companion SQL file: seed.sql
+ */
 export const SAMPLE_VENUES: Venue[] = [
   {
     id: 'seed-001',
@@ -20,8 +25,8 @@ export const SAMPLE_VENUES: Venue[] = [
     data_source: 'user_submitted',
     claimed_by_user_id: null,
     is_featured: true,
+    is_sponsored: false,
     upvote_count: 42,
-    dog_friendly: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     schedules: [
@@ -63,8 +68,8 @@ export const SAMPLE_VENUES: Venue[] = [
     data_source: 'user_submitted',
     claimed_by_user_id: null,
     is_featured: true,
+    is_sponsored: false,
     upvote_count: 38,
-    dog_friendly: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     schedules: [
@@ -106,8 +111,8 @@ export const SAMPLE_VENUES: Venue[] = [
     data_source: 'user_submitted',
     claimed_by_user_id: null,
     is_featured: false,
+    is_sponsored: false,
     upvote_count: 27,
-    dog_friendly: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     schedules: [
@@ -134,10 +139,10 @@ export const SAMPLE_VENUES: Venue[] = [
         start_time: '16:00',
         end_time: '19:00',
         is_all_day: false,
-        deal_text: '$3 PBR, $5 wells - weekend kickoff',
+        deal_text: '$3 PBR, $5 wells — weekend kickoff',
         deals: [
-          { type: 'beer',     description: '$3 PBR cans',    price: 3 },
-          { type: 'cocktail', description: '$5 well drinks', price: 5 },
+          { type: 'beer',     description: '$3 PBR cans',         price: 3 },
+          { type: 'cocktail', description: '$5 well drinks',      price: 5 },
         ],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -164,8 +169,8 @@ export const SAMPLE_VENUES: Venue[] = [
     data_source: 'user_submitted',
     claimed_by_user_id: null,
     is_featured: false,
+    is_sponsored: false,
     upvote_count: 31,
-    dog_friendly: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     schedules: [
@@ -207,8 +212,8 @@ export const SAMPLE_VENUES: Venue[] = [
     data_source: 'user_submitted',
     claimed_by_user_id: null,
     is_featured: false,
+    is_sponsored: false,
     upvote_count: 19,
-    dog_friendly: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     schedules: [
@@ -221,7 +226,7 @@ export const SAMPLE_VENUES: Venue[] = [
         is_all_day: false,
         deal_text: 'Half-off waffles & frites, $4 Belgian ales',
         deals: [
-          { type: 'food', description: 'Half-off waffles and frites' },
+          { type: 'food', description: 'Half-off waffles & frites' },
           { type: 'beer', description: '$4 Belgian ales', price: 4 },
         ],
         created_at: new Date().toISOString(),
@@ -249,8 +254,8 @@ export const SAMPLE_VENUES: Venue[] = [
     data_source: 'user_submitted',
     claimed_by_user_id: null,
     is_featured: false,
+    is_sponsored: false,
     upvote_count: 14,
-    dog_friendly: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     schedules: [
@@ -263,8 +268,8 @@ export const SAMPLE_VENUES: Venue[] = [
         is_all_day: false,
         deal_text: '$3 drafts, $5 cocktails, half-off flatbreads',
         deals: [
-          { type: 'beer',     description: '$3 draft beer',       price: 3 },
-          { type: 'cocktail', description: '$5 house cocktails',  price: 5 },
+          { type: 'beer',     description: '$3 draft beer',        price: 3 },
+          { type: 'cocktail', description: '$5 house cocktails',   price: 5 },
           { type: 'food',     description: 'Half-off flatbreads' },
         ],
         created_at: new Date().toISOString(),
