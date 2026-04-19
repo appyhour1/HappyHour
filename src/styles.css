@@ -2037,8 +2037,8 @@ html.dark .browse-hero-compact-title { color: #f0eff4; }
 
 /* ── VENUE CARDS — white on white bg ── */
 .vc {
-  background: var(--surface2) !important;
-  border: 2px solid #1A1612 !important;
+  background: #F8F6F1;
+  border: 2px solid #1A1612;
   border-radius: var(--radius-lg) !important;
   overflow: hidden;
   position: relative;
