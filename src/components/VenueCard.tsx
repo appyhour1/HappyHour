@@ -116,11 +116,11 @@ export const VenueCard = memo(function VenueCard({
             </span>
           )}
           {(venue as any).is_sponsored && (
-              <span className="vc__sponsored-pill">◆ Sponsored</span>
-            )}
-            {venue.is_featured && (
-              <span className="vc__featured-pill">⭐ Featured</span>
-            )}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#6D28D9', color: '#fff', fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 20, letterSpacing: '.05em', textTransform: 'uppercase' as const }}>◆ Sponsored</span>
+          )}
+          {venue.is_featured && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: '#E85D1A', color: '#fff', fontSize: 9, fontWeight: 800, padding: '3px 9px', borderRadius: 20, letterSpacing: '.05em', textTransform: 'uppercase' as const }}>⭐ Featured</span>
+          )}
         </div>
         <button className={`vc__heart${isFavorite ? ' vc__heart--saved' : ''}`} onClick={handleFavorite} aria-label="Save">
           <HeartIcon filled={isFavorite} />
