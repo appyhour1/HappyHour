@@ -127,6 +127,13 @@ export default function AdminPage() {
     }
   }
 
+  async function deleteVenue(venue: Venue) {
+    if (!window.confirm(`Delete "${venue.name}"? This cannot be undone.`)) return
+    const { error } = await supabase.from('venues').delete().eq('id', venue.id)
+    if (error) { alert('Delete failed: ' + error.message); return }
+    setVenues(prev => prev.filter(v => v.id !== venue.id))
+  }
+
   async function sendStatsEmail(venue: Venue) {
     const s = getVenueStats(venue.id)
     setSending(venue.id)
@@ -263,6 +270,12 @@ Thanks for being part of Appy Hour Cincinnati.
                       style={{ background: '#3A3630', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                     >
                       {sending === venue.id ? 'Opening...' : '📧 Email stats'}
+                    </button>
+                    <button
+                      onClick={() => deleteVenue(venue)}
+                      style={{ background: '#fee2e2', color: '#c0392b', border: 'none', borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+                    >
+                      🗑 Delete
                     </button>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginTop: 12 }}>
