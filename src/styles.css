@@ -1857,7 +1857,7 @@ html.dark .vc__deal-pill { opacity: .92; }
   flex: 1;
   height: 100%;
   text-decoration: none;
-  color: #aaa;
+  color: #C8C0B8;
   background: none;
   border: none;
   cursor: pointer;
@@ -2067,7 +2067,7 @@ html.dark .browse-hero-compact-title { color: #f0eff4; }
   border-top: none !important;
   border-radius: 18px 18px 0 0;
 }
-.bn-tab { color: #C8C0B8 !important; }
+.bn-tab { color: #C8C0B8 !important; } /* brighter inactive icons */
 .bn-tab.active { color: var(--coral) !important; }
 .bn-tab--live.active { color: var(--green) !important; }
 .bn-live-dot { background: var(--green) !important; border-color: var(--charcoal) !important; }
