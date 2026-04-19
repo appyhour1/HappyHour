@@ -1,39 +1,32 @@
-/* service-worker.js — Appy Hour PWA */
-const CACHE = 'appy-hour-v2'
-const STATIC = [
-  '/',
-  '/static/js/main.chunk.js',
-  '/static/css/main.chunk.css',
-]
+/* service-worker.js — Appy Hour PWA v3 */
+const CACHE = 'appy-hour-v3'
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll(STATIC)).catch(() => {})
-  )
   self.skipWaiting()
 })
 
 self.addEventListener('activate', e => {
+  // Delete ALL old caches on every update
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+      Promise.all(keys.map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   )
-  self.clients.claim()
 })
 
 self.addEventListener('fetch', e => {
-  // Only cache GET requests for same origin
   if (e.request.method !== 'GET') return
   if (!e.request.url.startsWith(self.location.origin)) return
-  // Don't cache Supabase API calls
-  if (e.request.url.includes('supabase.co')) return
 
+  // Always go to network first — only fall back to cache if offline
   e.respondWith(
     fetch(e.request)
       .then(response => {
-        const clone = response.clone()
-        caches.open(CACHE).then(cache => cache.put(e.request, clone))
+        // Only cache successful responses for offline support
+        if (response.ok) {
+          const clone = response.clone()
+          caches.open(CACHE).then(cache => cache.put(e.request, clone))
+        }
         return response
       })
       .catch(() => caches.match(e.request))
