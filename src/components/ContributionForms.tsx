@@ -259,6 +259,8 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
   const [website, setWebsite] = useState('')
   const [phone, setPhone] = useState('')
   const [dogFriendly, setDogFriendly] = useState(false)
+  const [lat, setLat] = useState<number | null>(null)
+  const [lng, setLng] = useState<number | null>(null)
   const [schedules, setSchedules] = useState<ScheduleBlock[]>([makeSchedule()])
 
   function handlePlaceSelect(place: PlaceResult) {
@@ -267,6 +269,8 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
     if (place.phone) setPhone(place.phone)
     if (place.website) setWebsite(place.website)
     if (place.neighborhood) setNeighborhood(place.neighborhood)
+    if (place.lat) setLat(place.lat)
+    if (place.lng) setLng(place.lng)
   }
 
   function handlePhotoScan(result: ScanResult) {
@@ -306,6 +310,17 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
     setErrorMsg('')
 
     try {
+      // Auto-geocode address if no coordinates yet
+      let resolvedLat = lat
+      let resolvedLng = lng
+      if (!resolvedLat && address.trim()) {
+        try {
+          const geoRes = await fetch(`/api/geocode?address=${encodeURIComponent(address.trim())}`)
+          const geoData = await geoRes.json()
+          if (geoData.lat) { resolvedLat = geoData.lat; resolvedLng = geoData.lng }
+        } catch { /* silently continue without coords */ }
+      }
+
       const { data: venue, error: venueErr } = await supabase
         .from('venues')
         .insert([{
@@ -314,6 +329,8 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
           address: address.trim() || null,
           website: website.trim() || null,
           phone: phone.trim() || null,
+          latitude: resolvedLat || null,
+          longitude: resolvedLng || null,
           dog_friendly: dogFriendly,
           categories: [], price_tier: null, image_url: null,
           verification_status: 'community', data_source: 'user_submitted',
