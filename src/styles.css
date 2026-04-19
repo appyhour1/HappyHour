@@ -3117,3 +3117,113 @@ html.dark .cf-schedule-block {
   transition: background .15s;
 }
 .shell-admin-btn:hover { background: rgba(255,255,255,.2); }
+
+/* ═══════════════════════════════════════════════════════
+   SPONSORED BANNER — between venue cards
+═══════════════════════════════════════════════════════ */
+
+.sponsored-banner-wrap {
+  margin-bottom: 10px;
+}
+
+.sponsored-banner {
+  background: #3A3630;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sponsored-banner-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #E85D1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sponsored-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.sponsored-banner-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sponsored-banner-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sponsored-banner-cta {
+  background: #E85D1A;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity .15s;
+  font-family: inherit;
+}
+.sponsored-banner-cta:hover { opacity: .85; }
+
+.sponsored-banner-label {
+  text-align: right;
+  font-size: 9px;
+  font-weight: 700;
+  color: #aaa;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  padding-right: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FEATURED PILL — overlapping top of card
+═══════════════════════════════════════════════════════ */
+
+.vc__featured-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #E85D1A;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 20px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+/* Dark mode */
+html.dark .sponsored-banner { background: #2A2520; }
+html.dark .sponsored-banner-title { color: #F0EDE8; }
+
+/* ═══ SPONSORED PILL ═══ */
+.vc__sponsored-pill {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #6D28D9; color: #fff;
+  font-size: 9px; font-weight: 800;
+  padding: 3px 9px; border-radius: 20px;
+  letter-spacing: .05em; text-transform: uppercase;
+}
