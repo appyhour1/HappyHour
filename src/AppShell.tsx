@@ -52,6 +52,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           >
             {dark ? '☀️' : '🌙'}
           </button>
+          <Link to="/admin" className="shell-admin-btn" title="Admin">⚙️</Link>
           <button className="shell-add-btn" onClick={() => setShowAddForm(true)}>
             + Add a spot
           </button>

@@ -3107,3 +3107,13 @@ html.dark .cf-schedule-block {
   background: #1a1a20;
   border-color: var(--border-2);
 }
+
+/* ═══ ADMIN BUTTON IN NAV ═══ */
+.shell-admin-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(255,255,255,.1); color: rgba(255,255,255,.7);
+  text-decoration: none; font-size: 16px;
+  transition: background .15s;
+}
+.shell-admin-btn:hover { background: rgba(255,255,255,.2); }
