@@ -3056,3 +3056,54 @@ html.dark .places-input { color: var(--ink) !important; }
 html.dark .places-dropdown { background: var(--surface) !important; border-color: var(--border) !important; }
 html.dark .places-suggestion:hover { background: var(--bg) !important; }
 html.dark .places-suggestion-text { color: var(--ink) !important; }
+
+/* ═══════════════════════════════════════════════════════
+   SCHEDULE BLOCK — multi-schedule form
+═══════════════════════════════════════════════════════ */
+
+.cf-schedule-block {
+  border: 1.5px solid var(--border-2);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: var(--surface);
+}
+
+.cf-schedule-block-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.cf-schedule-block-title {
+  font-size: 13px; font-weight: 800;
+  color: var(--ink); text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.cf-schedule-remove {
+  background: #fee2e2; color: #c0392b;
+  border: none; border-radius: 7px;
+  padding: 4px 10px; font-size: 11px;
+  font-weight: 700; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.cf-add-schedule-btn {
+  width: 100%; padding: 12px;
+  border: 2px dashed var(--coral);
+  border-radius: 12px; background: var(--coral-lt);
+  color: var(--coral); font-size: 13px;
+  font-weight: 700; cursor: pointer;
+  margin-bottom: 16px;
+  transition: all .15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.cf-add-schedule-btn:hover {
+  background: var(--coral); color: #fff;
+}
+
+html.dark .cf-schedule-block {
+  background: #1a1a20;
+  border-color: var(--border-2);
+}
