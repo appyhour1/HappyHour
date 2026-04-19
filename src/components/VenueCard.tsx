@@ -93,7 +93,11 @@ export const VenueCard = memo(function VenueCard({
       className={`vc${isOpen ? ' vc--open' : ''}${isSelected ? ' vc--selected' : ''}${venue.is_featured ? ' vc--featured' : ''}`}
       style={{
         background: '#F8F6F1',
-        border: isOpen ? '2px solid #22C55E' : '2px solid #1A1612',
+        border: isOpen
+          ? '2px solid #22C55E'
+          : venue.is_featured
+            ? '2px solid #E85D1A'
+            : '2px solid #1A1612',
         boxShadow: isOpen ? '0 0 0 1px #22C55E' : 'none',
       }}
       onClick={handleCardClick}
@@ -111,7 +115,12 @@ export const VenueCard = memo(function VenueCard({
               {venueStatus.badge}
             </span>
           )}
-          {venue.is_featured && <span className="vc__badge vc__badge--featured">⭐</span>}
+          {(venue as any).is_sponsored && (
+              <span className="vc__sponsored-pill">◆ Sponsored</span>
+            )}
+            {venue.is_featured && (
+              <span className="vc__featured-pill">⭐ Featured</span>
+            )}
         </div>
         <button className={`vc__heart${isFavorite ? ' vc__heart--saved' : ''}`} onClick={handleFavorite} aria-label="Save">
           <HeartIcon filled={isFavorite} />
