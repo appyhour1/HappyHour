@@ -112,7 +112,8 @@ export default function AdminPage() {
     e.preventDefault()
     if (password === ADMIN_PASSWORD) {
       setAuthed(true); setLoginError('')
-      loadContributions(); loadAnalytics()
+      // Load both on login — contributions won't auto-reload after that
+      setTimeout(() => { loadContributions(); loadAnalytics() }, 50)
     } else setLoginError('Incorrect password')
   }
 
@@ -120,8 +121,16 @@ export default function AdminPage() {
 
   async function loadContributions() {
     setContribLoading(true)
-    const { data } = await supabase.from('contributions').select('*').order('created_at', { ascending: false })
-    if (data) setContributions(data)
+    const { data } = await supabase
+      .from('contributions')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) {
+      // Merge with any local status overrides (for rejected/approved before page reload)
+      const overrides = JSON.parse(localStorage.getItem('contrib_overrides') || '{}')
+      const merged = data.map((c: Contribution) => overrides[c.id] ? { ...c, status: overrides[c.id] } : c)
+      setContributions(merged)
+    }
     setContribLoading(false)
   }
 
@@ -179,6 +188,8 @@ export default function AdminPage() {
     if (!window.confirm('Reject this submission?')) return
     setActionLoading(contrib.id)
     await supabase.from('contributions').update({ status: 'rejected' }).eq('id', contrib.id)
+    const overrides = JSON.parse(localStorage.getItem('contrib_overrides') || '{}')
+    localStorage.setItem('contrib_overrides', JSON.stringify({ ...overrides, [contrib.id]: 'rejected' }))
     setContributions(prev => prev.map(c => c.id === contrib.id ? { ...c, status: 'rejected' } : c))
     setActionLoading(null)
   }
