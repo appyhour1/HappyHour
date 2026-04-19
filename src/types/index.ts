@@ -94,10 +94,10 @@ export interface Venue {
   data_source: DataSource
   claimed_by_user_id: string | null
 
-// Platform
+  // Platform
   is_featured: boolean
+  is_sponsored: boolean
   upvote_count: number
-  dog_friendly: boolean
 
   // Timestamps
   created_at: string
@@ -125,8 +125,7 @@ export interface FilterState {
   neighborhoods: Set<string>
   priceTiers: Set<PriceTier>
   openNow: boolean
-  dogFriendly: boolean
-  timeWindow: TimeWindow | null
+  timeWindow: TimeWindow | null   // null = no time filter
   city: string | null
 }
 
@@ -138,7 +137,6 @@ export const DEFAULT_FILTERS: FilterState = {
   neighborhoods: new Set(),
   priceTiers: new Set(),
   openNow: false,
-  dogFriendly: false,
   timeWindow: null,
   city: null,
 }
