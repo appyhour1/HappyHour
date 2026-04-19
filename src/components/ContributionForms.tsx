@@ -321,47 +321,37 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
         } catch { /* silently continue without coords */ }
       }
 
-      const { data: venue, error: venueErr } = await supabase
-        .from('venues')
-        .insert([{
-          name: name.trim(), neighborhood: neighborhood.trim(),
-          city, state: 'OH',
-          address: address.trim() || null,
-          website: website.trim() || null,
-          phone: phone.trim() || null,
+      // Save to contributions table for admin review
+      const { error } = await supabase.from('contributions').insert([{
+        flow: 'new_venue',
+        status: 'pending',
+        data: {
+          name: name.trim(),
+          neighborhood: neighborhood.trim(),
+          city,
+          address: address.trim() || '',
+          website: website.trim() || '',
+          phone: phone.trim() || '',
           latitude: resolvedLat || null,
           longitude: resolvedLng || null,
           dog_friendly: dogFriendly,
-          categories: [], price_tier: null, image_url: null,
-          verification_status: 'community', data_source: 'user_submitted',
-          claimed_by_user_id: null, is_featured: false, upvote_count: 0,
-          last_verified_at: new Date().toISOString(),
-          created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-        }])
-        .select().single()
-
-      if (venueErr) throw new Error(venueErr.message)
-
-      // Insert all schedules
-      const scheduleRows = schedules
-        .filter(s => s.days.length > 0)
-        .map(s => ({
-          venue_id: venue.id,
-          days: s.days,
-          start_time: s.isAllDay ? '00:00' : s.startTime,
-          end_time: s.isAllDay ? '23:59' : s.endTime,
-          is_all_day: s.isAllDay,
-          deal_text: s.dealText.trim() || s.deals.filter(d => d.description).map(d => `${d.description}${d.price ? ' $' + d.price : ''}`).join(', '),
-          deals: s.deals.filter(d => d.description.trim()).map(d => ({
-            type: d.type, description: d.description.trim(),
-            price: d.price ? parseFloat(d.price) : null,
+          schedules: schedules.filter(s => s.days.length > 0).map(s => ({
+            days: s.days,
+            start_time: s.isAllDay ? '00:00' : s.startTime,
+            end_time: s.isAllDay ? '23:59' : s.endTime,
+            is_all_day: s.isAllDay,
+            deal_text: s.dealText.trim() || s.deals.filter(d => d.description).map(d =>
+              `${d.description}${d.price ? ' $' + d.price : ''}`).join(', '),
+            deals: s.deals.filter(d => d.description.trim()).map(d => ({
+              type: d.type, description: d.description.trim(),
+              price: d.price ? parseFloat(d.price) : null,
+            })),
           })),
-          created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-        }))
+        },
+        created_at: new Date().toISOString(),
+      }])
 
-      const { error: schedErr } = await supabase.from('happy_hour_schedules').insert(scheduleRows)
-      if (schedErr) throw new Error(schedErr.message)
-
+      if (error) throw new Error(error.message)
       setStatus('success')
     } catch (e: any) {
       setErrorMsg(e.message || 'Something went wrong. Please try again.')
@@ -374,7 +364,7 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
       <div className="cf-success">
         <div className="cf-success-icon">🎉</div>
         <div className="cf-success-title">Spot added!</div>
-        <p className="cf-success-msg">It's live on the app right now. Thanks for contributing!</p>
+        <p className="cf-success-msg">Thanks! Your submission is under review and will be published soon.</p>
         <button className="cf-btn-primary" onClick={onClose ?? (() => setStatus('idle'))}>Done</button>
       </div>
     )
@@ -384,7 +374,7 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
     <div className="cf-form">
       <div className="cf-header">
         <h2 className="cf-title">Add a new spot</h2>
-        <p className="cf-subtitle">Publishes immediately to the app.</p>
+        <p className="cf-subtitle">Submitted for review — published within 24 hours.</p>
       </div>
 
       <Field label="Find on Google" hint="Type the bar name to auto-fill details">
