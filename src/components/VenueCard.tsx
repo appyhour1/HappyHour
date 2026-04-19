@@ -54,10 +54,7 @@ export const VenueCard = memo(function VenueCard({
   })()
 
   const bestSchedule = venueStatus?.schedule ?? schedules[0]
- const DEAL_ORDER = ['beer', 'cocktail', 'food', 'wine', 'general']
-  const topDeals = [...(bestSchedule?.deals ?? [])]
-    .sort((a, b) => DEAL_ORDER.indexOf(a.type) - DEAL_ORDER.indexOf(b.type))
-    .slice(0, 4)
+  const topDeals = (bestSchedule?.deals ?? []).slice(0, 4)
   const vis = venueStatus ? STATUS_VISUALS[venueStatus.status] : null
 
   // Deal expiry warning — show if last verified > 30 days ago
@@ -91,6 +88,10 @@ export const VenueCard = memo(function VenueCard({
     <div
       ref={cardRef}
       className={`vc${isOpen ? ' vc--open' : ''}${isSelected ? ' vc--selected' : ''}${venue.is_featured ? ' vc--featured' : ''}`}
+      style={{
+        border: isOpen ? '2px solid #22C55E' : '2px solid #1A1612',
+        boxShadow: isOpen ? '0 0 0 1px #22C55E' : 'none',
+      }}
       onClick={handleCardClick}
       role="button"
       tabIndex={0}
