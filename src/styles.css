@@ -1857,7 +1857,7 @@ html.dark .vc__deal-pill { opacity: .92; }
   flex: 1;
   height: 100%;
   text-decoration: none;
-  color: #C8C0B8;
+  color: rgba(255,255,255,0.75);
   background: none;
   border: none;
   cursor: pointer;
@@ -1910,7 +1910,7 @@ html.dark .bottom-nav {
   background: #13131a;
   border-top-color: #2a2a30;
 }
-html.dark .bn-tab { color: #555565; }
+html.dark .bn-tab { color: rgba(255,255,255,0.75); }
 html.dark .bn-tab.active { color: #e8714a; }
 html.dark .bn-tab--live.active { color: #22b882; }
 html.dark .bn-live-dot { border-color: #13131a; }
@@ -2038,14 +2038,14 @@ html.dark .browse-hero-compact-title { color: #f0eff4; }
 /* ── VENUE CARDS — white on white bg ── */
 .vc {
   background: var(--surface2) !important;
-  border: 1px solid var(--border) !important;
+  border: 2px solid #1A1612 !important;
   border-radius: var(--radius-lg) !important;
   overflow: hidden;
   position: relative;
 }
 .vc--open {
-  border-color: var(--green) !important;
-  border-top: 3px solid var(--green) !important;
+  border: 2px solid var(--green) !important;
+  box-shadow: 0 0 0 1px var(--green) !important;
 }
 .vc--selected { box-shadow: 0 0 0 2px var(--blue) !important; }
 
@@ -2067,7 +2067,7 @@ html.dark .browse-hero-compact-title { color: #f0eff4; }
   border-top: none !important;
   border-radius: 18px 18px 0 0;
 }
-.bn-tab { color: #C8C0B8 !important; } /* brighter inactive icons */
+.bn-tab { color: rgba(255,255,255,0.75) !important; }
 .bn-tab.active { color: var(--coral) !important; }
 .bn-tab--live.active { color: var(--green) !important; }
 .bn-live-dot { background: var(--green) !important; border-color: var(--charcoal) !important; }
@@ -2978,8 +2978,8 @@ html.dark .browse-search-input { color: var(--ink); background: transparent; }
 html.dark .browse-topbar { background: var(--bg); }
 
 /* Venue cards dark */
-html.dark .vc { background: var(--surface) !important; border-color: var(--border) !important; }
-html.dark .vc--open { border-color: var(--green) !important; border-top-color: var(--green) !important; }
+html.dark .vc { background: var(--surface) !important; border: 2px solid #444 !important; }
+html.dark .vc--open { border: 2px solid var(--green) !important; box-shadow: 0 0 0 1px var(--green) !important; }
 html.dark .vc__name { color: var(--ink) !important; }
 html.dark .vc__neighborhood { color: var(--ink-3) !important; }
 html.dark .vc__time { color: var(--coral) !important; }
