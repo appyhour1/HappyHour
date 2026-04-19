@@ -95,6 +95,7 @@ export interface Venue {
   claimed_by_user_id: string | null
 
   // Platform
+  dog_friendly: boolean
   is_featured: boolean
   is_sponsored: boolean
   upvote_count: number
