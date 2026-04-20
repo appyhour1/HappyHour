@@ -12,14 +12,26 @@ export interface BrandAd {
 }
 
 export function SponsoredBanner({ ad }: { ad: BrandAd }) {
+  const [visible, setVisible] = React.useState(false)
+
+  React.useEffect(() => {
+    setVisible(false)
+    const t = setTimeout(() => setVisible(true), 30)
+    return () => clearTimeout(t)
+  }, [ad.id])
+
   return (
-    <div style={{ marginBottom: 10 }}>
+    <div style={{
+      marginBottom: 10,
+      opacity: visible ? 1 : 0,
+      transform: visible ? 'translateY(0)' : 'translateY(6px)',
+      transition: 'opacity .4s, transform .4s',
+    }}>
       <div style={{
         background: '#3A3630', borderRadius: 14,
         padding: '14px 16px', display: 'flex',
         alignItems: 'center', gap: 14,
       }}>
-        {/* Logo */}
         <div style={{
           width: 48, height: 48, borderRadius: 10,
           background: ad.logo_bg_color || '#E85D1A',
@@ -33,8 +45,6 @@ export function SponsoredBanner({ ad }: { ad: BrandAd }) {
               </span>
           }
         </div>
-
-        {/* Text */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {ad.headline}
