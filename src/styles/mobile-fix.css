@@ -1,70 +1,81 @@
 /* ═══════════════════════════════════════════════════════
-   MOBILE OVERFLOW FIX — minimal, safe
+   MOBILE OVERFLOW FIX
 ═══════════════════════════════════════════════════════ */
 
+/* Prevent any element from causing horizontal scroll */
 html, body, #root {
   max-width: 100%;
   overflow-x: hidden;
 }
 
-/* Every element uses border-box so padding doesn't add width */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-/* Main shell */
-.shell, .shell-main {
+.shell, .shell-main, .browse-page {
   max-width: 100%;
   overflow-x: hidden;
 }
 
-/* Browse page — safe padding on mobile */
-.browse-page {
-  max-width: 100%;
-  overflow-x: hidden;
-  padding-left: 12px;
-  padding-right: 12px;
-}
-
-/* Venue cards must never exceed screen width */
-.vc {
-  max-width: 100%;
-  min-width: 0;
-}
-
-/* Sponsored banner */
-.sponsored-banner-wrap,
-.sponsored-banner {
-  max-width: 100%;
-  min-width: 0;
-}
-
-/* Sort bar — horizontal scroll on mobile, no layout push */
-.sort-bar {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  flex-wrap: nowrap;
-}
-.sort-bar::-webkit-scrollbar { display: none; }
-
-/* Venue list — 1 col mobile, 2 col desktop */
+/* ── VENUE LIST ──
+   Use minmax(0, 1fr) NOT 1fr — plain 1fr allows content to
+   expand the column beyond viewport width */
 .venue-list {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   width: 100%;
 }
 
 @media (min-width: 700px) {
   .venue-list {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 12px;
   }
   .sponsored-banner-wrap,
   .hn-empty {
     grid-column: 1 / -1;
   }
+}
+
+/* Venue cards — constrain to their grid cell */
+.vc {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Sponsored banner — full width, no overflow */
+.sponsored-banner-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+.sponsored-banner {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Sort bar chips — horizontal scroll, never push layout wide */
+.sort-bar-inner {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.sort-bar-inner::-webkit-scrollbar { display: none; }
+
+/* Best picks scroll row */
+.bp-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.bp-scroll::-webkit-scrollbar { display: none; }
+
+/* Deal pills — wrap not overflow */
+.vc__deals {
+  min-width: 0;
+}
+.vc__deal-pill {
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Nav — hide text links on small phones */
