@@ -1,65 +1,59 @@
 /* ═══════════════════════════════════════════════════════
-   MOBILE OVERFLOW FIX
-   Prevents horizontal scroll and card cutoff on phones
+   MOBILE OVERFLOW FIX — minimal, safe
 ═══════════════════════════════════════════════════════ */
 
+html, body, #root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Every element uses border-box so padding doesn't add width */
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
-html, body {
-  overflow-x: hidden;
-  max-width: 100vw;
-  width: 100%;
-}
-
-#root {
-  overflow-x: hidden;
-  max-width: 100vw;
-}
-
-.shell {
-  overflow-x: hidden;
-  max-width: 100vw;
-}
-
-.shell-main {
-  overflow-x: hidden;
-  max-width: 100vw;
-}
-
-.browse-page {
-  overflow-x: hidden;
+/* Main shell */
+.shell, .shell-main {
   max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Browse page — safe padding on mobile */
+.browse-page {
+  max-width: 100%;
+  overflow-x: hidden;
   padding-left: 12px;
   padding-right: 12px;
 }
 
-/* Venue cards — never overflow their container */
+/* Venue cards must never exceed screen width */
 .vc {
   max-width: 100%;
   min-width: 0;
-  overflow: hidden;
 }
 
-/* Sponsored banner — full width, no overflow */
-.sponsored-banner-wrap {
-  max-width: 100%;
-  overflow: hidden;
-}
-
+/* Sponsored banner */
+.sponsored-banner-wrap,
 .sponsored-banner {
   max-width: 100%;
-  overflow: hidden;
+  min-width: 0;
 }
 
-/* Venue list grid — single column on mobile */
+/* Sort bar — horizontal scroll on mobile, no layout push */
+.sort-bar {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+}
+.sort-bar::-webkit-scrollbar { display: none; }
+
+/* Venue list — 1 col mobile, 2 col desktop */
 .venue-list {
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
-  max-width: 100%;
-  overflow: hidden;
+  width: 100%;
 }
 
 @media (min-width: 700px) {
@@ -67,92 +61,13 @@ html, body {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
-
-  .sponsored-banner-wrap {
-    grid-column: 1 / -1;
-  }
-
+  .sponsored-banner-wrap,
   .hn-empty {
     grid-column: 1 / -1;
   }
 }
 
-/* Nav bar — don't overflow on small screens */
-.shell-nav {
-  max-width: 100vw;
-  overflow: hidden;
+/* Nav — hide text links on small phones */
+@media (max-width: 600px) {
+  .shell-links { display: none; }
 }
-
-/* Hide desktop nav links on mobile */
-@media (max-width: 640px) {
-  .shell-links {
-    display: none;
-  }
-
-  .shell-nav {
-    padding: 0 12px;
-  }
-
-  .browse-hero-card {
-    margin: 0;
-  }
-
-  .best-picks-area {
-    overflow-x: hidden;
-  }
-}
-
-/* Pills and badges — wrap don't overflow */
-.vc__badges-left {
-  flex-wrap: wrap;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-/* Deal pills row */
-.vc__deals {
-  flex-wrap: wrap;
-  max-width: 100%;
-}
-
-/* Bottom nav — always full width */
-.bottom-nav {
-  max-width: 100vw;
-  left: 0;
-  right: 0;
-}
-
-/* Filter panel — don't overflow */
-.filter-panel-wrap {
-  max-width: 100%;
-  overflow: hidden;
-}
-
-/* Search bar */
-.browse-search-bar {
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Sort bar chips — allow scroll on mobile */
-.sort-bar {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  max-width: 100%;
-}
-.sort-bar::-webkit-scrollbar { display: none; }
-
-/* Content area */
-.content-area {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Best picks horizontal scroll */
-.best-picks-row {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.best-picks-row::-webkit-scrollbar { display: none; }
