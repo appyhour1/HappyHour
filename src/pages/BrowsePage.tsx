@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { useAppContext } from '../contexts/AppContext'
@@ -56,7 +56,9 @@ export default function BrowsePage() {
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null)
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [brandAds, setBrandAds] = useState<BrandAd[]>([])
-  const [, setTick] = useState(0)
+  // Random offset per session so ads start from different position each visit
+  const adOffset = useRef(Math.floor(Math.random() * 100))
+  const [tick, setTick] = useState(0)
   const venueCardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
 
@@ -244,8 +246,10 @@ export default function BrowsePage() {
                     />
                   ]
                   if (brandAds.length > 0 && (i + 1) % 4 === 0) {
-                    const ad = brandAds[Math.floor(i / 4) % brandAds.length]
-                    nodes.push(<SponsoredBanner key={`ad-${i}`} ad={ad} />)
+                    // offset rotates per session, tick rotates every 60s
+                    const rotationIndex = (Math.floor(i / 4) + adOffset.current + Math.floor(tick / 2)) % brandAds.length
+                    const ad = brandAds[rotationIndex]
+                    nodes.push(<SponsoredBanner key={`ad-${i}-${tick}`} ad={ad} />)
                   }
                   return nodes
                 })}
