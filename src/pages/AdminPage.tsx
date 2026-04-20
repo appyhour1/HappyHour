@@ -1,4 +1,4 @@
-/**
+/* v2
  * AdminPage.tsx — Route: /admin
  * Tab 1: Pending approvals
  * Tab 2: Venue analytics + featured/sponsored toggles
