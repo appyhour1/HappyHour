@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useAppContext } from '../contexts/AppContext'
 import { useFilterState } from '../hooks/useFilterState'
 import { useViewMode } from '../hooks/useViewMode'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { filterVenues, getNeighborhoods, isVenueActiveNow, distanceMiles, fmtDistance } from '../utils/filters'
 import { sortVenuesByMode } from '../utils/scoring'
 import { buildBestPicksSections } from '../utils/bestPicks'
@@ -14,10 +15,10 @@ import { MapView } from '../components/MapView'
 import { ViewToggle } from '../components/ViewToggle'
 import { VenueCard } from '../components/VenueCard'
 import { BestPicksRow } from '../components/BestPicksRow'
+import { EmailCapture, useEmailCapture } from '../components/EmailCapture'
 import { SponsoredBanner } from '../components/SponsoredBanner'
 import type { BrandAd } from '../components/SponsoredBanner'
 import { getActiveBrandAds } from '../services/brandAdService'
-import { EmailCapture, useEmailCapture } from '../components/EmailCapture'
 import type { Venue } from '../types'
 
 function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
@@ -46,9 +47,10 @@ function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
 }
 
 export default function BrowsePage() {
-  const { venues, loading, error, userLocation, requestLocation, favorites, city } = useAppContext()
+  const { venues, loading, error, userLocation, requestLocation, favorites, city, refetchVenues } = useAppContext()
   const fs = useFilterState()
   const vm = useViewMode()
+  const { refreshing } = usePullToRefresh(refetchVenues)
 
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null)
@@ -109,6 +111,15 @@ export default function BrowsePage() {
 
         <BrowseHero venues={venues} city={city} />
 
+        {/* Pull to refresh indicator */}
+        {refreshing && (
+          <div className="ptr-indicator">
+            <span className="ptr-spinner" />
+            Refreshing deals...
+          </div>
+        )}
+
+        {/* Search */}
         <div className="browse-search-bar">
           <div className="browse-search-icon">🔍</div>
           <input
@@ -131,6 +142,7 @@ export default function BrowsePage() {
           )}
         </div>
 
+        {/* Top bar */}
         <div className="browse-topbar">
           <div className="browse-topbar-left">
             <button
@@ -153,10 +165,12 @@ export default function BrowsePage() {
           </div>
         </div>
 
+        {/* Filters */}
         <div className={`filter-panel-wrap${filterOpen ? ' open' : ''}`}>
           <FilterPanel {...fs} venues={venues} neighborhoods={neighborhoods} />
         </div>
 
+        {/* Sort */}
         <SortBar
           sort={fs.sort}
           onSort={fs.setSort}
@@ -168,6 +182,7 @@ export default function BrowsePage() {
         {loading && <p className="loading-msg">Loading deals...</p>}
         {error && !loading && <p className="error-msg">Using sample data - {error}</p>}
 
+        {/* Best picks */}
         {!loading && showBestPicks && bestPicksSections.length > 0 && (
           <div className="best-picks-area">
             {bestPicksSections.map(section => (
@@ -184,6 +199,7 @@ export default function BrowsePage() {
           </div>
         )}
 
+        {/* Venue list */}
         {!loading && (
           <div className={`content-area${vm.isSplit ? ' split' : ''}`}>
             {vm.isMap && (
@@ -216,24 +232,23 @@ export default function BrowsePage() {
                     )}
                   </div>
                 ) : filtered.flatMap((venue, i) => {
-                    const nodes: React.ReactNode[] = [
-                      <VenueCard
-                        key={venue.id}
-                        venue={venue}
-                        isFavorite={favorites.isFavorite(venue.id)}
-                        onToggleFavorite={favorites.toggleFavorite}
-                        isSelected={selectedVenueId === venue.id}
-                        distanceLabel={getDistanceLabel(venue)}
-                        cardRef={el => { venueCardRefs.current[venue.id] = el }}
-                      />
-                    ]
-                    // Inject brand ad after every 4th venue card
-                    if (brandAds.length > 0 && (i + 1) % 4 === 0) {
-                      const ad = brandAds[Math.floor(i / 4) % brandAds.length]
-                      nodes.push(<SponsoredBanner key={`ad-${i}`} ad={ad} />)
-                    }
-                    return nodes
-                  })}
+                  const nodes: React.ReactNode[] = [
+                    <VenueCard
+                      key={venue.id}
+                      venue={venue}
+                      isFavorite={favorites.isFavorite(venue.id)}
+                      onToggleFavorite={favorites.toggleFavorite}
+                      isSelected={selectedVenueId === venue.id}
+                      distanceLabel={getDistanceLabel(venue)}
+                      cardRef={el => { venueCardRefs.current[venue.id] = el }}
+                    />
+                  ]
+                  if (brandAds.length > 0 && (i + 1) % 4 === 0) {
+                    const ad = brandAds[Math.floor(i / 4) % brandAds.length]
+                    nodes.push(<SponsoredBanner key={`ad-${i}`} ad={ad} />)
+                  }
+                  return nodes
+                })}
               </div>
             )}
           </div>
