@@ -63,7 +63,7 @@ export default function BrowsePage() {
   const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
 
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 60_000)
+    const id = setInterval(() => setTick(t => t + 1), 15_000)
     getActiveBrandAds().then(setBrandAds)
     return () => clearInterval(id)
   }, [])
@@ -246,10 +246,13 @@ export default function BrowsePage() {
                     />
                   ]
                   if (brandAds.length > 0 && (i + 1) % 4 === 0) {
-                    // offset rotates per session, tick rotates every 60s
-                    const rotationIndex = (Math.floor(i / 4) + adOffset.current + Math.floor(tick / 2)) % brandAds.length
-                    const ad = brandAds[rotationIndex]
-                    nodes.push(<SponsoredBanner key={`ad-${i}-${tick}`} ad={ad} />)
+                    const slotIndex = Math.floor(i / 4)
+                    // tick advances every 15s, shifting which ad shows
+                    const adIndex = (slotIndex + adOffset.current + tick) % brandAds.length
+                    if (slotIndex < brandAds.length) {
+                      const ad = brandAds[adIndex]
+                      nodes.push(<SponsoredBanner key={`ad-${i}-${tick}`} ad={ad} />)
+                    }
                   }
                   return nodes
                 })}
