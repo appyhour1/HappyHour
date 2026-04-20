@@ -1,0 +1,139 @@
+
+/* ═══════════════════════════════════════════════════════
+   VENUE LIST — 2 column on desktop, 1 on mobile
+═══════════════════════════════════════════════════════ */
+
+.venue-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 700px) {
+  .venue-list {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Venue cards slightly more compact on desktop */
+  .vc {
+    font-size: 95%;
+  }
+
+  /* Keep sponsored banners full width */
+  .sponsored-banner-wrap {
+    grid-column: 1 / -1;
+  }
+
+  /* Keep empty state full width */
+  .hn-empty {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PULL TO REFRESH
+═══════════════════════════════════════════════════════ */
+
+.ptr-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  font-size: 13px;
+  color: #888;
+  font-weight: 600;
+  transition: height .2s, opacity .2s;
+  overflow: hidden;
+}
+
+.ptr-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #E0DDD8;
+  border-top-color: #E85D1A;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CRAWL BUILDER — map route improvements
+═══════════════════════════════════════════════════════ */
+
+.crawl-map-section {
+  margin: 16px 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.crawl-route-map {
+  width: 100%;
+  height: 280px;
+  border: none;
+  display: block;
+}
+
+.crawl-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: var(--charcoal);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  font-family: inherit;
+  transition: opacity .15s;
+}
+.crawl-share-btn:hover { opacity: .85; }
+
+.crawl-time-estimate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin: 8px 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   DARK MODE — additional polish
+═══════════════════════════════════════════════════════ */
+
+html.dark .browse-page { background: var(--bg); }
+html.dark .browse-search-bar {
+  background: var(--surface) !important;
+  border: 1px solid var(--border-2) !important;
+}
+html.dark .browse-search-input { color: var(--ink) !important; background: transparent !important; }
+html.dark .browse-search-input::placeholder { color: var(--ink-4) !important; }
+html.dark .mobile-filter-btn { color: var(--ink-2) !important; }
+html.dark .sort-bar { background: var(--bg); border-color: var(--border); }
+html.dark .sort-chip { background: var(--surface); border-color: var(--border-2); color: var(--ink-3); }
+html.dark .sort-chip.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+html.dark .all-venues-divider { color: var(--ink-4); border-color: var(--border); }
+html.dark .all-venues-divider span { background: var(--bg); }
+html.dark .vc__name { color: var(--ink) !important; }
+html.dark .vc__neighborhood { color: var(--ink-3) !important; }
+html.dark .vc__cta { color: var(--ink-3) !important; }
+html.dark .vc__deal-text { color: var(--ink-3) !important; }
+html.dark .vc__time { color: var(--coral) !important; }
+html.dark .venue-list .hn-empty { background: var(--surface); }
+html.dark .shell-footer { border-color: var(--border); color: var(--ink-4); }
+html.dark .shell-footer-link { color: var(--ink-4); }
+html.dark .legal-page { background: var(--bg); color: var(--ink); }
+html.dark .legal-header { border-color: var(--border); }
+html.dark .legal-title { color: var(--ink) !important; }
+html.dark .legal-date { color: var(--ink-4); }
+html.dark .crawl-share-btn { background: #2A2520; border: 1px solid var(--border); }
