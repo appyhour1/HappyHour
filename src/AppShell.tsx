@@ -4,17 +4,17 @@
  */
 
 import React, { useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAppContext } from './contexts/AppContext'
 import { NewVenueForm } from './components/ContributionForms'
 import { BottomNav } from './components/BottomNav'
 import { InstallPrompt } from './components/InstallPrompt'
 import { AgeVerification } from './components/AgeVerification'
+import { Onboarding } from './components/Onboarding'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { city, favorites, dark, toggleDark } = useAppContext()
   const location = useLocation()
-  const navigate = useNavigate()
   const [showAddForm, setShowAddForm] = useState(false)
 
   const citySlug = city.toLowerCase().replace(/\s+/g, '-')
@@ -73,6 +73,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="shell-main">
         {children}
       </main>
+
+      <Onboarding />
       <AgeVerification />
       <InstallPrompt />
       <BottomNav />
