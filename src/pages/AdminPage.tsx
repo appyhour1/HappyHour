@@ -252,9 +252,27 @@ export default function AdminPage() {
 
   const EMPTY_AD: Partial<BrandAd> = {
     brand_name: '', headline: '', subtext: '',
-    cta_label: 'Find it', cta_url: '',
-    logo_emoji: '🍺', logo_bg_color: '#E85D1A',
+    logo_url: '', logo_bg_color: '#E85D1A',
     is_active: false, position: 0,
+  }
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const fileExt = file.name.split('.').pop()
+    const fileName = `brand-logos/${Date.now()}.${fileExt}`
+    const { data, error } = await supabase.storage
+      .from('public')
+      .upload(fileName, file, { upsert: true })
+    if (error) {
+      // Fallback: use base64 data URL
+      const reader = new FileReader()
+      reader.onload = () => setEditingAd(prev => ({ ...prev, logo_url: reader.result as string }))
+      reader.readAsDataURL(file)
+      return
+    }
+    const { data: urlData } = supabase.storage.from('public').getPublicUrl(fileName)
+    setEditingAd(prev => ({ ...prev, logo_url: urlData.publicUrl }))
   }
 
   // ── ANALYTICS ──────────────────────────────────
@@ -557,9 +575,6 @@ export default function AdminPage() {
                     ['brand_name', 'Brand name *', 'e.g. Modelo'],
                     ['headline', 'Headline *', 'e.g. Enjoy Modelo tonight'],
                     ['subtext', 'Subtext', 'e.g. Find it on draft at bars near you'],
-                    ['cta_label', 'Button label', 'e.g. Find it'],
-                    ['cta_url', 'Button URL', 'https://...'],
-                    ['logo_emoji', 'Logo emoji', '🍺'],
                     ['logo_bg_color', 'Logo background color', '#E85D1A'],
                     ['position', 'Position (order)', '0'],
                   ].map(([field, label, placeholder]) => (
@@ -573,6 +588,24 @@ export default function AdminPage() {
                       />
                     </div>
                   ))}
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.04em' }}>Brand logo</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {editingAd?.logo_url && (
+                        <div style={{ width: 48, height: 48, borderRadius: 8, background: editingAd.logo_bg_color || '#E85D1A', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                          <img src={editingAd.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
+                        </div>
+                      )}
+                      <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#F8F6F1', border: '1px solid #E0DDD8', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#555' }}>
+                        📁 {editingAd?.logo_url ? 'Change logo' : 'Upload logo'}
+                        <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
+                      </label>
+                      {editingAd?.logo_url && (
+                        <button onClick={() => setEditingAd(prev => ({ ...prev, logo_url: '' }))} style={{ ...btn('#fee2e2', '#c0392b'), fontSize: 11 }}>Remove</button>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>PNG, JPG, or SVG. Square logos work best.</div>
+                  </div>
                 </div>
 
                 {/* Preview */}
@@ -580,14 +613,17 @@ export default function AdminPage() {
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.04em' }}>Preview</div>
                     <div style={{ background: '#3A3630', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 10, background: editingAd.logo_bg_color || '#E85D1A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                        {editingAd.logo_emoji || '🍺'}
+                      <div style={{ width: 48, height: 48, borderRadius: 10, background: editingAd.logo_bg_color || '#E85D1A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                        {editingAd.logo_url
+                          ? <img src={editingAd.logo_url} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
+                          : <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>{(editingAd.brand_name || 'AD').slice(0, 2).toUpperCase()}</span>
+                        }
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 2 }}>{editingAd.headline}</div>
                         <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>{editingAd.subtext}</div>
                       </div>
-                      <div style={{ background: '#E85D1A', color: '#fff', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700 }}>{editingAd.cta_label || 'Find it'}</div>
+
                     </div>
                     <div style={{ textAlign: 'right', fontSize: 9, color: '#aaa', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 3 }}>Sponsored</div>
                   </div>
@@ -615,8 +651,11 @@ export default function AdminPage() {
               <div key={ad.id} style={{ ...card, borderLeft: `4px solid ${ad.is_active ? '#22C55E' : '#ddd'}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 8, background: ad.logo_bg_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                      {ad.logo_emoji}
+                    <div style={{ width: 40, height: 40, borderRadius: 8, background: ad.logo_bg_color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                      {ad.logo_url
+                        ? <img src={ad.logo_url} alt={ad.brand_name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 3 }} />
+                        : <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>{ad.brand_name.slice(0, 2).toUpperCase()}</span>
+                      }
                     </div>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: '#1A1612', marginBottom: 2 }}>{ad.brand_name}</div>
