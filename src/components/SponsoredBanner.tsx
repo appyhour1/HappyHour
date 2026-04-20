@@ -1,4 +1,5 @@
 import React from 'react'
+import { REDBULL_LOGO, TITOS_LOGO } from './BrandLogos'
 
 export interface BrandAd {
   id: string
@@ -125,20 +126,16 @@ function LogoBox({ ad, cfg }: { ad: BrandAd; cfg: BrandConfig }) {
 
   if (key === 'red bull') {
     return (
-      <div style={{ width: 52, height: 52, borderRadius: 10, background: '#CC1E4A', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: 1 }}>
-        <div style={{ fontSize: 22, lineHeight: 1 }}>🐂</div>
-        <div style={{ width: 20, height: 2, background: '#FFC906', borderRadius: 2 }} />
-        <div style={{ fontSize: 7, fontWeight: 900, color: '#FFC906', letterSpacing: '.08em', textTransform: 'uppercase' as const }}>Red Bull</div>
+      <div style={{ width: 52, height: 52, borderRadius: 10, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', padding: 4 }}>
+        <img src={REDBULL_LOGO} alt="Red Bull" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </div>
     )
   }
 
   if (key === "tito's vodka") {
     return (
-      <div style={{ width: 52, height: 52, borderRadius: 10, background: '#C87941', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, gap: 1, border: '1px solid rgba(255,255,255,.2)' }}>
-        <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', fontStyle: 'italic', letterSpacing: '-.5px', lineHeight: 1 }}>Tito's</div>
-        <div style={{ width: 28, height: 1, background: 'rgba(255,255,255,.4)' }} />
-        <div style={{ fontSize: 7, fontWeight: 700, color: 'rgba(255,255,255,.8)', letterSpacing: '.14em', textTransform: 'uppercase' as const }}>Vodka</div>
+      <div style={{ width: 52, height: 52, borderRadius: 10, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden', padding: 3 }}>
+        <img src={TITOS_LOGO} alt="Tito's Vodka" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </div>
     )
   }
