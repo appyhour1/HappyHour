@@ -9,6 +9,8 @@ import { Helmet } from 'react-helmet-async'
 import { supabase } from '../lib/supabase'
 import type { Venue } from '../types'
 import { getVenues } from '../services/venueService'
+import { getAllBrandAds, saveBrandAd, deleteBrandAd, toggleBrandAd } from '../services/brandAdService'
+import type { BrandAd } from '../components/SponsoredBanner'
 
 const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'appyhour2026'
 
@@ -89,7 +91,7 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false)
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
-  const [tab, setTab] = useState<'pending' | 'analytics'>('pending')
+  const [tab, setTab] = useState<'pending' | 'analytics' | 'ads'>('pending')
 
   // Pending
   const [contributions, setContributions] = useState<Contribution[]>([])
@@ -97,6 +99,11 @@ export default function AdminPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending')
+
+  // Brand Ads
+  const [brandAds, setBrandAds] = useState<BrandAd[]>([])
+  const [editingAd, setEditingAd] = useState<Partial<BrandAd> | null>(null)
+  const [adSaving, setAdSaving] = useState(false)
 
   // Analytics
   const [venues, setVenues] = useState<Venue[]>([])
@@ -113,7 +120,7 @@ export default function AdminPage() {
     if (password === ADMIN_PASSWORD) {
       setAuthed(true); setLoginError('')
       // Load both on login — contributions won't auto-reload after that
-      setTimeout(() => { loadContributions(); loadAnalytics() }, 50)
+      setTimeout(() => { loadContributions(); loadAnalytics(); loadBrandAds() }, 50)
     } else setLoginError('Incorrect password')
   }
 
@@ -202,6 +209,53 @@ export default function AdminPage() {
 
   const filteredContribs = contributions.filter(c => filter === 'all' ? true : c.status === filter)
   const pendingCount = contributions.filter(c => c.status === 'pending').length
+
+  // ── BRAND ADS ──────────────────────────────────
+
+  async function loadBrandAds() {
+    const ads = await getAllBrandAds()
+    setBrandAds(ads)
+  }
+
+  async function handleToggleAd(ad: BrandAd) {
+    await toggleBrandAd(ad.id, !ad.is_active)
+    setBrandAds(prev => prev.map(a => a.id === ad.id ? { ...a, is_active: !a.is_active } : a))
+  }
+
+  async function handleDeleteAd(id: string) {
+    if (!window.confirm('Delete this ad?')) return
+    await deleteBrandAd(id)
+    setBrandAds(prev => prev.filter(a => a.id !== id))
+  }
+
+  async function handleSaveAd() {
+    if (!editingAd?.brand_name || !editingAd?.headline) {
+      alert('Brand name and headline are required')
+      return
+    }
+    setAdSaving(true)
+    const saved = await saveBrandAd({
+      ...editingAd,
+      is_active: editingAd.is_active ?? false,
+      position: editingAd.position ?? brandAds.length,
+    })
+    if (saved) {
+      if (editingAd.id) {
+        setBrandAds(prev => prev.map(a => a.id === saved.id ? saved : a))
+      } else {
+        setBrandAds(prev => [...prev, saved])
+      }
+      setEditingAd(null)
+    }
+    setAdSaving(false)
+  }
+
+  const EMPTY_AD: Partial<BrandAd> = {
+    brand_name: '', headline: '', subtext: '',
+    cta_label: 'Find it', cta_url: '',
+    logo_emoji: '🍺', logo_bg_color: '#E85D1A',
+    is_active: false, position: 0,
+  }
 
   // ── ANALYTICS ──────────────────────────────────
 
@@ -346,6 +400,14 @@ export default function AdminPage() {
           <TabBtn active={tab === 'analytics'} onClick={() => setTab('analytics')}>
             📊 Analytics
           </TabBtn>
+          <TabBtn active={tab === 'ads'} onClick={() => setTab('ads')}>
+            📣 Brand ads
+            {brandAds.filter(a => a.is_active).length > 0 && (
+              <span style={{ background: '#8B5CF6', color: '#fff', borderRadius: 20, padding: '1px 7px', fontSize: 10, marginLeft: 7, fontWeight: 800 }}>
+                {brandAds.filter(a => a.is_active).length} live
+              </span>
+            )}
+          </TabBtn>
         </div>
 
         {/* ══ PENDING TAB ══ */}
@@ -471,6 +533,109 @@ export default function AdminPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* ══ ADS TAB ══ */}
+        {tab === 'ads' && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1612' }}>Brand advertisements</div>
+              <button onClick={() => setEditingAd(EMPTY_AD)} style={{ ...btn('#E85D1A', '#fff'), padding: '8px 16px' }}>
+                + New ad
+              </button>
+            </div>
+
+            {/* Edit / Create form */}
+            {editingAd && (
+              <div style={{ ...card, border: '2px solid #E85D1A', marginBottom: 20 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#1A1612', marginBottom: 14 }}>
+                  {editingAd.id ? 'Edit ad' : 'Create new ad'}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                  {[
+                    ['brand_name', 'Brand name *', 'e.g. Modelo'],
+                    ['headline', 'Headline *', 'e.g. Enjoy Modelo tonight'],
+                    ['subtext', 'Subtext', 'e.g. Find it on draft at bars near you'],
+                    ['cta_label', 'Button label', 'e.g. Find it'],
+                    ['cta_url', 'Button URL', 'https://...'],
+                    ['logo_emoji', 'Logo emoji', '🍺'],
+                    ['logo_bg_color', 'Logo background color', '#E85D1A'],
+                    ['position', 'Position (order)', '0'],
+                  ].map(([field, label, placeholder]) => (
+                    <div key={field}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</div>
+                      <input
+                        value={(editingAd as any)[field] ?? ''}
+                        onChange={e => setEditingAd(prev => ({ ...prev, [field]: field === 'position' ? parseInt(e.target.value) || 0 : e.target.value }))}
+                        placeholder={placeholder}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #E0DDD8', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' as const }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Preview */}
+                {editingAd.headline && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.04em' }}>Preview</div>
+                    <div style={{ background: '#3A3630', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 10, background: editingAd.logo_bg_color || '#E85D1A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                        {editingAd.logo_emoji || '🍺'}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 2 }}>{editingAd.headline}</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>{editingAd.subtext}</div>
+                      </div>
+                      <div style={{ background: '#E85D1A', color: '#fff', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700 }}>{editingAd.cta_label || 'Find it'}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', fontSize: 9, color: '#aaa', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 3 }}>Sponsored</div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <button onClick={() => setEditingAd(null)} style={{ ...btn('#F3F4F6', '#555'), padding: '8px 16px' }}>Cancel</button>
+                  <button onClick={handleSaveAd} disabled={adSaving} style={{ ...btn('#E85D1A', '#fff'), padding: '8px 16px' }}>
+                    {adSaving ? 'Saving...' : 'Save ad'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Ad list */}
+            {brandAds.length === 0 && !editingAd && (
+              <div style={{ textAlign: 'center', padding: 60, color: '#aaa' }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>📣</div>
+                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>No brand ads yet</div>
+                <div style={{ fontSize: 13 }}>Create your first ad to start showing sponsored banners between venue cards.</div>
+              </div>
+            )}
+
+            {brandAds.map(ad => (
+              <div key={ad.id} style={{ ...card, borderLeft: `4px solid ${ad.is_active ? '#22C55E' : '#ddd'}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 8, background: ad.logo_bg_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                      {ad.logo_emoji}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#1A1612', marginBottom: 2 }}>{ad.brand_name}</div>
+                      <div style={{ fontSize: 12, color: '#888' }}>{ad.headline}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <div onClick={() => handleToggleAd(ad)} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', userSelect: 'none' }}>
+                      <div style={{ width: 36, height: 20, borderRadius: 20, background: ad.is_active ? '#22C55E' : '#E0DDD8', position: 'relative', transition: 'background .2s' }}>
+                        <div style={{ position: 'absolute', top: 2, left: ad.is_active ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: ad.is_active ? '#22C55E' : '#aaa' }}>{ad.is_active ? 'Live' : 'Off'}</span>
+                    </div>
+                    <button onClick={() => setEditingAd(ad)} style={{ ...btn('#F8F6F1', '#555'), border: '1px solid #EAE6DF' }}>Edit</button>
+                    <button onClick={() => handleDeleteAd(ad.id)} style={btn('#fee2e2', '#c0392b')}>🗑</button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

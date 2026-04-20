@@ -14,6 +14,9 @@ import { MapView } from '../components/MapView'
 import { ViewToggle } from '../components/ViewToggle'
 import { VenueCard } from '../components/VenueCard'
 import { BestPicksRow } from '../components/BestPicksRow'
+import { SponsoredBanner } from '../components/SponsoredBanner'
+import type { BrandAd } from '../components/SponsoredBanner'
+import { getActiveBrandAds } from '../services/brandAdService'
 import { EmailCapture, useEmailCapture } from '../components/EmailCapture'
 import type { Venue } from '../types'
 
@@ -50,12 +53,14 @@ export default function BrowsePage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null)
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [brandAds, setBrandAds] = useState<BrandAd[]>([])
   const [, setTick] = useState(0)
   const venueCardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
 
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60_000)
+    getActiveBrandAds().then(setBrandAds)
     return () => clearInterval(id)
   }, [])
 
@@ -210,17 +215,25 @@ export default function BrowsePage() {
                       <button className="hn-empty-btn" onClick={fs.clearAll}>Clear filters</button>
                     )}
                   </div>
-                ) : filtered.map(venue => (
-                  <VenueCard
-                    key={venue.id}
-                    venue={venue}
-                    isFavorite={favorites.isFavorite(venue.id)}
-                    onToggleFavorite={favorites.toggleFavorite}
-                    isSelected={selectedVenueId === venue.id}
-                    distanceLabel={getDistanceLabel(venue)}
-                    cardRef={el => { venueCardRefs.current[venue.id] = el }}
-                  />
-                ))}
+                ) : filtered.flatMap((venue, i) => {
+                    const nodes: React.ReactNode[] = [
+                      <VenueCard
+                        key={venue.id}
+                        venue={venue}
+                        isFavorite={favorites.isFavorite(venue.id)}
+                        onToggleFavorite={favorites.toggleFavorite}
+                        isSelected={selectedVenueId === venue.id}
+                        distanceLabel={getDistanceLabel(venue)}
+                        cardRef={el => { venueCardRefs.current[venue.id] = el }}
+                      />
+                    ]
+                    // Inject brand ad after every 4th venue card
+                    if (brandAds.length > 0 && (i + 1) % 4 === 0) {
+                      const ad = brandAds[Math.floor(i / 4) % brandAds.length]
+                      nodes.push(<SponsoredBanner key={`ad-${i}`} ad={ad} />)
+                    }
+                    return nodes
+                  })}
               </div>
             )}
           </div>
