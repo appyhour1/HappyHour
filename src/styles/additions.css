@@ -1,35 +1,16 @@
-
 /* ═══════════════════════════════════════════════════════
-   VENUE LIST — 2 column on desktop, 1 on mobile
+   VENUE LIST — single column, constrained width
 ═══════════════════════════════════════════════════════ */
 
 .venue-list {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
-@media (min-width: 700px) {
-  .venue-list {
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  /* Venue cards slightly more compact on desktop */
-  .vc {
-    font-size: 95%;
-  }
-
-  /* Keep sponsored banners full width */
-  .sponsored-banner-wrap {
-    grid-column: 1 / -1;
-  }
-
-  /* Keep empty state full width */
-  .hn-empty {
-    grid-column: 1 / -1;
-  }
-}
+/* Keep sponsored banners and empty state full width */
+.sponsored-banner-wrap { width: 100%; }
+.hn-empty { width: 100%; }
 
 /* ═══════════════════════════════════════════════════════
    PULL TO REFRESH
