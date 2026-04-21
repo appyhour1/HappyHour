@@ -13,7 +13,7 @@ import { getVenues } from '../services/venueService'
 import { getAllBrandAds, saveBrandAd, deleteBrandAd, toggleBrandAd } from '../services/brandAdService'
 import type { BrandAd } from '../components/SponsoredBanner'
 
-const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'appyhour2026'
+const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'happyhour2026'
 
 interface VenueStats {
   venue_id: string; card_views: number; detail_views: number
@@ -41,28 +41,11 @@ function Toggle({ on, onChange, label, color }: {
   on: boolean; onChange: (v: boolean) => void; label: string; color: string
 }) {
   return (
-    <div
-      onClick={() => onChange(!on)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 6,
-        cursor: 'pointer', userSelect: 'none',
-      }}
-    >
-      <div style={{
-        width: 36, height: 20, borderRadius: 20,
-        background: on ? color : '#E0DDD8',
-        position: 'relative', transition: 'background .2s',
-        flexShrink: 0,
-      }}>
-        <div style={{
-          position: 'absolute', top: 2, left: on ? 18 : 2,
-          width: 16, height: 16, borderRadius: '50%',
-          background: '#fff', transition: 'left .2s',
-        }} />
+    <div onClick={() => onChange(!on)} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', userSelect: 'none' }}>
+      <div style={{ width: 36, height: 20, borderRadius: 20, background: on ? color : '#E0DDD8', position: 'relative', transition: 'background .2s', flexShrink: 0 }}>
+        <div style={{ position: 'absolute', top: 2, left: on ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
       </div>
-      <span style={{ fontSize: 11, fontWeight: 700, color: on ? color : '#aaa' }}>
-        {label}
-      </span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: on ? color : '#aaa' }}>{label}</span>
     </div>
   )
 }
@@ -94,19 +77,16 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('')
   const [tab, setTab] = useState<'pending' | 'analytics' | 'ads'>('pending')
 
-  // Pending
   const [contributions, setContributions] = useState<Contribution[]>([])
   const [contribLoading, setContribLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending')
 
-  // Brand Ads
   const [brandAds, setBrandAds] = useState<BrandAd[]>([])
   const [editingAd, setEditingAd] = useState<Partial<BrandAd> | null>(null)
   const [adSaving, setAdSaving] = useState(false)
 
-  // Analytics
   const [venues, setVenues] = useState<Venue[]>([])
   const [stats, setStats] = useState<Record<string, VenueStats>>({})
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
@@ -120,21 +100,14 @@ export default function AdminPage() {
     e.preventDefault()
     if (password === ADMIN_PASSWORD) {
       setAuthed(true); setLoginError('')
-      // Load both on login — contributions won't auto-reload after that
       setTimeout(() => { loadContributions(); loadAnalytics(); loadBrandAds() }, 50)
     } else setLoginError('Incorrect password')
   }
 
-  // ── CONTRIBUTIONS ───────────────────────────────
-
   async function loadContributions() {
     setContribLoading(true)
-    const { data } = await supabase
-      .from('contributions')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const { data } = await supabase.from('contributions').select('*').order('created_at', { ascending: false })
     if (data) {
-      // Merge with any local status overrides (for rejected/approved before page reload)
       const overrides = JSON.parse(localStorage.getItem('contrib_overrides') || '{}')
       const merged = data.map((c: Contribution) => overrides[c.id] ? { ...c, status: overrides[c.id] } : c)
       setContributions(merged)
@@ -146,25 +119,20 @@ export default function AdminPage() {
     setActionLoading(contrib.id)
     try {
       const d = contrib.data
-      const { data: venue, error: vErr } = await supabase
-        .from('venues')
-        .insert([{
-          name: d.name?.trim(), neighborhood: d.neighborhood?.trim() || 'Cincinnati',
-          city: d.city || 'Cincinnati', state: 'OH',
-          address: d.address?.trim() || null, website: d.website?.trim() || null,
-          phone: d.phone?.trim() || null,
-          latitude: d.latitude || null, longitude: d.longitude || null,
-          dog_friendly: d.dog_friendly || false,
-          categories: [], price_tier: null, image_url: null,
-          verification_status: 'community', data_source: 'user_submitted',
-          is_featured: false, is_sponsored: false, upvote_count: 0,
-          last_verified_at: new Date().toISOString(),
-          created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-        }])
-        .select().single()
-
+      const { data: venue, error: vErr } = await supabase.from('venues').insert([{
+        name: d.name?.trim(), neighborhood: d.neighborhood?.trim() || 'Cincinnati',
+        city: d.city || 'Cincinnati', state: 'OH',
+        address: d.address?.trim() || null, website: d.website?.trim() || null,
+        phone: d.phone?.trim() || null,
+        latitude: d.latitude || null, longitude: d.longitude || null,
+        dog_friendly: d.dog_friendly || false,
+        categories: [], price_tier: null, image_url: null,
+        verification_status: 'community', data_source: 'user_submitted',
+        is_featured: false, is_sponsored: false, upvote_count: 0,
+        last_verified_at: new Date().toISOString(),
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }]).select().single()
       if (vErr) throw new Error(vErr.message)
-
       const submittedSchedules = d.schedules || []
       if (submittedSchedules.length > 0) {
         await supabase.from('happy_hour_schedules').insert(
@@ -184,7 +152,6 @@ export default function AdminPage() {
           deals: [], created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
         }])
       }
-
       await supabase.from('contributions').update({ status: 'approved' }).eq('id', contrib.id)
       setContributions(prev => prev.map(c => c.id === contrib.id ? { ...c, status: 'approved' } : c))
       alert(`✅ ${d.name} is now live!`)
@@ -211,8 +178,6 @@ export default function AdminPage() {
   const filteredContribs = contributions.filter(c => filter === 'all' ? true : c.status === filter)
   const pendingCount = contributions.filter(c => c.status === 'pending').length
 
-  // ── BRAND ADS ──────────────────────────────────
-
   async function loadBrandAds() {
     const ads = await getAllBrandAds()
     setBrandAds(ads)
@@ -230,43 +195,26 @@ export default function AdminPage() {
   }
 
   async function handleSaveAd() {
-    if (!editingAd?.brand_name || !editingAd?.headline) {
-      alert('Brand name and headline are required')
-      return
-    }
+    if (!editingAd?.brand_name || !editingAd?.headline) { alert('Brand name and headline are required'); return }
     setAdSaving(true)
-    const saved = await saveBrandAd({
-      ...editingAd,
-      is_active: editingAd.is_active ?? false,
-      position: editingAd.position ?? brandAds.length,
-    })
+    const saved = await saveBrandAd({ ...editingAd, is_active: editingAd.is_active ?? false, position: editingAd.position ?? brandAds.length })
     if (saved) {
-      if (editingAd.id) {
-        setBrandAds(prev => prev.map(a => a.id === saved.id ? saved : a))
-      } else {
-        setBrandAds(prev => [...prev, saved])
-      }
+      if (editingAd.id) { setBrandAds(prev => prev.map(a => a.id === saved.id ? saved : a)) }
+      else { setBrandAds(prev => [...prev, saved]) }
       setEditingAd(null)
     }
     setAdSaving(false)
   }
 
-  const EMPTY_AD: Partial<BrandAd> = {
-    brand_name: '', headline: '', subtext: '',
-    logo_url: '', logo_bg_color: '#E85D1A',
-    is_active: false, position: 0,
-  }
+  const EMPTY_AD: Partial<BrandAd> = { brand_name: '', headline: '', subtext: '', logo_url: '', logo_bg_color: '#E85D1A', is_active: false, position: 0 }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     const fileExt = file.name.split('.').pop()
     const fileName = `brand-logos/${Date.now()}.${fileExt}`
-    const { data, error } = await supabase.storage
-      .from('public')
-      .upload(fileName, file, { upsert: true })
+    const { data, error } = await supabase.storage.from('public').upload(fileName, file, { upsert: true })
     if (error) {
-      // Fallback: use base64 data URL
       const reader = new FileReader()
       reader.onload = () => setEditingAd(prev => ({ ...prev, logo_url: reader.result as string }))
       reader.readAsDataURL(file)
@@ -276,17 +224,13 @@ export default function AdminPage() {
     setEditingAd(prev => ({ ...prev, logo_url: urlData.publicUrl }))
   }
 
-  // ── ANALYTICS ──────────────────────────────────
-
   async function loadAnalytics() {
     setAnalyticsLoading(true)
     try {
       const venueList = await getVenues('Cincinnati')
       setVenues(venueList)
-      const { data: statsData } = await supabase
-        .from('venue_stats').select('*')
-        .gte('week_start', getWeekStart(weekOffset))
-        .lte('week_start', getWeekEnd(weekOffset))
+      const { data: statsData } = await supabase.from('venue_stats').select('*')
+        .gte('week_start', getWeekStart(weekOffset)).lte('week_start', getWeekEnd(weekOffset))
       const statsMap: Record<string, VenueStats> = {}
       if (statsData) statsData.forEach((s: VenueStats) => { statsMap[s.venue_id] = s })
       setStats(statsMap)
@@ -297,41 +241,27 @@ export default function AdminPage() {
   useEffect(() => { if (authed) loadAnalytics() }, [weekOffset, authed]) // eslint-disable-line
 
   function getWeekStart(offset = 0): string {
-    const d = new Date()
-    const day = d.getDay()
-    d.setDate(d.getDate() - day + (day === 0 ? -6 : 1) + offset * 7)
-    d.setHours(0,0,0,0)
+    const d = new Date(); const day = d.getDay()
+    d.setDate(d.getDate() - day + (day === 0 ? -6 : 1) + offset * 7); d.setHours(0,0,0,0)
     return d.toISOString().split('T')[0]
   }
-
   function getWeekEnd(offset = 0): string {
-    const d = new Date(getWeekStart(offset))
-    d.setDate(d.getDate() + 6)
+    const d = new Date(getWeekStart(offset)); d.setDate(d.getDate() + 6)
     return d.toISOString().split('T')[0]
   }
-
   function getWeekLabel() {
     if (weekOffset === 0) return 'This week'
     if (weekOffset === -1) return 'Last week'
     return `Week of ${getWeekStart(weekOffset)}`
   }
-
   function getVenueStat(venueId: string): VenueStats {
-    return stats[venueId] ?? {
-      venue_id: venueId, card_views: 0, detail_views: 0,
-      directions_clicks: 0, website_clicks: 0, favorites: 0,
-      confirmations: 0, week_start: getWeekStart(weekOffset),
-    }
+    return stats[venueId] ?? { venue_id: venueId, card_views: 0, detail_views: 0, directions_clicks: 0, website_clicks: 0, favorites: 0, confirmations: 0, week_start: getWeekStart(weekOffset) }
   }
 
   async function toggleVenueFlag(venue: Venue, field: 'is_featured' | 'is_sponsored') {
-    const newVal = !venue[field]
-    setToggling(venue.id + field)
-    const { error } = await supabase
-      .from('venues').update({ [field]: newVal }).eq('id', venue.id)
-    if (!error) {
-      setVenues(prev => prev.map(v => v.id === venue.id ? { ...v, [field]: newVal } : v))
-    }
+    const newVal = !venue[field]; setToggling(venue.id + field)
+    const { error } = await supabase.from('venues').update({ [field]: newVal }).eq('id', venue.id)
+    if (!error) setVenues(prev => prev.map(v => v.id === venue.id ? { ...v, [field]: newVal } : v))
     setToggling(null)
   }
 
@@ -343,10 +273,9 @@ export default function AdminPage() {
   }
 
   async function sendStatsEmail(venue: Venue) {
-    const s = getVenueStat(venue.id)
-    setSending(venue.id)
-    const subject = `Your Appy Hour listing performance — ${getWeekLabel()}`
-    const body = `Hi ${venue.name},\n\nHere's how your listing performed on Appy Hour ${getWeekLabel().toLowerCase()}:\n\n📱 Card views: ${s.card_views}\n👀 Detail views: ${s.detail_views}\n🗺️ Directions: ${s.directions_clicks}\n🌐 Website: ${s.website_clicks}\n♥ Saves: ${s.favorites}\n✓ Confirmations: ${s.confirmations}\n\nView your listing: ${window.location.origin}/venue/${venue.id}\n\n— The Appy Hour Team`
+    const s = getVenueStat(venue.id); setSending(venue.id)
+    const subject = `Your Happy Hour Unlocked listing performance — ${getWeekLabel()}`
+    const body = `Hi ${venue.name},\n\nHere's how your listing performed on Happy Hour Unlocked ${getWeekLabel().toLowerCase()}:\n\n📱 Card views: ${s.card_views}\n👀 Detail views: ${s.detail_views}\n🗺️ Directions: ${s.directions_clicks}\n🌐 Website: ${s.website_clicks}\n♥ Saves: ${s.favorites}\n✓ Confirmations: ${s.confirmations}\n\nView your listing: ${window.location.origin}/venue/${venue.id}\n\n— The Happy Hour Unlocked Team`
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank')
     setSending(null)
   }
@@ -372,8 +301,8 @@ export default function AdminPage() {
         <div style={{ background: '#fff', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 360, border: '1px solid #EAE6DF' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>🍺</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#1A1612', letterSpacing: -.5, fontStyle: 'italic' }}>
-              <span>Appy</span><span style={{ color: '#E85D1A' }}>Hour</span>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#1A1612', letterSpacing: -.5, fontStyle: 'italic' }}>
+              <span>Happy Hour</span><span style={{ color: '#E85D1A' }}> Unlocked</span>
             </div>
             <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>Admin Dashboard</div>
           </div>
@@ -395,12 +324,12 @@ export default function AdminPage() {
 
   return (
     <>
-      <Helmet><title>Admin — Appy Hour</title></Helmet>
+      <Helmet><title>Admin — Happy Hour Unlocked</title></Helmet>
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '20px 16px 80px' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
           <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -.4, fontStyle: 'italic' }}>
-            <span style={{ color: '#E85D1A' }}>Appy</span>Hour
+            <span>Happy Hour</span><span style={{ color: '#E85D1A' }}> Unlocked</span>
             <span style={{ fontSize: 12, fontWeight: 400, color: '#888', marginLeft: 10, fontStyle: 'normal' }}>Admin</span>
           </div>
           <div style={{ fontSize: 12, color: '#888' }}>{venues.length} venues · Cincinnati</div>
@@ -411,14 +340,10 @@ export default function AdminPage() {
           <TabBtn active={tab === 'pending'} onClick={() => setTab('pending')}>
             🔔 Pending approvals
             {pendingCount > 0 && (
-              <span style={{ background: '#E85D1A', color: '#fff', borderRadius: 20, padding: '1px 7px', fontSize: 10, marginLeft: 7, fontWeight: 800 }}>
-                {pendingCount}
-              </span>
+              <span style={{ background: '#E85D1A', color: '#fff', borderRadius: 20, padding: '1px 7px', fontSize: 10, marginLeft: 7, fontWeight: 800 }}>{pendingCount}</span>
             )}
           </TabBtn>
-          <TabBtn active={tab === 'analytics'} onClick={() => setTab('analytics')}>
-            📊 Analytics
-          </TabBtn>
+          <TabBtn active={tab === 'analytics'} onClick={() => setTab('analytics')}>📊 Analytics</TabBtn>
           <TabBtn active={tab === 'ads'} onClick={() => setTab('ads')}>
             📣 Brand ads
             {brandAds.filter(a => a.is_active).length > 0 && (
@@ -434,14 +359,9 @@ export default function AdminPage() {
           <div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
               {(['pending', 'approved', 'rejected', 'all'] as const).map(f => (
-                <button key={f} onClick={() => setFilter(f)} style={{
-                  ...btn(filter === f ? '#3A3630' : '#fff', filter === f ? '#fff' : '#888'),
-                  border: '1px solid #EAE6DF',
-                }}>
+                <button key={f} onClick={() => setFilter(f)} style={{ ...btn(filter === f ? '#3A3630' : '#fff', filter === f ? '#fff' : '#888'), border: '1px solid #EAE6DF' }}>
                   {f.charAt(0).toUpperCase() + f.slice(1)}
-                  <span style={{ marginLeft: 5, opacity: .7 }}>
-                    ({f === 'all' ? contributions.length : contributions.filter(c => c.status === f).length})
-                  </span>
+                  <span style={{ marginLeft: 5, opacity: .7 }}>({f === 'all' ? contributions.length : contributions.filter(c => c.status === f).length})</span>
                 </button>
               ))}
               <button onClick={loadContributions} style={{ ...btn('#fff', '#888'), border: '1px solid #EAE6DF', marginLeft: 'auto' }}>↻ Refresh</button>
@@ -452,12 +372,8 @@ export default function AdminPage() {
             {!contribLoading && filteredContribs.length === 0 && (
               <div style={{ textAlign: 'center', padding: 60, color: '#aaa' }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
-                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>
-                  {filter === 'pending' ? 'No pending submissions' : 'Nothing here'}
-                </div>
-                <div style={{ fontSize: 13 }}>
-                  {filter === 'pending' ? 'New venue submissions will appear here.' : 'Try a different filter.'}
-                </div>
+                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{filter === 'pending' ? 'No pending submissions' : 'Nothing here'}</div>
+                <div style={{ fontSize: 13 }}>{filter === 'pending' ? 'New venue submissions will appear here.' : 'Try a different filter.'}</div>
               </div>
             )}
 
@@ -466,61 +382,31 @@ export default function AdminPage() {
               const isNew = contrib.flow === 'new_venue'
               const isExpanded = expandedId === contrib.id
               const isPending = contrib.status === 'pending'
-
               return (
-                <div key={contrib.id} style={{
-                  ...card,
-                  borderLeft: `4px solid ${isPending ? '#E85D1A' : contrib.status === 'approved' ? '#22C55E' : '#ddd'}`,
-                }}>
+                <div key={contrib.id} style={{ ...card, borderLeft: `4px solid ${isPending ? '#E85D1A' : contrib.status === 'approved' ? '#22C55E' : '#ddd'}` }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 15, fontWeight: 800, color: '#1A1612' }}>
-                          {isNew ? (d.name || 'Unnamed venue') : `Edit: ${d.venue_name || 'Unknown'}`}
-                        </span>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: '#1A1612' }}>{isNew ? (d.name || 'Unnamed venue') : `Edit: ${d.venue_name || 'Unknown'}`}</span>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: isNew ? '#EFF6FF' : '#FFF8E8', color: isNew ? '#1E40AF' : '#7A5000' }}>
                           {isNew ? '+ New venue' : '✏️ Edit suggestion'}
                         </span>
-                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                          background: isPending ? '#FFF3CD' : contrib.status === 'approved' ? '#DCFCE7' : '#F3F4F6',
-                          color: isPending ? '#856404' : contrib.status === 'approved' ? '#15803D' : '#6B7280',
-                        }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: isPending ? '#FFF3CD' : contrib.status === 'approved' ? '#DCFCE7' : '#F3F4F6', color: isPending ? '#856404' : contrib.status === 'approved' ? '#15803D' : '#6B7280' }}>
                           {contrib.status}
                         </span>
                       </div>
                       <div style={{ fontSize: 12, color: '#888' }}>
                         {isNew ? `${d.neighborhood || '—'} · ${d.city || 'Cincinnati'}` : (d.field_suggestions || '').slice(0, 80)}
-                        <span style={{ marginLeft: 8, color: '#bbb' }}>
-                          {new Date(contrib.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        <span style={{ marginLeft: 8, color: '#bbb' }}>{new Date(contrib.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
-                      <button onClick={() => setExpandedId(isExpanded ? null : contrib.id)}
-                        style={{ ...btn('#F8F6F1', '#555'), border: '1px solid #EAE6DF' }}>
-                        {isExpanded ? 'Hide' : 'View details'}
-                      </button>
-                      {isPending && isNew && (
-                        <button onClick={() => approveVenue(contrib)} disabled={actionLoading === contrib.id}
-                          style={btn('#22C55E', '#fff')}>
-                          {actionLoading === contrib.id ? 'Publishing...' : '✓ Approve & publish'}
-                        </button>
-                      )}
-                      {isPending && (
-                        <button onClick={() => rejectContribution(contrib)} disabled={actionLoading === contrib.id}
-                          style={btn('#fee2e2', '#c0392b')}>
-                          ✕ Reject
-                        </button>
-                      )}
-                      {!isPending && (
-                        <button onClick={() => deleteContribution(contrib.id)}
-                          style={btn('#F3F4F6', '#9CA3AF')}>
-                          🗑 Delete
-                        </button>
-                      )}
+                      <button onClick={() => setExpandedId(isExpanded ? null : contrib.id)} style={{ ...btn('#F8F6F1', '#555'), border: '1px solid #EAE6DF' }}>{isExpanded ? 'Hide' : 'View details'}</button>
+                      {isPending && isNew && <button onClick={() => approveVenue(contrib)} disabled={actionLoading === contrib.id} style={btn('#22C55E', '#fff')}>{actionLoading === contrib.id ? 'Publishing...' : '✓ Approve & publish'}</button>}
+                      {isPending && <button onClick={() => rejectContribution(contrib)} disabled={actionLoading === contrib.id} style={btn('#fee2e2', '#c0392b')}>✕ Reject</button>}
+                      {!isPending && <button onClick={() => deleteContribution(contrib.id)} style={btn('#F3F4F6', '#9CA3AF')}>🗑 Delete</button>}
                     </div>
                   </div>
-
                   {isExpanded && (
                     <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #EAE6DF' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
@@ -560,33 +446,17 @@ export default function AdminPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1612' }}>Brand advertisements</div>
-              <button onClick={() => setEditingAd(EMPTY_AD)} style={{ ...btn('#E85D1A', '#fff'), padding: '8px 16px' }}>
-                + New ad
-              </button>
+              <button onClick={() => setEditingAd(EMPTY_AD)} style={{ ...btn('#E85D1A', '#fff'), padding: '8px 16px' }}>+ New ad</button>
             </div>
-
-            {/* Edit / Create form */}
             {editingAd && (
               <div style={{ ...card, border: '2px solid #E85D1A', marginBottom: 20 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#1A1612', marginBottom: 14 }}>
-                  {editingAd.id ? 'Edit ad' : 'Create new ad'}
-                </div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#1A1612', marginBottom: 14 }}>{editingAd.id ? 'Edit ad' : 'Create new ad'}</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                  {[
-                    ['brand_name', 'Brand name *', 'e.g. Modelo'],
-                    ['headline', 'Headline *', 'e.g. Enjoy Modelo tonight'],
-                    ['subtext', 'Subtext', 'e.g. Find it on draft at bars near you'],
-                    ['logo_bg_color', 'Logo background color', '#E85D1A'],
-                    ['position', 'Position (order)', '0'],
-                  ].map(([field, label, placeholder]) => (
+                  {[['brand_name','Brand name *','e.g. Modelo'],['headline','Headline *','e.g. Enjoy Modelo tonight'],['subtext','Subtext','e.g. Find it on draft at bars near you'],['logo_bg_color','Logo background color','#E85D1A'],['position','Position (order)','0']].map(([field, label, placeholder]) => (
                     <div key={field}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</div>
-                      <input
-                        value={(editingAd as any)[field] ?? ''}
-                        onChange={e => setEditingAd(prev => ({ ...prev, [field]: field === 'position' ? parseInt(e.target.value) || 0 : e.target.value }))}
-                        placeholder={placeholder}
-                        style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #E0DDD8', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' as const }}
-                      />
+                      <input value={(editingAd as any)[field] ?? ''} onChange={e => setEditingAd(prev => ({ ...prev, [field]: field === 'position' ? parseInt(e.target.value) || 0 : e.target.value }))} placeholder={placeholder}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid #E0DDD8', fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' as const }} />
                     </div>
                   ))}
                   <div style={{ gridColumn: '1 / -1' }}>
@@ -601,45 +471,32 @@ export default function AdminPage() {
                         📁 {editingAd?.logo_url ? 'Change logo' : 'Upload logo'}
                         <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
                       </label>
-                      {editingAd?.logo_url && (
-                        <button onClick={() => setEditingAd(prev => ({ ...prev, logo_url: '' }))} style={{ ...btn('#fee2e2', '#c0392b'), fontSize: 11 }}>Remove</button>
-                      )}
+                      {editingAd?.logo_url && <button onClick={() => setEditingAd(prev => ({ ...prev, logo_url: '' }))} style={{ ...btn('#fee2e2', '#c0392b'), fontSize: 11 }}>Remove</button>}
                     </div>
                     <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>PNG, JPG, or SVG. Square logos work best.</div>
                   </div>
                 </div>
-
-                {/* Preview */}
                 {editingAd.headline && (
                   <div style={{ marginBottom: 14 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.04em' }}>Preview</div>
                     <div style={{ background: '#3A3630', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
                       <div style={{ width: 48, height: 48, borderRadius: 10, background: editingAd.logo_bg_color || '#E85D1A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                        {editingAd.logo_url
-                          ? <img src={editingAd.logo_url} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
-                          : <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>{(editingAd.brand_name || 'AD').slice(0, 2).toUpperCase()}</span>
-                        }
+                        {editingAd.logo_url ? <img src={editingAd.logo_url} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} /> : <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>{(editingAd.brand_name || 'AD').slice(0, 2).toUpperCase()}</span>}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 2 }}>{editingAd.headline}</div>
                         <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>{editingAd.subtext}</div>
                       </div>
-
                     </div>
                     <div style={{ textAlign: 'right', fontSize: 9, color: '#aaa', fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginTop: 3 }}>Sponsored</div>
                   </div>
                 )}
-
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                   <button onClick={() => setEditingAd(null)} style={{ ...btn('#F3F4F6', '#555'), padding: '8px 16px' }}>Cancel</button>
-                  <button onClick={handleSaveAd} disabled={adSaving} style={{ ...btn('#E85D1A', '#fff'), padding: '8px 16px' }}>
-                    {adSaving ? 'Saving...' : 'Save ad'}
-                  </button>
+                  <button onClick={handleSaveAd} disabled={adSaving} style={{ ...btn('#E85D1A', '#fff'), padding: '8px 16px' }}>{adSaving ? 'Saving...' : 'Save ad'}</button>
                 </div>
               </div>
             )}
-
-            {/* Ad list */}
             {brandAds.length === 0 && !editingAd && (
               <div style={{ textAlign: 'center', padding: 60, color: '#aaa' }}>
                 <div style={{ fontSize: 36, marginBottom: 12 }}>📣</div>
@@ -647,16 +504,12 @@ export default function AdminPage() {
                 <div style={{ fontSize: 13 }}>Create your first ad to start showing sponsored banners between venue cards.</div>
               </div>
             )}
-
             {brandAds.map(ad => (
               <div key={ad.id} style={{ ...card, borderLeft: `4px solid ${ad.is_active ? '#22C55E' : '#ddd'}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 8, background: ad.logo_bg_color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                      {ad.logo_url
-                        ? <img src={ad.logo_url} alt={ad.brand_name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 3 }} />
-                        : <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>{ad.brand_name.slice(0, 2).toUpperCase()}</span>
-                      }
+                      {ad.logo_url ? <img src={ad.logo_url} alt={ad.brand_name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 3 }} /> : <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>{ad.brand_name.slice(0, 2).toUpperCase()}</span>}
                     </div>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 800, color: '#1A1612', marginBottom: 2 }}>{ad.brand_name}</div>
@@ -687,18 +540,15 @@ export default function AdminPage() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setWeekOffset(w => w - 1)} style={{ ...btn('#fff', '#555'), border: '1px solid #E0DDD8' }}>← Prev</button>
                 <div style={{ padding: '7px 14px', borderRadius: 8, background: '#3A3630', color: '#fff', fontSize: 13, fontWeight: 700 }}>{getWeekLabel()}</div>
-                <button onClick={() => setWeekOffset(w => Math.min(0, w + 1))} disabled={weekOffset === 0}
-                  style={{ ...btn('#fff', '#555'), border: '1px solid #E0DDD8', opacity: weekOffset === 0 ? .4 : 1 }}>Next →</button>
+                <button onClick={() => setWeekOffset(w => Math.min(0, w + 1))} disabled={weekOffset === 0} style={{ ...btn('#fff', '#555'), border: '1px solid #E0DDD8', opacity: weekOffset === 0 ? .4 : 1 }}>Next →</button>
               </div>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
               <StatCard label="Page views" value={totalViews} color="#E85D1A" />
               <StatCard label="Directions" value={totalDirections} color="#3B82F6" />
               <StatCard label="Saves" value={totalFavorites} color="#E24B4A" />
               <StatCard label="Confirmations" value={totalConfirmations} color="#22C55E" />
             </div>
-
             <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search venues..."
                 style={{ flex: 1, minWidth: 180, padding: '9px 12px', borderRadius: 9, border: '1px solid #E0DDD8', fontSize: 13, fontFamily: 'inherit' }} />
@@ -709,7 +559,6 @@ export default function AdminPage() {
                 <option value="name">Sort by name</option>
               </select>
             </div>
-
             {analyticsLoading ? (
               <div style={{ textAlign: 'center', color: '#888', padding: 40 }}>Loading...</div>
             ) : filteredVenues.map(venue => {
@@ -720,33 +569,15 @@ export default function AdminPage() {
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: '#1A1612', marginBottom: 2 }}>{venue.name}</div>
                       <div style={{ fontSize: 12, color: '#888', marginBottom: 10 }}>{venue.neighborhood} · {venue.verification_status}</div>
-                      {/* Featured / Sponsored toggles */}
                       <div style={{ display: 'flex', gap: 20 }}>
-                        <Toggle
-                          on={venue.is_featured}
-                          onChange={() => toggleVenueFlag(venue, 'is_featured')}
-                          label="Featured"
-                          color="#E85D1A"
-                        />
-                        <Toggle
-                          on={(venue as any).is_sponsored}
-                          onChange={() => toggleVenueFlag(venue, 'is_sponsored')}
-                          label="Sponsored"
-                          color="#8B5CF6"
-                        />
-                        {toggling?.startsWith(venue.id) && (
-                          <span style={{ fontSize: 11, color: '#aaa' }}>Saving...</span>
-                        )}
+                        <Toggle on={venue.is_featured} onChange={() => toggleVenueFlag(venue, 'is_featured')} label="Featured" color="#E85D1A" />
+                        <Toggle on={(venue as any).is_sponsored} onChange={() => toggleVenueFlag(venue, 'is_sponsored')} label="Sponsored" color="#8B5CF6" />
+                        {toggling?.startsWith(venue.id) && <span style={{ fontSize: 11, color: '#aaa' }}>Saving...</span>}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
-                      <button onClick={() => sendStatsEmail(venue)} disabled={sending === venue.id}
-                        style={btn('#3A3630', '#fff')}>
-                        {sending === venue.id ? 'Opening...' : '📧 Email stats'}
-                      </button>
-                      <button onClick={() => deleteVenue(venue)} style={btn('#fee2e2', '#c0392b')}>
-                        🗑 Delete
-                      </button>
+                      <button onClick={() => sendStatsEmail(venue)} disabled={sending === venue.id} style={btn('#3A3630', '#fff')}>{sending === venue.id ? 'Opening...' : '📧 Email stats'}</button>
+                      <button onClick={() => deleteVenue(venue)} style={btn('#fee2e2', '#c0392b')}>🗑 Delete</button>
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginTop: 12 }}>
