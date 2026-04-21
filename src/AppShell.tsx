@@ -24,8 +24,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* ── NAV ── */}
       <header className="shell-nav">
         <Link to="/" className="shell-logo">
-          <span className="shell-logo-appy">Appy</span>
-          <span className="shell-logo-hour">Hour</span>
+          <span className="shell-logo-appy">Happy Hour</span>
+          <span className="shell-logo-hour"> Unlocked</span>
           <span className="shell-logo-city">{city}</span>
         </Link>
 
