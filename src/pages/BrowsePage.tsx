@@ -105,8 +105,8 @@ export default function BrowsePage() {
   return (
     <>
       <Helmet>
-        <title>Appy Hour {city} - Happy Hour Deals Happening Now</title>
-        <meta name="description" content={`Find the best happy hour deals in ${city}. Live prices, verified schedules, and deals happening right now.`} />
+        <title>Happy Hour Unlocked {city} - Happy Hour Deals Happening Now</title>
+        <meta name="description" content={`Happy Hour Unlocked — Find the best happy hour deals in ${city}. Live prices, verified schedules, and deals happening right now.`} />
       </Helmet>
 
       <div className="browse-page">
