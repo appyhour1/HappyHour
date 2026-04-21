@@ -1,18 +1,17 @@
 /**
  * Onboarding.tsx
  * Shows once on first visit, never again.
- * Set ENABLED = false to disable.
  */
 
 import React, { useState, useEffect } from 'react'
 
 const ENABLED = true
-const STORAGE_KEY = 'ah_onboarded_v2'
+const STORAGE_KEY = 'hhu_onboarded_v1'
 
 const steps = [
   {
     emoji: '🍺',
-    title: 'Welcome to AppyHour',
+    title: 'Welcome to Happy Hour Unlocked',
     sub: 'The best happy hour deals in Cincinnati — live, verified, and always up to date.',
     hint: null,
   },
@@ -37,7 +36,7 @@ const steps = [
   {
     emoji: '✓',
     title: 'Verified by locals',
-    sub: "Every deal is confirmed by real people. If a deal looks wrong, tap \"Suggest an edit\" on the venue page.",
+    sub: 'Every deal is confirmed by real people. If a deal looks wrong, tap "Suggest an edit" on the venue page.',
     hint: null,
   },
 ]
@@ -93,9 +92,9 @@ export function Onboarding() {
       }}>
 
         {/* Logo */}
-        <div style={{ fontSize: 14, fontWeight: 900, fontStyle: 'italic', marginBottom: 20, letterSpacing: -.5 }}>
-          <span style={{ color: '#1A1612' }}>Appy</span>
-          <span style={{ color: '#E85D1A' }}>Hour</span>
+        <div style={{ fontSize: 13, fontWeight: 900, marginBottom: 20, letterSpacing: -.3 }}>
+          <span style={{ color: '#1A1612' }}>Happy Hour</span>
+          <span style={{ color: '#E85D1A' }}> Unlocked</span>
         </div>
 
         {/* Step dots */}
@@ -143,7 +142,6 @@ export function Onboarding() {
           }} />
         </div>
 
-        {/* Buttons */}
         <button onClick={handleNext} style={{
           width: '100%', padding: 14,
           background: '#E85D1A', color: '#fff',
