@@ -70,7 +70,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ── PAGE CONTENT ── */}
-      <main className="shell-main" style={{ maxWidth: 600, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+      <main className="shell-main" style={{ maxWidth: 900, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         {children}
       </main>
 
