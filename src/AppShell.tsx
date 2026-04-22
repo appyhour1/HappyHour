@@ -74,6 +74,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
+      {/* ── FOOTER ── */}
+      <footer style={{
+        borderTop: '0.5px solid var(--border)',
+        padding: '20px 1.25rem 80px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 10,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Link to="/about" style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none', fontWeight: 500 }}>About</Link>
+          <span style={{ color: 'var(--border-2)' }}>·</span>
+          <Link to="/privacy" style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none', fontWeight: 500 }}>Privacy Policy</Link>
+          <span style={{ color: 'var(--border-2)' }}>·</span>
+          <Link to="/terms" style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none', fontWeight: 500 }}>Terms of Service</Link>
+          <span style={{ color: 'var(--border-2)' }}>·</span>
+          <Link to="/cookies" style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none', fontWeight: 500 }}>Cookie Policy</Link>
+          <span style={{ color: 'var(--border-2)' }}>·</span>
+          <a href="mailto:info@happyhourunlocked.com" style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none', fontWeight: 500 }}>Contact</a>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--ink-4)' }}>
+          © {new Date().getFullYear()} Happy Hour Unlocked · Cincinnati, Ohio
+        </div>
+      </footer>
+
       <Onboarding />
       <AgeVerification />
       <InstallPrompt />
