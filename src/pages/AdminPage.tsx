@@ -572,7 +572,7 @@ export default function AdminPage() {
                   <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #EAE6DF', fontSize: 12, color: '#bbb' }}>
                     No data yet — stats appear once the ad goes live
                   </div>
-                  </div>
+                )}
               </div>
             ))}
           </div>
