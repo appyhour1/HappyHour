@@ -15,9 +15,9 @@ import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
 import AboutPage from './pages/AboutPage'
 import AdminPage from './pages/AdminPage'
-import './styles.css'
-import './styles/additions.css'
 import './styles/mobile-fix.css'
+import './styles/additions.css'
+import './styles.css'
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
