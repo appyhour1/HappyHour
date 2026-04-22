@@ -2,83 +2,54 @@
    MOBILE OVERFLOW FIX
 ═══════════════════════════════════════════════════════ */
 
-/* Prevent any element from causing horizontal scroll */
+/* Prevent horizontal scroll */
 html, body, #root {
   max-width: 100%;
   overflow-x: hidden;
 }
 
-.shell, .shell-main, .browse-page {
+/* Shell can be full width — shell-main handles centering */
+.shell {
   max-width: 100%;
   overflow-x: hidden;
 }
 
-/* ── VENUE LIST ──
-   Use minmax(0, 1fr) NOT 1fr — plain 1fr allows content to
-   expand the column beyond viewport width */
+/* DO NOT set max-width: 100% on shell-main or browse-page —
+   those are constrained to 600px in styles.css for centering */
+.shell-main { overflow-x: hidden; }
+.browse-page { overflow-x: hidden; }
+
+/* ── VENUE LIST — single column, shell-main controls width */
 .venue-list {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   width: 100%;
 }
 
-@media (min-width: 700px) {
-  .venue-list {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 12px;
-  }
-  .sponsored-banner-wrap,
-  .hn-empty {
-    grid-column: 1 / -1;
-  }
-}
+.sponsored-banner-wrap, .hn-empty { width: 100%; }
 
-/* Venue cards — constrain to their grid cell */
-.vc {
-  min-width: 0;
-  max-width: 100%;
-  width: 100%;
-}
+/* Venue cards */
+.vc { min-width: 0; max-width: 100%; width: 100%; }
 
-/* Sponsored banner — full width, no overflow */
-.sponsored-banner-wrap {
-  min-width: 0;
-  max-width: 100%;
-}
-.sponsored-banner {
-  max-width: 100%;
-  overflow: hidden;
-}
+/* Sponsored banner */
+.sponsored-banner-wrap { min-width: 0; max-width: 100%; }
+.sponsored-banner { max-width: 100%; overflow: hidden; }
 
-/* Sort bar chips — horizontal scroll, never push layout wide */
+/* Sort bar chips */
 .sort-bar-inner {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  flex-wrap: nowrap;
-  min-width: 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; flex-wrap: nowrap; min-width: 0;
 }
 .sort-bar-inner::-webkit-scrollbar { display: none; }
 
-/* Best picks scroll row */
-.bp-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
+/* Best picks scroll */
+.bp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .bp-scroll::-webkit-scrollbar { display: none; }
 
-/* Deal pills — wrap not overflow */
-.vc__deals {
-  min-width: 0;
-}
-.vc__deal-pill {
-  min-width: 0;
-  max-width: 100%;
-}
+/* Deal pills */
+.vc__deals { min-width: 0; }
+.vc__deal-pill { min-width: 0; max-width: 100%; }
 
-/* Nav — hide text links on small phones */
-@media (max-width: 600px) {
-  .shell-links { display: none; }
-}
+/* Nav */
+@media (max-width: 600px) { .shell-links { display: none; } }
