@@ -11,8 +11,8 @@ export default function AboutPage() {
   return (
     <>
       <Helmet>
-        <title>About — Appy Hour Cincinnati</title>
-        <meta name="description" content="Appy Hour connects Cincinnati bar-goers with the best happy hour deals while helping local bars fill seats during slower hours." />
+        <title>About — Happy Hour Unlocked Cincinnati</title>
+        <meta name="description" content="Happy Hour Unlocked connects Cincinnati bar-goers with the best happy hour deals while helping local bars fill seats during slower hours." />
       </Helmet>
 
       <div className="about-page">
@@ -20,8 +20,8 @@ export default function AboutPage() {
         {/* ── HERO ── */}
         <div className="about-hero">
           <div className="about-hero-logo">
-            <span className="about-logo-appy">Appy</span>
-            <span className="about-logo-hour">Hour</span>
+            <span className="about-logo-appy">Happy Hour</span>
+            <span className="about-logo-hour"> Unlocked</span>
           </div>
           <p className="about-hero-tagline">
             Connecting Cincinnati to its best happy hours.
@@ -36,7 +36,7 @@ export default function AboutPage() {
             Happy hours are one of the best things about going out — great drinks, great prices, great company. But finding them was always a hassle. Googling bar websites, checking outdated Yelp pages, texting friends who might know. There was no single place that just told you what was happening right now, near you, with real prices.
           </p>
           <p className="about-section-body">
-            So we built Appy Hour. One place for Cincinnati's best happy hour deals, with live status, verified times, and real deal information.
+            So we built Happy Hour Unlocked. One place for Cincinnati's best happy hour deals, with live status, verified times, and real deal information.
           </p>
         </div>
 
@@ -45,7 +45,7 @@ export default function AboutPage() {
           <div className="about-section-icon">🤝</div>
           <h2 className="about-section-title">Good for everyone</h2>
           <p className="about-section-body">
-            Happy hours exist because bars want to bring in customers during slower hours. Appy Hour helps make that happen — by putting the right deal in front of the right person at exactly the right moment.
+            Happy hours exist because bars want to bring in customers during slower hours. Happy Hour Unlocked helps make that happen — by putting the right deal in front of the right person at exactly the right moment.
           </p>
           <div className="about-cards">
             <div className="about-card">
@@ -66,7 +66,7 @@ export default function AboutPage() {
           <div className="about-section-icon">🌆</div>
           <h2 className="about-section-title">Built by Cincinnati, for Cincinnati</h2>
           <p className="about-section-body">
-            Every deal on Appy Hour is submitted or confirmed by real people who go out in Cincinnati. When you tap "Still accurate" on a venue, you're helping your neighbors make better plans. The more people use it, the better it gets for everyone.
+            Every deal on Happy Hour Unlocked is submitted or confirmed by real people who go out in Cincinnati. When you tap "Still accurate" on a venue, you're helping your neighbors make better plans. The more people use it, the better it gets for everyone.
           </p>
           <p className="about-section-body">
             Know a bar with a great happy hour that's not listed? Add it. See a deal that's changed? Suggest a correction. This app gets better every time someone contributes.
@@ -85,7 +85,7 @@ export default function AboutPage() {
           <span>·</span>
           <Link to="/terms" className="about-legal-link">Terms of Service</Link>
           <span>·</span>
-          <a href="mailto:hello@appyhour.app" className="about-legal-link">Contact</a>
+          <a href="mailto:hello@happyhourunlocked.com" className="about-legal-link">Contact</a>
         </div>
 
       </div>
