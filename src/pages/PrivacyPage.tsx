@@ -8,8 +8,9 @@ import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 
 export default function PrivacyPage() {
-  const appName = 'Appy Hour'
-  const email = 'hello@appyhour.app'
+  const appName = 'Happy Hour Unlocked'
+  const email = 'info@happyhourunlocked.com'
+  const siteUrl = 'www.happyhourunlocked.com'
   const lastUpdated = 'April 2026'
 
   return (
@@ -30,7 +31,7 @@ export default function PrivacyPage() {
 
           <section className="legal-section">
             <h2>1. Who We Are</h2>
-            <p>{appName} is a free community-powered app that helps people in Cincinnati find happy hour deals. We're committed to protecting your privacy and being transparent about how we handle data.</p>
+            <p>{appName} ({siteUrl}) is a free community-powered app that helps people in Cincinnati find happy hour deals. We're committed to protecting your privacy and being transparent about how we handle data.</p>
           </section>
 
           <section className="legal-section">
@@ -56,7 +57,7 @@ export default function PrivacyPage() {
               <li>To contact you about a venue submission if needed</li>
               <li>To show venues near you (location, device only)</li>
             </ul>
-            <p>We do not sell your data. We do not show ads. We do not share your information with third parties except as described below.</p>
+            <p>We do not sell your data. We do not share your information with third parties except as described below.</p>
           </section>
 
           <section className="legal-section">
@@ -65,7 +66,6 @@ export default function PrivacyPage() {
               <li><strong>Supabase</strong> — our database provider. Venue data and email signups are stored securely on Supabase servers.</li>
               <li><strong>PostHog</strong> — anonymized analytics. No personal data is sent.</li>
               <li><strong>Google Places API</strong> — used when adding venues to auto-fill address data. We do not store any data returned by Google Places beyond what you explicitly submit.</li>
-              <li><strong>Mailchimp</strong> — used to send the weekly newsletter to email subscribers.</li>
               <li><strong>Vercel</strong> — our hosting provider.</li>
             </ul>
           </section>

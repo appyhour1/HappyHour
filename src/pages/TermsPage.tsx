@@ -8,8 +8,9 @@ import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 
 export default function TermsPage() {
-  const appName = 'Appy Hour'
-  const email = 'hello@appyhour.app'
+  const appName = 'Happy Hour Unlocked'
+  const email = 'info@happyhourunlocked.com'
+  const siteUrl = 'www.happyhourunlocked.com'
   const lastUpdated = 'April 2026'
 
   return (
@@ -30,7 +31,7 @@ export default function TermsPage() {
 
           <section className="legal-section">
             <h2>1. Acceptance of Terms</h2>
-            <p>By accessing or using {appName} ("the app"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the app. You must be 21 years of age or older to use {appName}.</p>
+            <p>By accessing or using {appName} ({siteUrl}) ("the app"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the app. You must be 21 years of age or older to use {appName}.</p>
           </section>
 
           <section className="legal-section">
