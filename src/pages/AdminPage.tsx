@@ -86,11 +86,12 @@ export default function AdminPage() {
   const [brandAds, setBrandAds] = useState<BrandAd[]>([])
   const [editingAd, setEditingAd] = useState<Partial<BrandAd> | null>(null)
   const [adSaving, setAdSaving] = useState(false)
-  const [adStats, setAdStats] = useState<Record<string, { impressions: number; clicks: number }>>({})
+  const [adStats, setAdStats] = useState<Record<string, { impressions: number; days: number }>>({})
 
   const [venues, setVenues] = useState<Venue[]>([])
   const [stats, setStats] = useState<Record<string, VenueStats>>({})
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
+  const [trafficData, setTrafficData] = useState<{ date: string; visitors: number; sessions: number }[]>([])
   const [sending, setSending] = useState<string | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
   const [search, setSearch] = useState('')
@@ -187,7 +188,7 @@ export default function AdminPage() {
     since.setDate(since.getDate() - 30)
     const { data } = await supabase
       .from('ad_events')
-      .select('ad_id, brand_name, event_type')
+      .select('ad_id, brand_name, event_type, created_at')
       .gte('created_at', since.toISOString())
     if (data) {
       const stats: Record<string, { impressions: number; clicks: number }> = {}
@@ -244,6 +245,32 @@ export default function AdminPage() {
   async function loadAnalytics() {
     setAnalyticsLoading(true)
     try {
+      // Load 30 days of traffic
+      const since = new Date()
+      since.setDate(since.getDate() - 30)
+      const { data: visits } = await supabase
+        .from('app_visits')
+        .select('session_id, created_at')
+        .gte('created_at', since.toISOString())
+        .order('created_at', { ascending: true })
+
+      if (visits) {
+        const byDay: Record<string, Set<string>> = {}
+        visits.forEach((v: any) => {
+          const day = v.created_at.split('T')[0]
+          if (!byDay[day]) byDay[day] = new Set()
+          byDay[day].add(v.session_id)
+        })
+        // Fill in last 30 days (including days with 0 visits)
+        const days: { date: string; visitors: number; sessions: number }[] = []
+        for (let i = 29; i >= 0; i--) {
+          const d = new Date(); d.setDate(d.getDate() - i)
+          const key = d.toISOString().split('T')[0]
+          const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          days.push({ date: label, visitors: byDay[key]?.size || 0, sessions: byDay[key]?.size || 0 })
+        }
+        setTrafficData(days)
+      }
       const venueList = await getVenues('Cincinnati')
       setVenues(venueList)
       const { data: statsData } = await supabase.from('venue_stats').select('*')
@@ -546,25 +573,25 @@ export default function AdminPage() {
                 </div>
                 {/* Ad stats row */}
                 {adStats[ad.id] && (
-                  <div style={{ display: 'flex', gap: 24, marginTop: 12, paddingTop: 12, borderTop: '1px solid #EAE6DF' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: '#3B82F6' }}>{adStats[ad.id].impressions.toLocaleString()}</div>
-                      <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>Impressions</div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: '#22C55E' }}>{adStats[ad.id].clicks.toLocaleString()}</div>
-                      <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>Clicks</div>
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: '#E85D1A' }}>
-                        {adStats[ad.id].impressions > 0
-                          ? ((adStats[ad.id].clicks / adStats[ad.id].impressions) * 100).toFixed(1) + '%'
-                          : '—'}
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #EAE6DF' }}>
+                    <div style={{ display: 'flex', gap: 24, marginBottom: 6 }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: '#3B82F6' }}>{adStats[ad.id].impressions.toLocaleString()}</div>
+                        <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>Impressions</div>
                       </div>
-                      <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>CTR</div>
-                    </div>
-                    <div style={{ textAlign: 'center', marginLeft: 'auto' }}>
-                      <div style={{ fontSize: 11, color: '#aaa', fontWeight: 500 }}>Last 30 days</div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: '#22C55E' }}>{adStats[ad.id].days}</div>
+                        <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>Days active</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: '#E85D1A' }}>
+                          {adStats[ad.id].days > 0 ? Math.round(adStats[ad.id].impressions / adStats[ad.id].days).toLocaleString() : '—'}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>Avg / day</div>
+                      </div>
+                      <div style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+                        <div style={{ fontSize: 11, color: '#bbb' }}>Last 30 days</div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -581,6 +608,51 @@ export default function AdminPage() {
         {/* ══ ANALYTICS TAB ══ */}
         {tab === 'analytics' && (
           <div>
+            {/* Traffic chart */}
+            {trafficData.length > 0 && (() => {
+              const max = Math.max(...trafficData.map(d => d.visitors), 1)
+              const total = trafficData.reduce((a, d) => a + d.visitors, 0)
+              const avg = Math.round(total / 30)
+              const peak = Math.max(...trafficData.map(d => d.visitors))
+              const last7 = trafficData.slice(-7).reduce((a, d) => a + d.visitors, 0)
+              return (
+                <div style={{ background: '#fff', border: '1px solid #EAE6DF', borderRadius: 14, padding: '16px 18px', marginBottom: 20 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1612', marginBottom: 14 }}>Daily visitors — last 30 days</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+                    {[
+                      { label: 'Total visitors', value: total.toLocaleString(), color: '#3B82F6' },
+                      { label: 'Avg per day', value: avg.toLocaleString(), color: '#E85D1A' },
+                      { label: 'Last 7 days', value: last7.toLocaleString(), color: '#22C55E' },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: '#F8F6F1', borderRadius: 10, padding: '12px 14px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+                        <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Bar chart */}
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 80, marginBottom: 4 }}>
+                    {trafficData.map((d, i) => (
+                      <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                        <div title={`${d.date}: ${d.visitors} visitors`} style={{
+                          width: '100%', borderRadius: '3px 3px 0 0',
+                          background: d.visitors === peak ? '#E85D1A' : '#3B82F6',
+                          height: `${Math.max((d.visitors / max) * 100, d.visitors > 0 ? 4 : 1)}%`,
+                          opacity: d.visitors === 0 ? 0.2 : 1,
+                          transition: 'height .3s',
+                        }} />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#bbb' }}>
+                    <span>{trafficData[0]?.date}</span>
+                    <span>{trafficData[14]?.date}</span>
+                    <span>{trafficData[29]?.date}</span>
+                  </div>
+                </div>
+              )
+            })()}
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1612' }}>Weekly performance</div>
               <div style={{ display: 'flex', gap: 8 }}>

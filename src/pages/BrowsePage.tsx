@@ -70,6 +70,7 @@ export default function BrowsePage() {
 
   useEffect(() => {
     Analytics.seoPageViewed('browse', city)
+    Analytics.pageVisited('browse')
   }, [city])
 
   const neighborhoods = getNeighborhoods(venues)
