@@ -15,6 +15,7 @@ import PrivacyPage from './pages/PrivacyPage'
 import TermsPage from './pages/TermsPage'
 import AboutPage from './pages/AboutPage'
 import AdminPage from './pages/AdminPage'
+import CookiePolicyPage from './pages/CookiePolicyPage'
 import './styles/mobile-fix.css'
 import './styles/additions.css'
 import './styles.css'
@@ -41,6 +42,7 @@ root.render(
             <Route path="/admin/email-preview" element={<EmailPreviewPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
+            <Route path="/cookies" element={<CookiePolicyPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/:city" element={<SeoLandingPage />} />
