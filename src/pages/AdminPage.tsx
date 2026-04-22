@@ -86,6 +86,7 @@ export default function AdminPage() {
   const [brandAds, setBrandAds] = useState<BrandAd[]>([])
   const [editingAd, setEditingAd] = useState<Partial<BrandAd> | null>(null)
   const [adSaving, setAdSaving] = useState(false)
+  const [adStats, setAdStats] = useState<Record<string, { impressions: number; clicks: number }>>({})
 
   const [venues, setVenues] = useState<Venue[]>([])
   const [stats, setStats] = useState<Record<string, VenueStats>>({})
@@ -181,6 +182,22 @@ export default function AdminPage() {
   async function loadBrandAds() {
     const ads = await getAllBrandAds()
     setBrandAds(ads)
+    // Load last 30 days of ad events
+    const since = new Date()
+    since.setDate(since.getDate() - 30)
+    const { data } = await supabase
+      .from('ad_events')
+      .select('ad_id, brand_name, event_type')
+      .gte('created_at', since.toISOString())
+    if (data) {
+      const stats: Record<string, { impressions: number; clicks: number }> = {}
+      data.forEach((e: any) => {
+        if (!stats[e.ad_id]) stats[e.ad_id] = { impressions: 0, clicks: 0 }
+        if (e.event_type === 'impression') stats[e.ad_id].impressions++
+        if (e.event_type === 'click') stats[e.ad_id].clicks++
+      })
+      setAdStats(stats)
+    }
   }
 
   async function handleToggleAd(ad: BrandAd) {
@@ -527,6 +544,35 @@ export default function AdminPage() {
                     <button onClick={() => handleDeleteAd(ad.id)} style={btn('#fee2e2', '#c0392b')}>🗑</button>
                   </div>
                 </div>
+                {/* Ad stats row */}
+                {adStats[ad.id] && (
+                  <div style={{ display: 'flex', gap: 24, marginTop: 12, paddingTop: 12, borderTop: '1px solid #EAE6DF' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: '#3B82F6' }}>{adStats[ad.id].impressions.toLocaleString()}</div>
+                      <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>Impressions</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: '#22C55E' }}>{adStats[ad.id].clicks.toLocaleString()}</div>
+                      <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>Clicks</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: '#E85D1A' }}>
+                        {adStats[ad.id].impressions > 0
+                          ? ((adStats[ad.id].clicks / adStats[ad.id].impressions) * 100).toFixed(1) + '%'
+                          : '—'}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>CTR</div>
+                    </div>
+                    <div style={{ textAlign: 'center', marginLeft: 'auto' }}>
+                      <div style={{ fontSize: 11, color: '#aaa', fontWeight: 500 }}>Last 30 days</div>
+                    </div>
+                  </div>
+                )}
+                {!adStats[ad.id] && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #EAE6DF', fontSize: 12, color: '#bbb' }}>
+                    No data yet — stats appear once the ad goes live
+                  </div>
+                  </div>
               </div>
             ))}
           </div>
