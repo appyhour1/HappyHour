@@ -196,6 +196,8 @@ export default function AboutPage() {
           <Link to="/privacy" className="about-legal-link">Privacy Policy</Link>
           <span>·</span>
           <Link to="/terms" className="about-legal-link">Terms of Service</Link>
+          <span>·</span>
+          <Link to="/cookies" className="about-legal-link">Cookie Policy</Link>
         </div>
 
       </div>

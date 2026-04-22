@@ -38,7 +38,7 @@ export default function PrivacyPage() {
             <h2>2. Information We Collect</h2>
             <h3>Information you give us</h3>
             <ul>
-              <li><strong>Email address</strong> — if you sign up for our weekly newsletter. We never sell or share your email. You can unsubscribe at any time via the unsubscribe link in any email we send.</li>
+              <li><strong>Email address</strong> — if you sign up for our weekly newsletter. We never sell or share your email.</li>
               <li><strong>Venue submissions</strong> — if you add a venue or suggest a correction, we store the venue name, address, deal details, and optionally your email for follow-up.</li>
             </ul>
             <h3>Information collected automatically</h3>
@@ -56,7 +56,6 @@ export default function PrivacyPage() {
               <li>To improve the app based on anonymized usage patterns</li>
               <li>To contact you about a venue submission if needed</li>
               <li>To show venues near you (location, device only)</li>
-              <li>To display relevant sponsored content from brand partners. Sponsors do not receive your personal data.</li>
             </ul>
             <p>We do not sell your data. We do not share your information with third parties except as described below.</p>
           </section>
@@ -64,23 +63,21 @@ export default function PrivacyPage() {
           <section className="legal-section">
             <h2>4. Third-Party Services</h2>
             <ul>
-              <li><strong>Supabase</strong> — our database provider. Venue data and email signups are stored securely on Supabase servers. Supabase is SOC 2 compliant and all data is encrypted at rest and in transit.</li>
-              <li><strong>PostHog</strong> — anonymized analytics. PostHog may set cookies or use local storage to track session data. No personal data is sent. See our <Link to="/cookies">Cookie Policy</Link> for details.</li>
+              <li><strong>Supabase</strong> — our database provider. Venue data and email signups are stored securely on Supabase servers.</li>
+              <li><strong>PostHog</strong> — anonymized analytics. No personal data is sent.</li>
               <li><strong>Google Places API</strong> — used when adding venues to auto-fill address data. We do not store any data returned by Google Places beyond what you explicitly submit.</li>
               <li><strong>Vercel</strong> — our hosting provider.</li>
-              <li><strong>Sponsored advertisers</strong> — {appName} displays paid sponsor banners from brand partners. These banners may link to third-party websites. We do not share your personal data with sponsors. When you tap a sponsor link and leave our app, the third-party site's own privacy policy applies.</li>
             </ul>
           </section>
 
           <section className="legal-section">
             <h2>5. Cookies and Local Storage</h2>
-            <p>{appName} uses browser local storage to remember your saved venues, filter preferences, and whether you've dismissed certain prompts. This data is stored only on your device and is never transmitted to our servers. Our analytics provider PostHog may also set cookies for anonymized session tracking. You can clear all stored data at any time by clearing your browser's site data.</p>
-            <p>For a full breakdown of every cookie and storage item we use, see our <Link to="/cookies">Cookie &amp; Data Policy</Link>.</p>
+            <p>{appName} uses browser local storage (not cookies) to remember your saved venues, filter preferences, and whether you've dismissed certain prompts. This data is stored only on your device and is never transmitted to our servers. You can clear it at any time by clearing your browser data.</p>
           </section>
 
           <section className="legal-section">
             <h2>6. Age Requirement</h2>
-            <p>{appName} is intended for users who are 21 years of age or older, as the app promotes and facilitates access to alcoholic beverage promotions. By using this app, you confirm that you are of legal drinking age in your jurisdiction. We do not knowingly collect data from users under 21.</p>
+            <p>{appName} is intended for users who are 21 years of age or older, as the app promotes and facilitates access to alcoholic beverage promotions. By using this app, you confirm that you are of legal drinking age in your jurisdiction.</p>
           </section>
 
           <section className="legal-section">
@@ -95,8 +92,7 @@ export default function PrivacyPage() {
               <li>Access the personal data we hold about you</li>
               <li>Request correction of inaccurate data</li>
               <li>Request deletion of your data</li>
-              <li>Unsubscribe from the newsletter at any time via the link in any email</li>
-              <li>Opt out of anonymized analytics tracking</li>
+              <li>Unsubscribe from the newsletter at any time</li>
             </ul>
             <p>To exercise any of these rights, email us at <a href={`mailto:${email}`}>{email}</a>.</p>
           </section>
