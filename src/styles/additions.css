@@ -1,120 +1,31 @@
-/* ═══════════════════════════════════════════════════════
-   VENUE LIST — single column, constrained width
-═══════════════════════════════════════════════════════ */
-
-.venue-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* Keep sponsored banners and empty state full width */
-.sponsored-banner-wrap { width: 100%; }
-.hn-empty { width: 100%; }
-
-/* ═══════════════════════════════════════════════════════
-   PULL TO REFRESH
-═══════════════════════════════════════════════════════ */
-
+/* Pull to refresh */
 .ptr-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 48px;
-  font-size: 13px;
-  color: #888;
-  font-weight: 600;
-  transition: height .2s, opacity .2s;
-  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; height: 48px; font-size: 13px; color: #888;
+  font-weight: 600; transition: height .2s, opacity .2s; overflow: hidden;
 }
-
 .ptr-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #E0DDD8;
-  border-top-color: #E85D1A;
-  border-radius: 50%;
+  width: 18px; height: 18px; border: 2px solid #E0DDD8;
+  border-top-color: #E85D1A; border-radius: 50%;
   animation: spin .7s linear infinite;
 }
 
-/* ═══════════════════════════════════════════════════════
-   CRAWL BUILDER — map route improvements
-═══════════════════════════════════════════════════════ */
+/* Crawl map */
+.crawl-map-section { margin: 16px 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
+.crawl-route-map { width: 100%; height: 280px; border: none; display: block; }
+.crawl-time-estimate { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); background: var(--surface); border-radius: 8px; padding: 6px 12px; margin: 8px 0; }
 
-.crawl-map-section {
-  margin: 16px 0;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.crawl-route-map {
-  width: 100%;
-  height: 280px;
-  border: none;
-  display: block;
-}
-
-.crawl-share-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px;
-  background: var(--charcoal);
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 12px;
-  font-family: inherit;
-  transition: opacity .15s;
-}
-.crawl-share-btn:hover { opacity: .85; }
-
-.crawl-time-estimate {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--ink-3);
-  background: var(--surface);
-  border-radius: 8px;
-  padding: 6px 12px;
-  margin: 8px 0;
-}
-
-/* ═══════════════════════════════════════════════════════
-   DARK MODE — additional polish
-═══════════════════════════════════════════════════════ */
-
+/* Dark mode polish */
 html.dark .browse-page { background: var(--bg); }
-html.dark .browse-search-bar {
-  background: var(--surface) !important;
-  border: 1px solid var(--border-2) !important;
-}
+html.dark .browse-search-bar { background: var(--surface) !important; border: 1px solid var(--border-2) !important; }
 html.dark .browse-search-input { color: var(--ink) !important; background: transparent !important; }
 html.dark .browse-search-input::placeholder { color: var(--ink-4) !important; }
 html.dark .mobile-filter-btn { color: var(--ink-2) !important; }
-html.dark .sort-bar { background: var(--bg); border-color: var(--border); }
 html.dark .sort-chip { background: var(--surface); border-color: var(--border-2); color: var(--ink-3); }
 html.dark .sort-chip.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-html.dark .all-venues-divider { color: var(--ink-4); border-color: var(--border); }
-html.dark .all-venues-divider span { background: var(--bg); }
 html.dark .vc__name { color: var(--ink) !important; }
-html.dark .vc__neighborhood { color: var(--ink-3) !important; }
 html.dark .vc__cta { color: var(--ink-3) !important; }
 html.dark .vc__deal-text { color: var(--ink-3) !important; }
 html.dark .vc__time { color: var(--coral) !important; }
-html.dark .venue-list .hn-empty { background: var(--surface); }
-html.dark .shell-footer { border-color: var(--border); color: var(--ink-4); }
-html.dark .shell-footer-link { color: var(--ink-4); }
-html.dark .legal-page { background: var(--bg); color: var(--ink); }
-html.dark .legal-header { border-color: var(--border); }
-html.dark .legal-title { color: var(--ink) !important; }
-html.dark .legal-date { color: var(--ink-4); }
 html.dark .crawl-share-btn { background: #2A2520; border: 1px solid var(--border); }
+html.dark .legal-title { color: var(--ink) !important; }

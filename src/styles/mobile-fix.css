@@ -1,38 +1,11 @@
-/* ═══════════════════════════════════════════════════════
-   MOBILE OVERFLOW FIX
-═══════════════════════════════════════════════════════ */
-
 /* Prevent horizontal scroll */
-html, body, #root {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Shell can be full width — shell-main handles centering */
-.shell {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* DO NOT set max-width: 100% on shell-main or browse-page —
-   those are constrained to 600px in styles.css for centering */
+html, body, #root { max-width: 100%; overflow-x: hidden; }
+.shell { max-width: 100%; overflow-x: hidden; }
 .shell-main { overflow-x: hidden; }
 .browse-page { overflow-x: hidden; }
 
-/* ── VENUE LIST — single column, shell-main controls width */
-.venue-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-}
-
-.sponsored-banner-wrap, .hn-empty { width: 100%; }
-
-/* Venue cards */
+/* Venue cards — constrain to grid cell */
 .vc { min-width: 0; max-width: 100%; width: 100%; }
-
-/* Sponsored banner */
 .sponsored-banner-wrap { min-width: 0; max-width: 100%; }
 .sponsored-banner { max-width: 100%; overflow: hidden; }
 
