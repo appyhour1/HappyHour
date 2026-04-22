@@ -36,7 +36,6 @@ function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
       <div className="browse-hero-sub">bars serving happy hour deals</div>
       <div className="browse-hero-actions">
         <Link to="/now" className="browse-hero-btn">See what's open →</Link>
-        <Link to="/about" className="browse-hero-about-btn">About</Link>
         <div className="browse-hero-stats">
           <span className="browse-hero-stat">{venues.length} venues</span>
           <span className="browse-hero-stat-dot">·</span>
@@ -44,6 +43,9 @@ function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
         </div>
       </div>
       <div className="browse-hero-inquire">
+        <Link to="/about" className="browse-hero-inquire-btn">
+          ℹ️ About
+        </Link>
         <a href="mailto:info@happyhourunlocked.com?subject=Venue Listing Inquiry" className="browse-hero-inquire-btn">
           🏠 List your venue
         </a>
