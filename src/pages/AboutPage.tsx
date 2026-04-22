@@ -202,7 +202,7 @@ export default function AboutPage() {
 
       {/* ── INQUIRY MODAL ── */}
       {showInquiry && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', z: 600, padding: 20, zIndex: 600 }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 600 }}
           onClick={e => e.target === e.currentTarget && setShowInquiry(false)}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '28px 24px', width: '100%', maxWidth: 420, maxHeight: '90vh', overflowY: 'auto' }}>
             <InquiryForm onClose={() => setShowInquiry(false)} />
