@@ -191,13 +191,18 @@ export default function AdminPage() {
       .select('ad_id, brand_name, event_type, created_at')
       .gte('created_at', since.toISOString())
     if (data) {
-      const stats: Record<string, { impressions: number; clicks: number }> = {}
+      const stats: Record<string, { impressions: number; days: Set<string> }> = {}
       data.forEach((e: any) => {
-        if (!stats[e.ad_id]) stats[e.ad_id] = { impressions: 0, clicks: 0 }
-        if (e.event_type === 'impression') stats[e.ad_id].impressions++
-        if (e.event_type === 'click') stats[e.ad_id].clicks++
+        if (e.event_type !== 'impression') return
+        if (!stats[e.ad_id]) stats[e.ad_id] = { impressions: 0, days: new Set() }
+        stats[e.ad_id].impressions++
+        stats[e.ad_id].days.add(e.created_at.split('T')[0])
       })
-      setAdStats(stats)
+      const simplified: Record<string, { impressions: number; days: number }> = {}
+      Object.entries(stats).forEach(([id, s]) => {
+        simplified[id] = { impressions: s.impressions, days: s.days.size }
+      })
+      setAdStats(simplified)
     }
   }
 
