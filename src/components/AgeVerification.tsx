@@ -15,7 +15,7 @@
 import React, { useState, useEffect } from 'react'
 
 // ─── TOGGLE THIS TO true AT LAUNCH ───────────────
-const ENABLED = false
+const ENABLED = true
 // ─────────────────────────────────────────────────
 
 const STORAGE_KEY = 'ah_age_verified'
