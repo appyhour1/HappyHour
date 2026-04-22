@@ -6,6 +6,7 @@ import { fmtTime, isVenueActiveNow } from '../utils/filters'
 import { getScheduleStatus, STATUS_VISUALS } from '../utils/happeningNow'
 import type { HappyHourStatus, ScheduleStatus } from '../utils/happeningNow'
 import { Analytics, track } from '../services/analytics'
+import { useCardImpression } from '../hooks/useCardImpression'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
 
@@ -47,6 +48,20 @@ export const VenueCard = memo(function VenueCard({
   const isOpen = isVenueActiveNow(venue)
   const schedules = venue.schedules || []
 
+  // ── IMPRESSION TRACKING ──
+  const impressionRef = useCardImpression(
+    venue.id,
+    venue.name,
+    venue.is_featured ?? false,
+    (venue as any).is_sponsored ?? false
+  )
+
+  // Merge impression ref with external cardRef
+  const mergedRef = (el: HTMLDivElement | null) => {
+    ;(impressionRef as React.MutableRefObject<HTMLDivElement | null>).current = el
+    if (cardRef) cardRef(el)
+  }
+
   const venueStatus: ScheduleStatus | null = (() => {
     const statuses = schedules.map(s => getScheduleStatus(s)).filter((s): s is ScheduleStatus => s !== null)
     if (!statuses.length) return null
@@ -60,7 +75,6 @@ export const VenueCard = memo(function VenueCard({
     .slice(0, 4)
   const vis = venueStatus ? STATUS_VISUALS[venueStatus.status] : null
 
-  // Deal expiry warning — show if last verified > 30 days ago
   const daysSinceVerified = venue.last_verified_at
     ? Math.floor((Date.now() - new Date(venue.last_verified_at).getTime()) / 86_400_000)
     : null
@@ -89,7 +103,7 @@ export const VenueCard = memo(function VenueCard({
 
   return (
     <div
-      ref={cardRef}
+      ref={mergedRef}
       className={`vc${isOpen ? ' vc--open' : ''}${isSelected ? ' vc--selected' : ''}${venue.is_featured ? ' vc--featured' : ''}`}
       style={{
         background: '#F8F6F1',
@@ -106,7 +120,6 @@ export const VenueCard = memo(function VenueCard({
       onKeyDown={e => e.key === 'Enter' && handleCardClick()}
       aria-label={`${venue.name} — ${venueStatus?.badge ?? 'See details'}`}
     >
-      {/* ── TOP ROW: status + heart ── */}
       <div className="vc__top">
         <div className="vc__badges-left">
           {venueStatus && vis && (
@@ -127,7 +140,6 @@ export const VenueCard = memo(function VenueCard({
         </button>
       </div>
 
-      {/* ── NAME + META ── */}
       <div className="vc__name">{venue.name}</div>
       <div className="vc__meta">
         <span className="vc__neighborhood">{venue.neighborhood}</span>
@@ -139,7 +151,6 @@ export const VenueCard = memo(function VenueCard({
         )}
       </div>
 
-      {/* ── TIME ── */}
       {bestSchedule && (
         <div className="vc__time">
           {bestSchedule.is_all_day ? 'All day' : `${fmtTime(bestSchedule.start_time)} – ${fmtTime(bestSchedule.end_time)}`}
@@ -152,15 +163,10 @@ export const VenueCard = memo(function VenueCard({
         </div>
       )}
 
-      {/* ── DEAL PILLS — horizontal compact ── */}
       {topDeals.length > 0 ? (
         <div className="vc__deals">
           {topDeals.map((deal, i) => (
-            <span
-              key={i}
-              className="vc__deal-pill"
-              style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}
-            >
+            <span key={i} className="vc__deal-pill" style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}>
               <span className="vc__pill-type">{DEAL_TYPE_LABELS[deal.type]}</span>
               {deal.price != null
                 ? <span className="vc__pill-price">${deal.price}</span>
@@ -176,14 +182,12 @@ export const VenueCard = memo(function VenueCard({
         <div className="vc__deal-text">{bestSchedule.deal_text}</div>
       ) : null}
 
-      {/* ── EXPIRY WARNING ── */}
       {showExpiryWarning && (
         <div className="vc__expiry-warning">
           ⚠️ Last confirmed {daysSinceVerified}d ago — verify before heading out
         </div>
       )}
 
-      {/* ── FOOTER ── */}
       <div className="vc__footer">
         <span className="vc__cta">View deals →</span>
         <button className="vc__share" onClick={handleShare} aria-label="Share" title="Share">
