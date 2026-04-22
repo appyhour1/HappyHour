@@ -26,6 +26,34 @@ async function trackAdEvent(adId: string, brandName: string, eventType: 'impress
 }
 
 // ─────────────────────────────────────────────
+// SESSION / VISIT TRACKER
+// ─────────────────────────────────────────────
+
+function getOrCreateSessionId(): string {
+  let sid = sessionStorage.getItem('hhu_session_id')
+  if (!sid) {
+    sid = Math.random().toString(36).slice(2) + Date.now().toString(36)
+    sessionStorage.setItem('hhu_session_id', sid)
+  }
+  return sid
+}
+
+async function trackVisit(page = 'browse') {
+  try {
+    // Only track once per session per page
+    const key = `hhu_visited_${page}`
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+    const sessionId = getOrCreateSessionId()
+    await supabase.from('app_visits').insert([{
+      session_id: sessionId,
+      page,
+      created_at: new Date().toISOString(),
+    }])
+  } catch { }
+}
+
+// ─────────────────────────────────────────────
 // PROVIDER INTERFACE
 // ─────────────────────────────────────────────
 
@@ -167,6 +195,12 @@ export const Analytics = {
   adClicked: (adId: string, brandName: string) => {
     track('ad_clicked', { ad_id: adId, brand_name: brandName })
     trackAdEvent(adId, brandName, 'click')
+  },
+
+  // ── PAGE VISITS ──
+  pageVisited: (page: string) => {
+    trackVisit(page)
+    track('page_visited', { page })
   },
 
   // ── EMAIL SIGNUP ──
