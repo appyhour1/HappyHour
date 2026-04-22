@@ -19,10 +19,10 @@ import './styles/mobile-fix.css'
 import './styles/additions.css'
 import './styles.css'
 
-// Register service worker for PWA
+// Unregister any cached service workers
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js').catch(() => {})
+  navigator.serviceWorker.getRegistrations().then(registrations => {
+    registrations.forEach(r => r.unregister())
   })
 }
 
