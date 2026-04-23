@@ -140,7 +140,7 @@ export default function VenueDetailPage() {
       setVenue(cached)
       setLoading(false)
       // Set best schedule index based on today
-      setActiveScheduleIdx(getBestScheduleIndex(cached.schedules ?? []))
+      setActiveDay(getBestDay(cached.schedules ?? []))
     }
     getVenueById(id).then(async v => {
       if (v) {
