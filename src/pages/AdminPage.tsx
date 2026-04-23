@@ -282,10 +282,31 @@ export default function AdminPage() {
       }
       const venueList = await getVenues('Cincinnati')
       setVenues(venueList)
+
+      // Pull card views from venue_impressions for the selected week
+      const weekStart = new Date(getWeekStart(weekOffset))
+      const weekEnd = new Date(getWeekEnd(weekOffset))
+      weekEnd.setDate(weekEnd.getDate() + 1)
+      const { data: impressions } = await supabase
+        .from('venue_impressions')
+        .select('venue_id')
+        .gte('created_at', weekStart.toISOString())
+        .lt('created_at', weekEnd.toISOString())
+
+      // Pull other stats (detail_views, directions, etc) from venue_stats
       const { data: statsData } = await supabase.from('venue_stats').select('*')
-        .gte('week_start', getWeekStart(weekOffset)).lte('week_start', getWeekEnd(weekOffset))
       const statsMap: Record<string, VenueStats> = {}
       if (statsData) statsData.forEach((s: VenueStats) => { statsMap[s.venue_id] = s })
+
+      // Merge impression counts into stats
+      if (impressions) {
+        impressions.forEach((r: any) => {
+          if (!statsMap[r.venue_id]) {
+            statsMap[r.venue_id] = { venue_id: r.venue_id, card_views: 0, detail_views: 0, directions_clicks: 0, website_clicks: 0, favorites: 0, confirmations: 0, week_start: getWeekStart(weekOffset) }
+          }
+          statsMap[r.venue_id].card_views = (statsMap[r.venue_id].card_views || 0) + 1
+        })
+      }
       setStats(statsMap)
     } catch (e) { console.error(e) }
     setAnalyticsLoading(false)
