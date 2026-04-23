@@ -94,6 +94,8 @@ export default function AdminPage() {
   const [trafficData, setTrafficData] = useState<{ date: string; visitors: number; sessions: number }[]>([])
   const [sending, setSending] = useState<string | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
+  const [impressionRange, setImpressionRange] = useState<'today'|'week'|'month'|'alltime'>('week')
+  const [impressionData, setImpressionData] = useState<Record<string, number>>({})
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'views' | 'clicks'>('views')
   const [toggling, setToggling] = useState<string | null>(null)
@@ -288,6 +290,31 @@ export default function AdminPage() {
     } catch (e) { console.error(e) }
     setAnalyticsLoading(false)
   }
+
+  async function loadImpressions(range: 'today'|'week'|'month'|'alltime') {
+    const now = new Date()
+    let since: string | null = null
+    if (range === 'today') {
+      const d = new Date(); d.setHours(0,0,0,0)
+      since = d.toISOString()
+    } else if (range === 'week') {
+      const d = new Date(); d.setDate(d.getDate() - 7)
+      since = d.toISOString()
+    } else if (range === 'month') {
+      const d = new Date(); d.setDate(d.getDate() - 30)
+      since = d.toISOString()
+    }
+    let query = supabase.from('venue_impressions').select('venue_id')
+    if (since) query = query.gte('created_at', since)
+    const { data } = await query
+    const counts: Record<string, number> = {}
+    if (data) data.forEach((r: any) => { counts[r.venue_id] = (counts[r.venue_id] || 0) + 1 })
+    setImpressionData(counts)
+  }
+
+  useEffect(() => {
+    if (authed) loadImpressions(impressionRange)
+  }, [impressionRange, authed]) // eslint-disable-line
 
   useEffect(() => {
     if (authed) {
@@ -667,6 +694,47 @@ export default function AdminPage() {
                 </div>
               )
             })()}
+
+            {/* Venue Card Impressions Section */}
+            <div style={{ background: '#fff', border: '1px solid #EAE6DF', borderRadius: 14, padding: '16px 18px', marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1612' }}>Card impressions by venue</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['today','week','month','alltime'] as const).map(r => (
+                    <button key={r} onClick={() => setImpressionRange(r)}
+                      style={{ padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                        fontSize: 12, fontWeight: 700,
+                        background: impressionRange === r ? '#1A1612' : '#F8F6F1',
+                        color: impressionRange === r ? '#fff' : '#888' }}>
+                      {r === 'today' ? 'Today' : r === 'week' ? '7 Days' : r === 'month' ? '30 Days' : 'All Time'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {venues.length === 0 ? (
+                <div style={{ color: '#aaa', fontSize: 13, textAlign: 'center', padding: 20 }}>Loading...</div>
+              ) : [...venues]
+                .sort((a, b) => (impressionData[b.id] || 0) - (impressionData[a.id] || 0))
+                .filter(v => (impressionData[v.id] || 0) > 0 || venues.length < 10)
+                .slice(0, 15)
+                .map(v => {
+                  const views = impressionData[v.id] || 0
+                  const max = Math.max(...Object.values(impressionData), 1)
+                  return (
+                    <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                      <div style={{ width: 160, fontSize: 12, fontWeight: 600, color: '#1A1612', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 0 }}>{v.name}</div>
+                      <div style={{ flex: 1, height: 10, background: '#F8F6F1', borderRadius: 5, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 5, background: '#E85D1A', width: `${Math.max((views / max) * 100, views > 0 ? 3 : 0)}%`, transition: 'width .4s' }} />
+                      </div>
+                      <div style={{ width: 40, fontSize: 12, fontWeight: 800, color: '#E85D1A', textAlign: 'right', flexShrink: 0 }}>{views}</div>
+                    </div>
+                  )
+                })
+              }
+              {Object.keys(impressionData).length === 0 && (
+                <div style={{ color: '#aaa', fontSize: 12, textAlign: 'center', paddingTop: 8 }}>No impressions yet for this period</div>
+              )}
+            </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1612' }}>Weekly performance</div>
