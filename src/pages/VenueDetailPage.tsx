@@ -25,29 +25,50 @@ const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon'
 // Map JS getDay() to our day abbreviations
 const JS_DAY_TO_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
-function getBestScheduleIndex(schedules: HappyHourSchedule[]): number {
-  if (!schedules.length) return 0
+function getBestDay(schedules: HappyHourSchedule[]): string {
+  if (!schedules.length) return JS_DAY_TO_ABBR[new Date().getDay()]
   const todayAbbr = JS_DAY_TO_ABBR[new Date().getDay()]
 
-  // 1. Prefer a schedule that is live right now
-  for (let i = 0; i < schedules.length; i++) {
-    const st = getScheduleStatus(schedules[i])
-    if (st?.status === 'live_now' || st?.status === 'ends_soon') return i
+  // Get all days this venue has deals
+  const allDays = Array.from(new Set(schedules.flatMap(s => s.days)))
+
+  // Prefer today if venue is open today
+  if (allDays.includes(todayAbbr as any)) return todayAbbr
+
+  // Otherwise find next upcoming day
+  const dayOrder = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+  const todayIdx = dayOrder.indexOf(todayAbbr)
+  for (let i = 1; i <= 7; i++) {
+    const next = dayOrder[(todayIdx + i) % 7]
+    if (allDays.includes(next as any)) return next
   }
 
-  // 2. Prefer a schedule that starts soon today
-  for (let i = 0; i < schedules.length; i++) {
-    const st = getScheduleStatus(schedules[i])
-    if (st?.status === 'starts_soon' || st?.status === 'later_today') return i
-  }
+  return allDays[0] || todayAbbr
+}
 
-  // 3. Prefer a schedule that includes today
-  for (let i = 0; i < schedules.length; i++) {
-    if (schedules[i].days.includes(todayAbbr as any)) return i
-  }
+function getDealsForDay(schedules: HappyHourSchedule[], day: string) {
+  // Get all schedules that apply to this day
+  const matching = schedules.filter(s => s.days.includes(day as any))
+  if (!matching.length) return { deals: [], dealText: '', time: '', schedule: null }
 
-  // 4. Fall back to first schedule
-  return 0
+  // Use the schedule with the most deals as the "primary" for time display
+  const primary = matching.reduce((a, b) => b.deals.length > a.deals.length ? b : a)
+
+  // Merge all deals, deduplicating by description
+  const allDeals: typeof primary.deals = []
+  matching.forEach(s => {
+    s.deals.forEach(deal => {
+      const alreadyShown = allDeals.some(d =>
+        d.description.toLowerCase().trim() === deal.description.toLowerCase().trim()
+      )
+      if (!alreadyShown) allDeals.push(deal)
+    })
+  })
+
+  const dealText = matching.map(s => s.deal_text).filter(Boolean).join(' · ')
+  const time = primary.is_all_day ? 'All day' : `${fmtTime(primary.start_time)} – ${fmtTime(primary.end_time)}`
+
+  return { deals: allDeals, dealText, time, schedule: primary }
 }
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -69,7 +90,7 @@ export default function VenueDetailPage() {
   const [showEditVenue, setShowEditVenue] = useState(false)
   const [showClaimForm, setShowClaimForm] = useState(false)
   const confirmDeal = useConfirmDeal()
-  const [activeScheduleIdx, setActiveScheduleIdx] = useState(0)
+  const [activeDay, setActiveDay] = useState('')
 
   function refetchVenue() {
     if (!id) return
@@ -124,8 +145,8 @@ export default function VenueDetailPage() {
     getVenueById(id).then(async v => {
       if (v) {
         setVenue(v)
-        // Set best schedule for today
-        setActiveScheduleIdx(getBestScheduleIndex(v.schedules ?? []))
+        // Default to today's day if venue is open today
+        setActiveDay(getBestDay(v.schedules ?? []))
 
         // Track page view via PostHog
         Analytics.venueDetailViewed(v.id, v.name)
@@ -164,8 +185,6 @@ export default function VenueDetailPage() {
   })()
 
   const vis = venueStatus ? STATUS_VISUALS[venueStatus.status] : null
-  const curSchedule = schedules[activeScheduleIdx]
-
   const related = allVenues
     .filter(v => v.id !== venue.id && v.neighborhood === venue.neighborhood)
     .slice(0, 3)
@@ -313,75 +332,51 @@ export default function VenueDetailPage() {
         {/* ── HAPPY HOUR SCHEDULES ── */}
         <div className="detail-section">
           <h2 className="detail-section-title">Happy Hour Deals</h2>
-          {schedules.length > 1 && (
-            <div className="detail-schedule-tabs">
-              {schedules.map((s, i) => {
-                const st = getScheduleStatus(s)
-                return (
-                  <button
-                    key={s.id}
-                    className={`detail-tab${activeScheduleIdx === i ? ' active' : ''}`}
-                    onClick={() => setActiveScheduleIdx(i)}
-                  >
-                    {s.days.length === 7 ? 'All week' : s.days.slice(0,3).join(', ')}
-                    {st && (st.status === 'live_now' || st.status === 'ends_soon') && (
-                      <span className="tab-live-dot" />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          )}
-          {curSchedule && (() => {
-            const st = getScheduleStatus(curSchedule)
+          {(() => {
+            // Build list of unique days this venue has deals, in week order
+            const dayOrder = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+            const venueDays = dayOrder.filter(d => schedules.some(s => s.days.includes(d as any)))
             const todayAbbr = JS_DAY_TO_ABBR[new Date().getDay()]
-
-            // Find any OTHER schedules that also apply today (e.g. day-specific specials)
-            // so we can show merged deals when a venue has both weekly + daily specials
-            const todaysOtherSchedules = schedules.filter((s, i) =>
-              i !== activeScheduleIdx && s.days.includes(todayAbbr as any)
-            )
-
-            // Collect all deals from today-applicable schedules
-            const bonusDeals = todaysOtherSchedules.flatMap(s => s.deals)
-            const bonusDealText = todaysOtherSchedules.map(s => s.deal_text).filter(Boolean).join(' · ')
+            const selectedDay = activeDay || getBestDay(schedules)
+            const { deals, dealText, time, schedule } = getDealsForDay(schedules, selectedDay)
+            const isToday = selectedDay === todayAbbr
+            const st = schedule ? getScheduleStatus(schedule) : null
 
             return (
-              <div className="detail-schedule">
-                <div className="detail-schedule-header">
-                  <span className="detail-time">
-                    {curSchedule.is_all_day ? 'All day' : `${fmtTime(curSchedule.start_time)} – ${fmtTime(curSchedule.end_time)}`}
-                  </span>
-                  {st && (
-                    <span className="detail-schedule-status" style={vis ? { background: vis.bg, color: vis.text } : {}}>
-                      {st.label}
-                    </span>
-                  )}
-                </div>
-                <div className="detail-days">
-                  {DAYS_OF_WEEK.map(d => (
-                    <span key={d} className={`detail-day${curSchedule.days.includes(d) ? ' active' : ''}`}>{d}</span>
-                  ))}
-                </div>
-                {!curSchedule.is_all_day && (
-                  <button className="detail-cal-btn" onClick={() => addToCalendar(curSchedule)}>
-                    📅 Add to Google Calendar
-                  </button>
+              <>
+                {venueDays.length > 1 && (
+                  <div className="detail-schedule-tabs">
+                    {venueDays.map(d => (
+                      <button
+                        key={d}
+                        className={`detail-tab${selectedDay === d ? ' active' : ''}`}
+                        onClick={() => setActiveDay(d)}
+                      >
+                        {d}
+                        {d === todayAbbr && isToday && st && (st.status === 'live_now' || st.status === 'ends_soon') && (
+                          <span className="tab-live-dot" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 )}
-                {(() => {
-                  // Merge current schedule deals with any day-specific bonus deals
-                  // Deduplicate by description to avoid showing the same deal twice
-                  const allDeals = [...curSchedule.deals]
-                  bonusDeals.forEach(bonus => {
-                    const alreadyShown = allDeals.some(d =>
-                      d.description.toLowerCase().trim() === bonus.description.toLowerCase().trim()
-                    )
-                    if (!alreadyShown) allDeals.push(bonus)
-                  })
-
-                  return allDeals.length > 0 ? (
+                <div className="detail-schedule">
+                  <div className="detail-schedule-header">
+                    <span className="detail-time">{time}</span>
+                    {isToday && st && (
+                      <span className="detail-schedule-status" style={vis ? { background: vis.bg, color: vis.text } : {}}>
+                        {st.label}
+                      </span>
+                    )}
+                  </div>
+                  {schedule && !schedule.is_all_day && (
+                    <button className="detail-cal-btn" onClick={() => addToCalendar(schedule!)}>
+                      📅 Add to Google Calendar
+                    </button>
+                  )}
+                  {deals.length > 0 ? (
                     <div className="detail-deals">
-                      {allDeals.map((deal, i) => (
+                      {deals.map((deal, i) => (
                         <div key={i} className="detail-deal-row" style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}>
                           <span className="detail-deal-type">{DEAL_TYPE_LABELS[deal.type]}</span>
                           <span className="detail-deal-desc">{deal.description}</span>
@@ -390,10 +385,10 @@ export default function VenueDetailPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="detail-deal-text">{curSchedule.deal_text}{bonusDealText ? ` · ${bonusDealText}` : ''}</p>
-                  )
-                })()}
-              </div>
+                    <p className="detail-deal-text">{dealText}</p>
+                  )}
+                </div>
+              </>
             )
           })()}
         </div>
