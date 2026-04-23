@@ -10,43 +10,40 @@
  *   - Supabase (production)
  *   - SAMPLE_VENUES (fallback when Supabase is unavailable)
  */
-
 import { supabase } from '../lib/supabase'
 import { SAMPLE_VENUES } from '../data/sampleVenues'
 import type { Venue, HappyHourSchedule } from '../types'
 
+// Cities included in the Cincinnati metro area feed
+const CINCINNATI_METRO = ['Cincinnati', 'Covington', 'Newport', 'Bellevue', 'Dayton', 'Fort Thomas', 'Alexandria', 'Norwood', 'Hyde Park', 'Anderson Township']
+
 // ─────────────────────────────────────────────
 // READ
 // ─────────────────────────────────────────────
-
 export async function getVenues(city = 'Cincinnati'): Promise<Venue[]> {
   try {
     const { data, error } = await supabase
       .from('venues_with_schedules')
       .select('*')
-      .eq('city', city)
+      .in('city', CINCINNATI_METRO)
       .order('is_featured', { ascending: false })
       .order('name')
-
     if (error) throw error
     if (data && data.length > 0) return data as Venue[]
-    return SAMPLE_VENUES.filter(v => v.city === city || city === 'Cincinnati')
+    return SAMPLE_VENUES
   } catch {
     return SAMPLE_VENUES
   }
 }
 
 export async function getVenueById(id: string): Promise<Venue | null> {
-  // Try sample data first (for demo IDs)
   const sample = SAMPLE_VENUES.find(v => v.id === id)
-
   try {
     const { data, error } = await supabase
       .from('venues_with_schedules')
       .select('*')
       .eq('id', id)
       .single()
-
     if (error) return sample ?? null
     return data as Venue
   } catch {
@@ -67,7 +64,6 @@ export async function getFeaturedVenues(city = 'Cincinnati'): Promise<Venue[]> {
 // ─────────────────────────────────────────────
 // WRITE — venues
 // ─────────────────────────────────────────────
-
 export async function createVenue(payload: Omit<Venue, 'id' | 'created_at' | 'updated_at' | 'schedules'>): Promise<Venue> {
   const { data, error } = await supabase
     .from('venues')
@@ -97,7 +93,6 @@ export async function deleteVenue(id: string): Promise<void> {
 // ─────────────────────────────────────────────
 // WRITE — schedules
 // ─────────────────────────────────────────────
-
 export async function createSchedule(payload: Omit<HappyHourSchedule, 'id' | 'created_at' | 'updated_at'>): Promise<HappyHourSchedule> {
   const { data, error } = await supabase
     .from('happy_hour_schedules')
@@ -127,12 +122,9 @@ export async function deleteSchedule(id: string): Promise<void> {
 // ─────────────────────────────────────────────
 // UPVOTES
 // ─────────────────────────────────────────────
-
 export async function upvoteVenue(id: string): Promise<void> {
-  // Increment upvote_count atomically
   const { error } = await supabase.rpc('increment_upvote', { venue_id: id })
   if (error) {
-    // Fallback: fetch + update
     const { data } = await supabase.from('venues').select('upvote_count').eq('id', id).single()
     if (data) {
       await supabase.from('venues').update({ upvote_count: data.upvote_count + 1 }).eq('id', id)
