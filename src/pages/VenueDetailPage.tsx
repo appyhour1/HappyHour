@@ -334,6 +334,18 @@ export default function VenueDetailPage() {
           )}
           {curSchedule && (() => {
             const st = getScheduleStatus(curSchedule)
+            const todayAbbr = JS_DAY_TO_ABBR[new Date().getDay()]
+
+            // Find any OTHER schedules that also apply today (e.g. day-specific specials)
+            // so we can show merged deals when a venue has both weekly + daily specials
+            const todaysOtherSchedules = schedules.filter((s, i) =>
+              i !== activeScheduleIdx && s.days.includes(todayAbbr as any)
+            )
+
+            // Collect all deals from today-applicable schedules
+            const bonusDeals = todaysOtherSchedules.flatMap(s => s.deals)
+            const bonusDealText = todaysOtherSchedules.map(s => s.deal_text).filter(Boolean).join(' · ')
+
             return (
               <div className="detail-schedule">
                 <div className="detail-schedule-header">
@@ -365,6 +377,24 @@ export default function VenueDetailPage() {
                         {deal.price != null && <span className="detail-deal-price">${deal.price}</span>}
                       </div>
                     ))}
+                    {/* Show deals from day-specific schedules that also apply today */}
+                    {bonusDeals.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#E85D1A', textTransform: 'uppercase', letterSpacing: '.06em', padding: '8px 0 4px' }}>
+                          Today's specials
+                        </div>
+                        {bonusDeals.map((deal, i) => (
+                          <div key={`bonus-${i}`} className="detail-deal-row" style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}>
+                            <span className="detail-deal-type">{DEAL_TYPE_LABELS[deal.type]}</span>
+                            <span className="detail-deal-desc">{deal.description}</span>
+                            {deal.price != null && <span className="detail-deal-price">${deal.price}</span>}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {bonusDealText && bonusDeals.length === 0 && (
+                      <p className="detail-deal-text" style={{ color: '#E85D1A', fontWeight: 600 }}>Today: {bonusDealText}</p>
+                    )}
                   </div>
                 ) : (
                   <p className="detail-deal-text">{curSchedule.deal_text}</p>
