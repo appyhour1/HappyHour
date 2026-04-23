@@ -368,37 +368,31 @@ export default function VenueDetailPage() {
                     📅 Add to Google Calendar
                   </button>
                 )}
-                {curSchedule.deals.length > 0 ? (
-                  <div className="detail-deals">
-                    {curSchedule.deals.map((deal, i) => (
-                      <div key={i} className="detail-deal-row" style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}>
-                        <span className="detail-deal-type">{DEAL_TYPE_LABELS[deal.type]}</span>
-                        <span className="detail-deal-desc">{deal.description}</span>
-                        {deal.price != null && <span className="detail-deal-price">${deal.price}</span>}
-                      </div>
-                    ))}
-                    {/* Show deals from day-specific schedules that also apply today */}
-                    {bonusDeals.length > 0 && (
-                      <>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#E85D1A', textTransform: 'uppercase', letterSpacing: '.06em', padding: '8px 0 4px' }}>
-                          Today's specials
+                {(() => {
+                  // Merge current schedule deals with any day-specific bonus deals
+                  // Deduplicate by description to avoid showing the same deal twice
+                  const allDeals = [...curSchedule.deals]
+                  bonusDeals.forEach(bonus => {
+                    const alreadyShown = allDeals.some(d =>
+                      d.description.toLowerCase().trim() === bonus.description.toLowerCase().trim()
+                    )
+                    if (!alreadyShown) allDeals.push(bonus)
+                  })
+
+                  return allDeals.length > 0 ? (
+                    <div className="detail-deals">
+                      {allDeals.map((deal, i) => (
+                        <div key={i} className="detail-deal-row" style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}>
+                          <span className="detail-deal-type">{DEAL_TYPE_LABELS[deal.type]}</span>
+                          <span className="detail-deal-desc">{deal.description}</span>
+                          {deal.price != null && <span className="detail-deal-price">${deal.price}</span>}
                         </div>
-                        {bonusDeals.map((deal, i) => (
-                          <div key={`bonus-${i}`} className="detail-deal-row" style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}>
-                            <span className="detail-deal-type">{DEAL_TYPE_LABELS[deal.type]}</span>
-                            <span className="detail-deal-desc">{deal.description}</span>
-                            {deal.price != null && <span className="detail-deal-price">${deal.price}</span>}
-                          </div>
-                        ))}
-                      </>
-                    )}
-                    {bonusDealText && bonusDeals.length === 0 && (
-                      <p className="detail-deal-text" style={{ color: '#E85D1A', fontWeight: 600 }}>Today: {bonusDealText}</p>
-                    )}
-                  </div>
-                ) : (
-                  <p className="detail-deal-text">{curSchedule.deal_text}</p>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="detail-deal-text">{curSchedule.deal_text}{bonusDealText ? ` · ${bonusDealText}` : ''}</p>
+                  )
+                })()}
               </div>
             )
           })()}
