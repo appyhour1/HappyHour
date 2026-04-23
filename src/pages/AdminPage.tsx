@@ -101,7 +101,9 @@ export default function AdminPage() {
   function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     if (password === ADMIN_PASSWORD) {
-      setAuthed(true); setLoginError('')
+      setAuthed(true)
+      sessionStorage.setItem('hhu_admin_authed', '1')
+      setLoginError('')
       setTimeout(() => { loadContributions(); loadAnalytics(); loadBrandAds() }, 50)
     } else setLoginError('Incorrect password')
   }
@@ -287,7 +289,15 @@ export default function AdminPage() {
     setAnalyticsLoading(false)
   }
 
-  useEffect(() => { if (authed) loadAnalytics() }, [weekOffset, authed]) // eslint-disable-line
+  useEffect(() => {
+    if (authed) {
+      loadContributions()
+      loadAnalytics()
+      loadBrandAds()
+    }
+  }, [authed]) // eslint-disable-line
+
+  useEffect(() => { if (authed) loadAnalytics() }, [weekOffset]) // eslint-disable-line
 
   function getWeekStart(offset = 0): string {
     const d = new Date(); const day = d.getDay()
