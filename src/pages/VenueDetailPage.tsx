@@ -2,12 +2,12 @@
  * VenueDetailPage.tsx
  * Route: /venue/:id
  */
-
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { useAppContext } from '../contexts/AppContext'
 import { getVenueById } from '../services/venueService'
+import { supabase } from '../lib/supabase'
 import { fmtTime, isVenueActiveNow, getVenueActiveDays, verifiedAgo } from '../utils/filters'
 import { getScheduleStatus, STATUS_VISUALS } from '../utils/happeningNow'
 import { DEAL_TYPE_COLORS, DEAL_TYPE_LABELS, CATEGORY_LABELS, DAYS_OF_WEEK } from '../types'
@@ -21,6 +21,34 @@ import { track } from '../services/analytics'
 import type { Venue, HappyHourSchedule, HappyHourStatus, ScheduleStatus } from '../types'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
+
+// Map JS getDay() to our day abbreviations
+const JS_DAY_TO_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+
+function getBestScheduleIndex(schedules: HappyHourSchedule[]): number {
+  if (!schedules.length) return 0
+  const todayAbbr = JS_DAY_TO_ABBR[new Date().getDay()]
+
+  // 1. Prefer a schedule that is live right now
+  for (let i = 0; i < schedules.length; i++) {
+    const st = getScheduleStatus(schedules[i])
+    if (st?.status === 'live_now' || st?.status === 'ends_soon') return i
+  }
+
+  // 2. Prefer a schedule that starts soon today
+  for (let i = 0; i < schedules.length; i++) {
+    const st = getScheduleStatus(schedules[i])
+    if (st?.status === 'starts_soon' || st?.status === 'later_today') return i
+  }
+
+  // 3. Prefer a schedule that includes today
+  for (let i = 0; i < schedules.length; i++) {
+    if (schedules[i].days.includes(todayAbbr)) return i
+  }
+
+  // 4. Fall back to first schedule
+  return 0
+}
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -87,16 +115,34 @@ export default function VenueDetailPage() {
   useEffect(() => {
     if (!id) return
     const cached = allVenues.find(v => v.id === id)
-    if (cached) { setVenue(cached); setLoading(false) }
-    getVenueById(id).then(v => {
+    if (cached) {
+      setVenue(cached)
+      setLoading(false)
+      // Set best schedule index based on today
+      setActiveScheduleIdx(getBestScheduleIndex(cached.schedules ?? []))
+    }
+    getVenueById(id).then(async v => {
       if (v) {
         setVenue(v)
+        // Set best schedule for today
+        setActiveScheduleIdx(getBestScheduleIndex(v.schedules ?? []))
+
+        // Track page view via PostHog
         Analytics.venueDetailViewed(v.id, v.name)
+
+        // Log to venue_impressions (works with anon key, no RPC needed)
+        try {
+          await supabase.from('venue_impressions').insert({
+            venue_id: v.id,
+            event_type: 'detail_view',
+          })
+        } catch { /* silent */ }
+
         confirmDeal.loadCountsForVenues([v.id])
       }
       setLoading(false)
     })
-  }, [id, allVenues])
+  }, [id]) // eslint-disable-line
 
   if (loading) return <div className="loading-msg">Loading...</div>
   if (!venue) return (
@@ -111,7 +157,6 @@ export default function VenueDetailPage() {
   const activeDays = getVenueActiveDays(venue)
   const isFav = favorites.isFavorite(venue.id)
 
-  // Best status
   const venueStatus: ScheduleStatus | null = (() => {
     const statuses = schedules.map(s => getScheduleStatus(s)).filter((s): s is ScheduleStatus => s !== null)
     if (!statuses.length) return null
@@ -121,12 +166,10 @@ export default function VenueDetailPage() {
   const vis = venueStatus ? STATUS_VISUALS[venueStatus.status] : null
   const curSchedule = schedules[activeScheduleIdx]
 
-  // Related venues (same neighborhood, different venue)
   const related = allVenues
     .filter(v => v.id !== venue.id && v.neighborhood === venue.neighborhood)
     .slice(0, 3)
 
-  // JSON-LD structured data for SEO
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'BarOrCafe',
@@ -153,16 +196,12 @@ export default function VenueDetailPage() {
         <meta name="description" content={`${venue.name} happy hour deals in ${venue.neighborhood}, ${venue.city}. ${schedules[0]?.deal_text ?? 'See current specials and hours.'}`} />
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
-
       <div className="detail-page">
         {/* ── BACK NAV ── */}
         <nav className="detail-nav">
           <button className="detail-back-btn" onClick={() => navigate(-1)}>← Back</button>
           <div className="detail-nav-actions">
-            <button
-              className="detail-edit-btn"
-              onClick={() => setShowEditVenue(v => !v)}
-            >
+            <button className="detail-edit-btn" onClick={() => setShowEditVenue(v => !v)}>
               {showEditVenue ? '✕ Close editor' : '✏️ Edit venue'}
             </button>
             <button className="detail-share-btn" onClick={openDirections} aria-label="Directions">
@@ -182,7 +221,6 @@ export default function VenueDetailPage() {
           </div>
         </nav>
 
-        {/* ── INLINE EDIT FORM ── */}
         {showEditVenue && (
           <div className="detail-edit-panel">
             <EditVenueForm
@@ -223,7 +261,6 @@ export default function VenueDetailPage() {
           </div>
         </div>
 
-        {/* ── CONTACT ── */}
         {/* ── MAP ── */}
         {venue.latitude && venue.longitude && (
           <div className="detail-map-wrap">
@@ -247,12 +284,9 @@ export default function VenueDetailPage() {
               {venue.address && (
                 <div className="detail-info-row">
                   <span className="detail-info-label">Address</span>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="detail-info-link"
-                    onClick={() => Analytics.getDirectionsClicked(venue.id, venue.name)}
-                  >
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
+                    target="_blank" rel="noopener noreferrer" className="detail-info-link"
+                    onClick={() => Analytics.getDirectionsClicked(venue.id, venue.name)}>
                     {venue.address} ↗
                   </a>
                 </div>
@@ -279,7 +313,6 @@ export default function VenueDetailPage() {
         {/* ── HAPPY HOUR SCHEDULES ── */}
         <div className="detail-section">
           <h2 className="detail-section-title">Happy Hour Deals</h2>
-
           {schedules.length > 1 && (
             <div className="detail-schedule-tabs">
               {schedules.map((s, i) => {
@@ -299,7 +332,6 @@ export default function VenueDetailPage() {
               })}
             </div>
           )}
-
           {curSchedule && (() => {
             const st = getScheduleStatus(curSchedule)
             return (
@@ -314,22 +346,16 @@ export default function VenueDetailPage() {
                     </span>
                   )}
                 </div>
-
                 <div className="detail-days">
                   {DAYS_OF_WEEK.map(d => (
                     <span key={d} className={`detail-day${curSchedule.days.includes(d) ? ' active' : ''}`}>{d}</span>
                   ))}
                 </div>
-
                 {!curSchedule.is_all_day && (
-                  <button
-                    className="detail-cal-btn"
-                    onClick={() => addToCalendar(curSchedule)}
-                  >
+                  <button className="detail-cal-btn" onClick={() => addToCalendar(curSchedule)}>
                     📅 Add to Google Calendar
                   </button>
                 )}
-
                 {curSchedule.deals.length > 0 ? (
                   <div className="detail-deals">
                     {curSchedule.deals.map((deal, i) => (
@@ -380,14 +406,12 @@ export default function VenueDetailPage() {
           </div>
         </div>
 
-        {/* ── EDIT SUGGESTION FORM ── */}
         {showEditForm && (
           <div className="detail-section">
             <SuggestEditForm venue={venue} onClose={() => setShowEditForm(false)} />
           </div>
         )}
 
-        {/* ── CLAIM VENUE ── */}
         {!showClaimForm ? (
           <div className="detail-claim-banner">
             <span className="detail-claim-text">Is this your bar?</span>
@@ -401,7 +425,6 @@ export default function VenueDetailPage() {
           </div>
         )}
 
-        {/* ── RELATED VENUES ── */}
         {related.length > 0 && (
           <div className="detail-section">
             <h2 className="detail-section-title">More in {venue.neighborhood}</h2>
