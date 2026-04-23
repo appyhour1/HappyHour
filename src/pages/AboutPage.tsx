@@ -2,12 +2,10 @@
  * AboutPage.tsx
  * Route: /about
  */
-
 import React, { useState } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
-import { createClient } from '@supabase/supabase-js'
-const supabase = createClient(process.env.REACT_APP_SUPABASE_URL!, process.env.REACT_APP_SUPABASE_ANON_KEY!)
+import { supabase } from '../lib/supabase'
 
 function InquiryForm({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('')
@@ -16,7 +14,6 @@ function InquiryForm({ onClose }: { onClose: () => void }) {
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name || !bar || !email) return
@@ -30,7 +27,6 @@ function InquiryForm({ onClose }: { onClose: () => void }) {
     setDone(true)
     setSubmitting(false)
   }
-
   if (done) return (
     <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
       <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
@@ -43,7 +39,6 @@ function InquiryForm({ onClose }: { onClose: () => void }) {
       </button>
     </div>
   )
-
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ fontSize: 20, fontWeight: 900, color: '#1A1612', marginBottom: 4 }}>Get your bar listed</div>
@@ -87,16 +82,13 @@ function InquiryForm({ onClose }: { onClose: () => void }) {
 
 export default function AboutPage() {
   const [showInquiry, setShowInquiry] = useState(false)
-
   return (
     <>
       <Helmet>
         <title>About — Happy Hour Unlocked Cincinnati</title>
         <meta name="description" content="Happy Hour Unlocked connects Cincinnati bar-goers with the best happy hour deals while helping local bars fill seats during slower hours." />
       </Helmet>
-
       <div className="about-page">
-
         {/* ── HERO ── */}
         <div className="about-hero">
           <div className="about-hero-logo">
@@ -105,7 +97,6 @@ export default function AboutPage() {
           </div>
           <p className="about-hero-tagline">Connecting Cincinnati to its best happy hours.</p>
         </div>
-
         {/* ── MISSION ── */}
         <div className="about-section">
           <div className="about-section-icon">🍺</div>
@@ -117,7 +108,6 @@ export default function AboutPage() {
             So we built Happy Hour Unlocked. One place for Cincinnati's best happy hour deals, with live status, verified times, and real deal information.
           </p>
         </div>
-
         {/* ── WIN-WIN ── */}
         <div className="about-section">
           <div className="about-section-icon">🤝</div>
@@ -138,7 +128,6 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-
         {/* ── COMMUNITY ── */}
         <div className="about-section">
           <div className="about-section-icon">🌆</div>
@@ -150,7 +139,6 @@ export default function AboutPage() {
             Know a bar with a great happy hour that's not listed? Add it. See a deal that's changed? Suggest a correction. This app gets better every time someone contributes.
           </p>
         </div>
-
         {/* ── CTA ── */}
         <div className="about-cta">
           <Link to="/" className="about-cta-btn">Find a happy hour →</Link>
@@ -158,7 +146,6 @@ export default function AboutPage() {
             Inquire about listing your bar
           </button>
         </div>
-
         {/* ── INQUIRE ── */}
         <div className="about-section">
           <div className="about-section-icon">📬</div>
@@ -178,19 +165,21 @@ export default function AboutPage() {
               <div className="about-card-body">Advertise to a hyper-local audience of bar-goers actively planning their night out.</div>
             </div>
           </div>
-          <a
-            href="mailto:info@happyhourunlocked.com"
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 8, marginTop: 16, padding: '14px 20px',
-              background: '#1A1612', color: '#fff', borderRadius: 12,
-              fontSize: 15, fontWeight: 700, textDecoration: 'none',
-            }}
-          >
+          <a href="mailto:info@happyhourunlocked.com"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16, padding: '14px 20px', background: '#1A1612', color: '#fff', borderRadius: 12, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
             ✉️ info@happyhourunlocked.com
           </a>
         </div>
-
+        {/* ── ADVERTISING CTA ── */}
+        <div style={{ marginBottom: 14 }}>
+          <a href="mailto:info@happyhourunlocked.com?subject=Advertising and Sponsorship Inquiry"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px 20px', borderRadius: 12, textDecoration: 'none', background: 'linear-gradient(135deg, #E85D1A, #8B5CF6)', color: '#fff', fontSize: 15, fontWeight: 700 }}>
+            📣 Advertising &amp; Sponsorship Opportunities
+          </a>
+          <p style={{ textAlign: 'center', fontSize: 12, color: '#aaa', marginTop: 8 }}>
+            Reach Cincinnati's most engaged bar-goers — contact us about brand partnerships and sponsored placements.
+          </p>
+        </div>
         {/* ── FOOTER LINKS ── */}
         <div className="about-legal">
           <Link to="/privacy" className="about-legal-link">Privacy Policy</Link>
@@ -199,9 +188,7 @@ export default function AboutPage() {
           <span>·</span>
           <Link to="/cookies" className="about-legal-link">Cookie Policy</Link>
         </div>
-
       </div>
-
       {/* ── INQUIRY MODAL ── */}
       {showInquiry && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, zIndex: 600 }}

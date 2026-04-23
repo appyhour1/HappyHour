@@ -6,8 +6,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Helmet } from 'react-helmet-async'
-import { createClient } from '@supabase/supabase-js'
-const supabase = createClient(process.env.REACT_APP_SUPABASE_URL!, process.env.REACT_APP_SUPABASE_ANON_KEY!)
+import { supabase } from '../lib/supabase'
 import type { Venue } from '../types'
 import { getVenues } from '../services/venueService'
 import { getAllBrandAds, saveBrandAd, deleteBrandAd, toggleBrandAd } from '../services/brandAdService'
