@@ -72,7 +72,7 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
 }
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(false)
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem('hhu_admin_authed') === '1')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
   const [tab, setTab] = useState<'pending' | 'analytics' | 'ads'>('pending')
