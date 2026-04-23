@@ -1,4 +1,4 @@
-import React, { memo } from 'react'
+import React, { memo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Venue } from '../types'
 import { DEAL_TYPE_COLORS, DEAL_TYPE_LABELS } from '../types'
@@ -48,7 +48,8 @@ export const VenueCard = memo(function VenueCard({
   const isOpen = isVenueActiveNow(venue)
   const schedules = venue.schedules || []
 
-  // ── IMPRESSION TRACKING ──
+  // ── SCROLL IMPRESSION TRACKING ──
+  // Fires once per session when card is 50% visible for 1 full second
   const impressionRef = useCardImpression(
     venue.id,
     venue.name,
@@ -56,7 +57,7 @@ export const VenueCard = memo(function VenueCard({
     (venue as any).is_sponsored ?? false
   )
 
-  // Merge impression ref with external cardRef
+  // Merge impression ref with any external cardRef (e.g. for map scroll)
   const mergedRef = (el: HTMLDivElement | null) => {
     ;(impressionRef as React.MutableRefObject<HTMLDivElement | null>).current = el
     if (cardRef) cardRef(el)
@@ -120,6 +121,7 @@ export const VenueCard = memo(function VenueCard({
       onKeyDown={e => e.key === 'Enter' && handleCardClick()}
       aria-label={`${venue.name} — ${venueStatus?.badge ?? 'See details'}`}
     >
+      {/* ── TOP ROW ── */}
       <div className="vc__top">
         <div className="vc__badges-left">
           {venueStatus && vis && (
@@ -140,6 +142,7 @@ export const VenueCard = memo(function VenueCard({
         </button>
       </div>
 
+      {/* ── NAME + META ── */}
       <div className="vc__name">{venue.name}</div>
       <div className="vc__meta">
         <span className="vc__neighborhood">{venue.neighborhood}</span>
@@ -151,6 +154,7 @@ export const VenueCard = memo(function VenueCard({
         )}
       </div>
 
+      {/* ── TIME ── */}
       {bestSchedule && (
         <div className="vc__time">
           {bestSchedule.is_all_day ? 'All day' : `${fmtTime(bestSchedule.start_time)} – ${fmtTime(bestSchedule.end_time)}`}
@@ -163,10 +167,15 @@ export const VenueCard = memo(function VenueCard({
         </div>
       )}
 
+      {/* ── DEAL PILLS ── */}
       {topDeals.length > 0 ? (
         <div className="vc__deals">
           {topDeals.map((deal, i) => (
-            <span key={i} className="vc__deal-pill" style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}>
+            <span
+              key={i}
+              className="vc__deal-pill"
+              style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}
+            >
               <span className="vc__pill-type">{DEAL_TYPE_LABELS[deal.type]}</span>
               {deal.price != null
                 ? <span className="vc__pill-price">${deal.price}</span>
@@ -182,12 +191,14 @@ export const VenueCard = memo(function VenueCard({
         <div className="vc__deal-text">{bestSchedule.deal_text}</div>
       ) : null}
 
+      {/* ── EXPIRY WARNING ── */}
       {showExpiryWarning && (
         <div className="vc__expiry-warning">
           ⚠️ Last confirmed {daysSinceVerified}d ago — verify before heading out
         </div>
       )}
 
+      {/* ── FOOTER ── */}
       <div className="vc__footer">
         <span className="vc__cta">View deals →</span>
         <button className="vc__share" onClick={handleShare} aria-label="Share" title="Share">
