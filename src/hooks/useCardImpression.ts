@@ -2,12 +2,12 @@ import { useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { track } from '../services/analytics'
 
-// Tracks once per card per session — fires after 1 second of visibility
+// Tracks once per card per session — fires after 1 second of 50% visibility
 const seen = new Set<string>()
 
 async function recordImpression(venueId: string, venueName: string, isFeatured: boolean, isSponsored: boolean) {
   try {
-    // Fire to PostHog
+    // 1. Fire to PostHog
     track('venue_card_impression', {
       venue_id: venueId,
       venue_name: venueName,
@@ -15,10 +15,16 @@ async function recordImpression(venueId: string, venueName: string, isFeatured: 
       is_sponsored: isSponsored,
     })
 
-    // Write to Supabase venue_stats
+    // 2. Increment weekly venue_stats (existing)
     await supabase.rpc('increment_venue_stat', {
       p_venue_id: venueId,
       p_stat: 'card_views',
+    })
+
+    // 3. Log timestamped event for daily/weekly/monthly/yearly/all-time queries
+    await supabase.from('venue_impressions').insert({
+      venue_id: venueId,
+      event_type: 'card_view',
     })
   } catch {
     // Never break the UI for analytics
@@ -41,7 +47,6 @@ export function useCardImpression(
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          // Start 1-second timer when card enters viewport
           timerRef.current = setTimeout(() => {
             if (!seen.has(venueId)) {
               seen.add(venueId)
@@ -49,14 +54,13 @@ export function useCardImpression(
             }
           }, 1000)
         } else {
-          // Card left viewport before 1 second — cancel timer
           if (timerRef.current) {
             clearTimeout(timerRef.current)
             timerRef.current = null
           }
         }
       },
-      { threshold: 0.5 } // 50% of card must be visible
+      { threshold: 0.5 }
     )
 
     observer.observe(el)
