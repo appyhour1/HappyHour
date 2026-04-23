@@ -43,7 +43,7 @@ function getBestScheduleIndex(schedules: HappyHourSchedule[]): number {
 
   // 3. Prefer a schedule that includes today
   for (let i = 0; i < schedules.length; i++) {
-    if (schedules[i].days.includes(todayAbbr)) return i
+    if (schedules[i].days.includes(todayAbbr as any)) return i
   }
 
   // 4. Fall back to first schedule
