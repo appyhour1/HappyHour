@@ -1,4 +1,4 @@
-/* v3
+/* v4
  * AdminPage.tsx — Route: /admin
  * Tab 1: Pending approvals
  * Tab 2: Venue analytics + featured/sponsored toggles (collapsible per-venue cards)
@@ -784,7 +784,12 @@ export default function AdminPage() {
             {trafficData.length > 0 && (() => {
               const max = Math.max(...trafficData.map(d => d.visitors), 1)
               const total = trafficData.reduce((a, d) => a + d.visitors, 0)
-              const avg = Math.round(total / 30)
+              const now = new Date()
+              const isLaunchMonth = now.getFullYear() === 2026 && now.getMonth() === 3
+              const daysElapsed = isLaunchMonth
+                ? Math.floor((now.getTime() - new Date('2026-04-22').getTime()) / (1000 * 60 * 60 * 24)) + 1
+                : now.getDate()
+              const avg = daysElapsed > 0 ? Math.round(total / daysElapsed) : 0
               const peak = Math.max(...trafficData.map(d => d.visitors))
               const last7 = trafficData.slice(-7).reduce((a, d) => a + d.visitors, 0)
               return (
