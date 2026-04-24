@@ -1,4 +1,4 @@
-/* v4
+/* v5
  * AdminPage.tsx — Route: /admin
  * Tab 1: Pending approvals
  * Tab 2: Venue analytics + featured/sponsored toggles (collapsible per-venue cards)
@@ -99,6 +99,13 @@ export default function AdminPage() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'views' | 'clicks'>('views')
   const [toggling, setToggling] = useState<string | null>(null)
+  const [installStats, setInstallStats] = useState<{
+    total: number
+    android: number
+    ios: number
+    thisMonth: number
+    byDay: { date: string; count: number }[]
+  }>({ total: 0, android: 0, ios: 0, thisMonth: 0, byDay: [] })
 
   // ── Auth ────────────────────────────────────────────────────────────────────
 
@@ -219,6 +226,46 @@ export default function AdminPage() {
     setImpressionData(counts)
   }
 
+  async function loadInstallStats() {
+    // All-time confirmed installs (accepted + appinstalled + ios_installed)
+    const INSTALL_EVENTS = ['pwa_install_accepted', 'pwa_installed', 'pwa_ios_installed']
+
+    const { data: allTime } = await supabase
+      .from('app_installs')
+      .select('platform, event_type, created_at')
+      .in('event_type', INSTALL_EVENTS)
+
+    if (!allTime) return
+
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
+
+    let total = 0, android = 0, ios = 0, thisMonth = 0
+    const byDayMap: Record<string, number> = {}
+
+    allTime.forEach((r: any) => {
+      total++
+      if (r.platform === 'android') android++
+      if (r.platform === 'ios') ios++
+      if (new Date(r.created_at) >= monthStart) thisMonth++
+      const day = r.created_at.split('T')[0]
+      byDayMap[day] = (byDayMap[day] || 0) + 1
+    })
+
+    // Build last 30 days array for the chart
+    const byDay: { date: string; count: number }[] = []
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      const key = d.toISOString().split('T')[0]
+      const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      byDay.push({ date: label, count: byDayMap[key] || 0 })
+    }
+
+    setInstallStats({ total, android, ios, thisMonth, byDay })
+  }
+
   async function loadBrandAds() {
     const ads = await getAllBrandAds()
     setBrandAds(ads)
@@ -251,6 +298,7 @@ export default function AdminPage() {
       loadContributions()
       loadAnalytics()
       loadBrandAds()
+      loadInstallStats()
     }
   }, [authed]) // eslint-disable-line
 
@@ -831,6 +879,59 @@ export default function AdminPage() {
                 </div>
               )
             })()}
+
+            {/* ── App Installs ── */}
+            <div style={{ background: '#fff', border: '1px solid #EAE6DF', borderRadius: 14, padding: '16px 18px', marginBottom: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1612', marginBottom: 14 }}>App installs</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+                {[
+                  { label: 'Total installs', value: installStats.total, color: '#E85D1A' },
+                  { label: 'This month', value: installStats.thisMonth, color: '#3B82F6' },
+                  { label: 'Android', value: installStats.android, color: '#22C55E' },
+                  { label: 'iOS', value: installStats.ios, color: '#8B5CF6' },
+                ].map(s => (
+                  <div key={s.label} style={{ background: '#F8F6F1', borderRadius: 10, padding: '12px 14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+                    <div style={{ fontSize: 10, color: '#aaa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em' }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+              {installStats.byDay.some(d => d.count > 0) ? (
+                <>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>
+                    Daily installs — last 30 days
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 50, marginBottom: 4 }}>
+                    {installStats.byDay.map((d, i) => {
+                      const maxCount = Math.max(...installStats.byDay.map(x => x.count), 1)
+                      return (
+                        <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
+                          <div
+                            title={`${d.date}: ${d.count} install${d.count !== 1 ? 's' : ''}`}
+                            style={{
+                              width: '100%', borderRadius: '3px 3px 0 0',
+                              background: '#E85D1A',
+                              height: `${Math.max((d.count / maxCount) * 100, d.count > 0 ? 8 : 1)}%`,
+                              opacity: d.count === 0 ? 0.15 : 1,
+                              transition: 'height .3s',
+                            }}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#bbb' }}>
+                    <span>{installStats.byDay[0]?.date}</span>
+                    <span>{installStats.byDay[14]?.date}</span>
+                    <span>{installStats.byDay[29]?.date}</span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: '#bbb', textAlign: 'center', paddingTop: 4 }}>
+                  No installs tracked yet — data appears once users install the app
+                </div>
+              )}
+            </div>
 
             {/* Summary totals */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
