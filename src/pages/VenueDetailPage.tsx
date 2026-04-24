@@ -15,7 +15,6 @@ import { Analytics } from '../services/analytics'
 import { SuggestEditForm } from '../components/ContributionForms'
 import { ClaimVenueForm } from '../components/ClaimVenueForm'
 import { useConfirmDeal } from '../hooks/useConfirmDeal'
-import { EditVenueForm } from '../components/EditVenueForm'
 import { PhotoGallery } from '../components/PhotoGallery'
 import { track } from '../services/analytics'
 import type { Venue, HappyHourSchedule, HappyHourStatus, ScheduleStatus } from '../types'
@@ -114,15 +113,9 @@ export default function VenueDetailPage() {
   const [venue, setVenue] = useState<Venue | null>(null)
   const [loading, setLoading] = useState(true)
   const [showEditForm, setShowEditForm] = useState(false)
-  const [showEditVenue, setShowEditVenue] = useState(false)
   const [showClaimForm, setShowClaimForm] = useState(false)
   const confirmDeal = useConfirmDeal()
   const [activeDay, setActiveDay] = useState('')
-
-  function refetchVenue() {
-    if (!id) return
-    getVenueById(id).then(v => { if (v) setVenue(v) })
-  }
 
   function handleShare() {
     const url = window.location.href
@@ -246,9 +239,6 @@ export default function VenueDetailPage() {
         <nav className="detail-nav">
           <button className="detail-back-btn" onClick={() => navigate(-1)}>← Back</button>
           <div className="detail-nav-actions">
-            <button className="detail-edit-btn" onClick={() => setShowEditVenue(v => !v)}>
-              {showEditVenue ? '✕ Close editor' : '✏️ Edit venue'}
-            </button>
             <button className="detail-share-btn" onClick={openDirections} aria-label="Directions">
               🗺️ Directions
             </button>
@@ -265,16 +255,6 @@ export default function VenueDetailPage() {
             </button>
           </div>
         </nav>
-
-        {showEditVenue && (
-          <div className="detail-edit-panel">
-            <EditVenueForm
-              venue={venue}
-              onClose={() => setShowEditVenue(false)}
-              onSaved={() => { refetchVenue(); setShowEditVenue(false) }}
-            />
-          </div>
-        )}
 
         {/* ── HERO ── */}
         <div className="detail-hero">
