@@ -13,6 +13,14 @@ const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon'
 // Session-level dedup — each venue fires once per page load
 const seen = new Set<string>()
 
+// Format minutes into readable duration: 45 → "45m", 90 → "1h 30m", 60 → "1h"
+function fmtMins(mins: number): string {
+  if (mins < 60) return `${mins}m`
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return m === 0 ? `${h}h` : `${h}h ${m}m`
+}
+
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -55,7 +63,6 @@ export const VenueCard = memo(function VenueCard({
 
   // Stable ref callback — works with both impression tracking and external cardRef
   const setRef = useCallback((el: HTMLDivElement | null) => {
-    // Forward to external ref if provided
     if (cardRef) cardRef(el)
 
     // Clean up previous observer
@@ -70,17 +77,15 @@ export const VenueCard = memo(function VenueCard({
 
     if (!el || seen.has(venue.id)) return
 
-    // Set up intersection observer for scroll impression tracking
+    // 50% visible for 1 second fires the impression
     observerRef.current = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          // Card is 50% visible — start 1 second timer
           timerRef.current = setTimeout(async () => {
             if (seen.has(venue.id)) return
             seen.add(venue.id)
 
             try {
-              // PostHog event
               track('venue_card_impression', {
                 venue_id: venue.id,
                 venue_name: venue.name,
@@ -88,13 +93,11 @@ export const VenueCard = memo(function VenueCard({
                 is_sponsored: (venue as any).is_sponsored ?? false,
               })
 
-              // Weekly stats counter
               await supabase.rpc('increment_venue_stat', {
                 p_venue_id: venue.id,
                 p_stat: 'card_views',
               })
 
-              // Timestamped event for daily/monthly/all-time queries
               await supabase.from('venue_impressions').insert({
                 venue_id: venue.id,
                 event_type: 'card_view',
@@ -104,7 +107,6 @@ export const VenueCard = memo(function VenueCard({
             }
           }, 1000)
         } else {
-          // Card left viewport — cancel timer
           if (timerRef.current) {
             clearTimeout(timerRef.current)
             timerRef.current = null
@@ -117,7 +119,6 @@ export const VenueCard = memo(function VenueCard({
     observerRef.current.observe(el)
   }, [venue.id, venue.name, venue.is_featured, cardRef]) // eslint-disable-line
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (observerRef.current) observerRef.current.disconnect()
@@ -132,16 +133,35 @@ export const VenueCard = memo(function VenueCard({
   })()
 
   const bestSchedule = venueStatus?.schedule ?? schedules[0]
-  const DEAL_ORDER = ['beer', 'cocktail', 'food', 'wine', 'general']
+
+  // Deal type display order — beer first, general last
+  const DEAL_ORDER = ['beer', 'cocktail', 'wine', 'food', 'general']
   const topDeals = [...(bestSchedule?.deals ?? [])]
-    .sort((a, b) => DEAL_ORDER.indexOf(a.type) - DEAL_ORDER.indexOf(b.type))
+    .sort((a, b) => {
+      const aIdx = DEAL_ORDER.indexOf(a.type)
+      const bIdx = DEAL_ORDER.indexOf(b.type)
+      if (aIdx !== bIdx) return aIdx - bIdx
+      // Within same type: priced first, then cheapest first
+      const aHasPrice = a.price != null
+      const bHasPrice = b.price != null
+      if (aHasPrice && !bHasPrice) return -1
+      if (!aHasPrice && bHasPrice) return 1
+      if (aHasPrice && bHasPrice) return (a.price ?? 0) - (b.price ?? 0)
+      return a.description.toLowerCase().localeCompare(b.description.toLowerCase())
+    })
     .slice(0, 4)
+
   const vis = venueStatus ? STATUS_VISUALS[venueStatus.status] : null
 
   const daysSinceVerified = venue.last_verified_at
     ? Math.floor((Date.now() - new Date(venue.last_verified_at).getTime()) / 86_400_000)
     : null
   const showExpiryWarning = daysSinceVerified !== null && daysSinceVerified > 30
+
+  // Time signal thresholds — raised to 90 mins so users see urgency earlier
+  const URGENCY_THRESHOLD_MINS = 90
+  const showEndsIn = venueStatus?.minutesRemaining != null && venueStatus.minutesRemaining <= URGENCY_THRESHOLD_MINS
+  const showStartsIn = venueStatus?.minutesUntil != null && venueStatus.minutesUntil <= URGENCY_THRESHOLD_MINS
 
   function handleCardClick() {
     Analytics.venueCardClicked(venue.id, venue.name, isOpen)
@@ -217,11 +237,15 @@ export const VenueCard = memo(function VenueCard({
       {bestSchedule && (
         <div className="vc__time">
           {bestSchedule.is_all_day ? 'All day' : `${fmtTime(bestSchedule.start_time)} – ${fmtTime(bestSchedule.end_time)}`}
-          {venueStatus?.minutesRemaining != null && venueStatus.minutesRemaining <= 60 && (
-            <span className="vc__time-note"> · ends in {venueStatus.minutesRemaining}m</span>
+          {showEndsIn && (
+            <span className="vc__time-note vc__time-note--urgent">
+              {' '}· ends in {fmtMins(venueStatus!.minutesRemaining!)}
+            </span>
           )}
-          {venueStatus?.minutesUntil != null && venueStatus.minutesUntil <= 60 && (
-            <span className="vc__time-note"> · starts in {venueStatus.minutesUntil}m</span>
+          {!showEndsIn && showStartsIn && (
+            <span className="vc__time-note">
+              {' '}· starts in {fmtMins(venueStatus!.minutesUntil!)}
+            </span>
           )}
         </div>
       )}
@@ -239,7 +263,7 @@ export const VenueCard = memo(function VenueCard({
             </span>
           ))}
           {(bestSchedule?.deals ?? []).length > 4 && (
-            <span className="vc__more-deals">+{bestSchedule!.deals.length - 4} more</span>
+            <span className="vc__more-deals">+{(bestSchedule?.deals ?? []).length - 4} more</span>
           )}
         </div>
       ) : bestSchedule?.deal_text ? (
