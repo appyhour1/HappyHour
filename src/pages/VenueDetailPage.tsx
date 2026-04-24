@@ -25,6 +25,9 @@ const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon'
 // Map JS getDay() to our day abbreviations
 const JS_DAY_TO_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
+// Canonical deal type display order — consistent with VenueCard
+const DEAL_TYPE_ORDER = ['beer', 'cocktail', 'wine', 'food', 'general']
+
 function getBestDay(schedules: HappyHourSchedule[]): string {
   if (!schedules.length) return JS_DAY_TO_ABBR[new Date().getDay()]
   const todayAbbr = JS_DAY_TO_ABBR[new Date().getDay()]
@@ -54,7 +57,7 @@ function getDealsForDay(schedules: HappyHourSchedule[], day: string) {
   // Use the schedule with the most deals as the "primary" for time display
   const primary = matching.reduce((a, b) => b.deals.length > a.deals.length ? b : a)
 
-  // Merge all deals, deduplicating by description
+  // Merge all deals from all matching schedules, deduplicating by description
   const allDeals: typeof primary.deals = []
   matching.forEach(s => {
     s.deals.forEach(deal => {
@@ -65,10 +68,34 @@ function getDealsForDay(schedules: HappyHourSchedule[], day: string) {
     })
   })
 
+  // Sort deals:
+  // 1. By type in canonical order (beer → cocktail → wine → food → general)
+  // 2. Within each type: price ascending (priced deals first, cheapest first)
+  // 3. Final tiebreaker: description alphabetically
+  const sortedDeals = [...allDeals].sort((a, b) => {
+    const aTypeIdx = DEAL_TYPE_ORDER.indexOf(a.type) ?? 99
+    const bTypeIdx = DEAL_TYPE_ORDER.indexOf(b.type) ?? 99
+    if (aTypeIdx !== bTypeIdx) return aTypeIdx - bTypeIdx
+
+    // Same type — priced deals before unpriced
+    const aHasPrice = a.price != null
+    const bHasPrice = b.price != null
+    if (aHasPrice && !bHasPrice) return -1
+    if (!aHasPrice && bHasPrice) return 1
+
+    // Both priced — cheapest first
+    if (aHasPrice && bHasPrice) {
+      if (a.price !== b.price) return (a.price ?? 0) - (b.price ?? 0)
+    }
+
+    // Alphabetical by description
+    return a.description.toLowerCase().localeCompare(b.description.toLowerCase())
+  })
+
   const dealText = matching.map(s => s.deal_text).filter(Boolean).join(' · ')
   const time = primary.is_all_day ? 'All day' : `${fmtTime(primary.start_time)} – ${fmtTime(primary.end_time)}`
 
-  return { deals: allDeals, dealText, time, schedule: primary }
+  return { deals: sortedDeals, dealText, time, schedule: primary }
 }
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -139,13 +166,11 @@ export default function VenueDetailPage() {
     if (cached) {
       setVenue(cached)
       setLoading(false)
-      // Set best schedule index based on today
       setActiveDay(getBestDay(cached.schedules ?? []))
     }
     getVenueById(id).then(async v => {
       if (v) {
         setVenue(v)
-        // Default to today's day if venue is open today
         setActiveDay(getBestDay(v.schedules ?? []))
 
         // Track page view via PostHog
@@ -216,6 +241,7 @@ export default function VenueDetailPage() {
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
       <div className="detail-page">
+
         {/* ── BACK NAV ── */}
         <nav className="detail-nav">
           <button className="detail-back-btn" onClick={() => navigate(-1)}>← Back</button>
@@ -333,7 +359,6 @@ export default function VenueDetailPage() {
         <div className="detail-section">
           <h2 className="detail-section-title">Happy Hour Deals</h2>
           {(() => {
-            // Build list of unique days this venue has deals, in week order
             const dayOrder = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
             const venueDays = dayOrder.filter(d => schedules.some(s => s.days.includes(d as any)))
             const todayAbbr = JS_DAY_TO_ABBR[new Date().getDay()]
@@ -458,6 +483,7 @@ export default function VenueDetailPage() {
             </div>
           </div>
         )}
+
       </div>
     </>
   )
