@@ -13,7 +13,6 @@ import { getVenues } from '../services/venueService'
 import { getAllBrandAds, saveBrandAd, deleteBrandAd, toggleBrandAd } from '../services/brandAdService'
 import type { BrandAd } from '../components/SponsoredBanner'
 import { EditVenueForm } from '../components/EditVenueForm'
-import { EditVenueForm } from '../components/EditVenueForm'
 
 const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'happyhour2026'
 
