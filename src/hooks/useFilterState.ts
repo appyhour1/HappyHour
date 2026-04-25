@@ -17,6 +17,11 @@
  * - Here: filter values, sort mode, URL sync, toggle helpers, clear
  * - App.tsx: venues data, loading, modal state, save/delete actions
  * - FilterPanel: renders the filter UI, calls callbacks from this hook
+ *
+ * DEFAULT SORT: 'featured'
+ * - Featured venues always appear first (paid placement)
+ * - Remaining venues sorted alphabetically via scoring.ts 'featured' mode
+ * - Switch to 'best_match' when engagement data (upvotes, confirmations) is meaningful
  */
 
 import { useState, useEffect, useCallback } from 'react'
@@ -38,12 +43,15 @@ export interface UseFilterStateReturn {
   toggleNeighborhood: (n: string) => void
   togglePriceTier: (p: PriceTier) => void
   setTimeWindow: (tw: TimeWindow | null) => void
-setOpenNow: (on: boolean) => void
+  setOpenNow: (on: boolean) => void
   setDogFriendly: (df: boolean) => void
   setSearch: (q: string) => void
   setSort: (mode: SortMode) => void
   clearAll: () => void
 }
+
+// Default sort: featured first, then alphabetical
+const DEFAULT_SORT: SortMode = 'featured'
 
 function defaultFiltersWithToday(): FilterState {
   return { ...DEFAULT_FILTERS }
@@ -65,11 +73,11 @@ export function useFilterState(): UseFilterStateReturn {
   const [sort, setSort] = useState<SortMode>(() => {
     try {
       const params = new URLSearchParams(window.location.search)
-      if (params.toString() === '') return 'best_match'
+      if (params.toString() === '') return DEFAULT_SORT
       const { sort: parsed } = paramsToFilters(params)
       return parsed
     } catch {
-      return 'best_match'
+      return DEFAULT_SORT
     }
   })
 
@@ -110,9 +118,10 @@ export function useFilterState(): UseFilterStateReturn {
   }
 
   // ── CLEAR ALL ──
+  // Resets to default sort (featured) not best_match
   const clearAll = useCallback(() => {
     setFilters(defaultFiltersWithToday())
-    setSort('best_match')
+    setSort(DEFAULT_SORT)
   }, [])
 
   return {
@@ -128,7 +137,7 @@ export function useFilterState(): UseFilterStateReturn {
     toggleNeighborhood: (n) => toggleInSet<string>('neighborhoods', n),
     togglePriceTier:    (p) => toggleInSet<PriceTier>('priceTiers', p),
     setTimeWindow:      (tw) => setFilter('timeWindow', tw),
-setOpenNow:         (on) => setFilter('openNow', on),
+    setOpenNow:         (on) => setFilter('openNow', on),
     setDogFriendly:     (df: boolean) => setFilter('dogFriendly' as any, df),
     setSearch:          (q)  => setFilter('search', q),
     setSort,
