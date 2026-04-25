@@ -98,7 +98,7 @@ export default function AdminPage() {
   const [impressionRange, setImpressionRange] = useState<'today' | 'week' | 'month' | 'alltime'>('week')
   const [impressionData, setImpressionData] = useState<Record<string, number>>({})
   const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState<'name' | 'views' | 'clicks'>('views')
+  const [sortBy, setSortBy] = useState<'name' | 'views' | 'clicks'>('name')
   const [toggling, setToggling] = useState<string | null>(null)
   const [editingVenueId, setEditingVenueId] = useState<string | null>(null)
   const [installStats, setInstallStats] = useState<{
