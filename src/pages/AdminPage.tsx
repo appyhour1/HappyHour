@@ -12,6 +12,8 @@ import type { Venue } from '../types'
 import { getVenues } from '../services/venueService'
 import { getAllBrandAds, saveBrandAd, deleteBrandAd, toggleBrandAd } from '../services/brandAdService'
 import type { BrandAd } from '../components/SponsoredBanner'
+import { EditVenueForm } from '../components/EditVenueForm'
+import { EditVenueForm } from '../components/EditVenueForm'
 
 const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'happyhour2026'
 
@@ -99,6 +101,8 @@ export default function AdminPage() {
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'views' | 'clicks'>('views')
   const [toggling, setToggling] = useState<string | null>(null)
+  const [editingVenueId, setEditingVenueId] = useState<string | null>(null)
+  const [editingVenueId, setEditingVenueId] = useState<string | null>(null)
   const [installStats, setInstallStats] = useState<{
     total: number
     android: number
@@ -1093,12 +1097,32 @@ export default function AdminPage() {
                           {toggling?.startsWith(venue.id) && <span style={{ fontSize: 11, color: '#aaa' }}>Saving...</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => setEditingVenueId(editingVenueId === venue.id ? null : venue.id)}
+                            style={btn(editingVenueId === venue.id ? '#F3F4F6' : '#F8F6F1', '#555', { border: '1px solid #EAE6DF' })}
+                          >
+                            {editingVenueId === venue.id ? '✕ Close editor' : '✏️ Edit venue'}
+                          </button>
                           <button onClick={() => sendStatsEmail(venue)} disabled={sending === venue.id} style={btn('#3A3630', '#fff')}>
                             {sending === venue.id ? 'Opening...' : '📧 Email stats'}
                           </button>
                           <button onClick={() => deleteVenue(venue)} style={btn('#fee2e2', '#c0392b')}>🗑 Delete</button>
                         </div>
                       </div>
+
+                      {/* Inline venue editor */}
+                      {editingVenueId === venue.id && (
+                        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #EAE6DF' }}>
+                          <EditVenueForm
+                            venue={venue}
+                            onClose={() => setEditingVenueId(null)}
+                            onSaved={() => {
+                              setEditingVenueId(null)
+                              loadAnalytics()
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
