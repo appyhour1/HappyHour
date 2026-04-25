@@ -154,6 +154,10 @@ export default function VenueDetailPage() {
   }
 
   useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
+
+  useEffect(() => {
     if (!id) return
     const cached = allVenues.find(v => v.id === id)
     if (cached) {
