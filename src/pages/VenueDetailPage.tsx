@@ -366,7 +366,7 @@ export default function VenueDetailPage() {
                   </div>
                 )}
                 <div className="detail-schedule">
-                  <div className="detail-schedule-header">
+                  <div className="detail-schedule-header" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <span className="detail-time">{time}</span>
                     {isToday && st && (
                       <span className="detail-schedule-status" style={vis ? { background: vis.bg, color: vis.text } : {}}>
