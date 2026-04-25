@@ -101,7 +101,6 @@ export default function AdminPage() {
   const [sortBy, setSortBy] = useState<'name' | 'views' | 'clicks'>('views')
   const [toggling, setToggling] = useState<string | null>(null)
   const [editingVenueId, setEditingVenueId] = useState<string | null>(null)
-  const [editingVenueId, setEditingVenueId] = useState<string | null>(null)
   const [installStats, setInstallStats] = useState<{
     total: number
     android: number
