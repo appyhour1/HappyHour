@@ -28,7 +28,7 @@ type DealType = 'beer' | 'cocktail' | 'food' | 'wine' | 'general'
 interface DealItem {
   type: DealType
   description: string
-  price: number | null
+  price: number | undefined
 }
 
 const DEAL_TYPE_OPTIONS: { value: DealType; label: string; emoji: string }[] = [
@@ -59,7 +59,7 @@ function Field({ label, required, hint, children }: {
 }
 
 function emptyDeal(): DealItem {
-  return { type: 'beer', description: '', price: null }
+  return { type: 'beer', description: '', price: undefined }
 }
 
 function dealsFromSchedule(schedule: HappyHourSchedule): DealItem[] {
@@ -67,7 +67,7 @@ function dealsFromSchedule(schedule: HappyHourSchedule): DealItem[] {
     return schedule.deals.map((d: any) => ({
       type: d.type ?? 'general',
       description: d.description ?? '',
-      price: d.price ?? null,
+      price: d.price ?? undefined,
     }))
   }
   return [emptyDeal()]
@@ -127,7 +127,7 @@ function DealRow({
           min="0"
           step="0.5"
           value={deal.price ?? ''}
-          onChange={e => onChange({ ...deal, price: e.target.value ? parseFloat(e.target.value) : null })}
+          onChange={e => onChange({ ...deal, price: e.target.value ? parseFloat(e.target.value) : undefined })}
           placeholder="—"
           style={{
             width: '100%', padding: '7px 8px 7px 22px', borderRadius: 8,
