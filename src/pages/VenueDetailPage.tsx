@@ -25,7 +25,7 @@ const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon'
 const JS_DAY_TO_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
 // Canonical deal type display order — consistent with VenueCard
-const DEAL_TYPE_ORDER = ['beer', 'cocktail', 'wine', 'food', 'general']
+const DEAL_TYPE_ORDER = ['beer', 'cocktail', 'liquor', 'wine', 'food', 'general']
 
 function getBestDay(schedules: HappyHourSchedule[]): string {
   if (!schedules.length) return JS_DAY_TO_ABBR[new Date().getDay()]
