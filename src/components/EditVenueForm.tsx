@@ -16,14 +16,8 @@
 import React, { useState } from 'react'
 import { PlacesSearch, type PlaceResult } from './PlacesSearch'
 import { supabase } from '../lib/supabase'
-import type { Venue, HappyHourSchedule, DayOfWeek } from '../types'
+import type { Venue, HappyHourSchedule, DayOfWeek, DealType } from '../types'
 import { DAYS_OF_WEEK } from '../types'
-
-// ─────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────
-
-type DealType = 'beer' | 'cocktail' | 'food' | 'wine' | 'general'
 
 interface DealItem {
   type: DealType
