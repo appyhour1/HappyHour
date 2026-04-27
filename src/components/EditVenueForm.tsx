@@ -34,6 +34,7 @@ interface DealItem {
 const DEAL_TYPE_OPTIONS: { value: DealType; label: string; emoji: string }[] = [
   { value: 'beer',     label: 'Beer',     emoji: '🍺' },
   { value: 'cocktail', label: 'Cocktail', emoji: '🍸' },
+  { value: 'liquor',   label: 'Liquor',   emoji: '🥃' },
   { value: 'wine',     label: 'Wine',     emoji: '🍷' },
   { value: 'food',     label: 'Food',     emoji: '🍔' },
   { value: 'general',  label: 'General',  emoji: '🏷️' },

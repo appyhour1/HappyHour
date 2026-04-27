@@ -135,7 +135,7 @@ export const VenueCard = memo(function VenueCard({
   const bestSchedule = venueStatus?.schedule ?? schedules[0]
 
   // Deal type display order — beer first, general last
-  const DEAL_ORDER = ['beer', 'cocktail', 'wine', 'food', 'general']
+  const DEAL_ORDER = ['beer', 'cocktail', 'liquor', 'wine', 'food', 'general']
   const topDeals = [...(bestSchedule?.deals ?? [])]
     .sort((a, b) => {
       const aIdx = DEAL_ORDER.indexOf(a.type)
