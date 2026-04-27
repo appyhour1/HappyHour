@@ -17,7 +17,6 @@ import AboutPage from './pages/AboutPage'
 import AdminPage from './pages/AdminPage'
 import './styles.css'
 import './styles/additions.css'
-import './styles/mobile-fix.css'
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
