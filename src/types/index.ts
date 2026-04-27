@@ -15,7 +15,7 @@ export type VerificationStatus = 'unverified' | 'community' | 'verified' | 'clai
 
 export type DataSource = 'user_submitted' | 'business_claimed' | 'scraped' | 'admin'
 
-export type DealType = 'beer' | 'wine' | 'cocktail' | 'food' | 'general'
+export type DealType = 'beer' | 'wine' | 'cocktail' | 'liquor' | 'food' | 'general'
 
 export type VenueCategory =
   | 'sports_bar'
@@ -229,17 +229,19 @@ export const EMPTY_FORM: VenueFormState = {
 // ─────────────────────────────────────────────
 
 export const DEAL_TYPE_LABELS: Record<DealType, string> = {
-  beer: 'Beer',
-  wine: 'Wine',
+  beer:     'Beer',
+  wine:     'Wine',
   cocktail: 'Cocktails',
-  food: 'Food',
-  general: 'General',
+  liquor:   'Liquor',
+  food:     'Food',
+  general:  'General',
 }
 
 export const DEAL_TYPE_COLORS: Record<DealType, { bg: string; text: string }> = {
   beer:     { bg: '#FEF3E2', text: '#633806' },
   wine:     { bg: '#F9EEFF', text: '#5B1A7A' },
   cocktail: { bg: '#EEEDFE', text: '#3C3489' },
+  liquor:   { bg: '#FFF0F0', text: '#8B1A1A' },
   food:     { bg: '#E1F5EE', text: '#085041' },
   general:  { bg: '#F0EDE8', text: '#555' },
 }
