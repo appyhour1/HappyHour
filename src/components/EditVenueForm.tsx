@@ -90,61 +90,61 @@ function DealRow({
 }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8,
+      marginBottom: 8,
       background: '#FFFBF5', border: '1px solid #F0E8D8', borderRadius: 10, padding: '10px 12px',
     }}>
-      {/* Type selector */}
-      <select
-        value={deal.type}
-        onChange={e => onChange({ ...deal, type: e.target.value as DealType })}
-        style={{
-          padding: '7px 10px', borderRadius: 8, border: '1px solid #E0DDD8',
-          fontSize: 13, fontFamily: 'inherit', background: '#fff',
-          flexShrink: 0, width: 130,
-        }}
-      >
-        {DEAL_TYPE_OPTIONS.map(o => (
-          <option key={o.value} value={o.value}>{o.emoji} {o.label}</option>
-        ))}
-      </select>
-
-      {/* Description */}
-      <input
-        value={deal.description}
-        onChange={e => onChange({ ...deal, description: e.target.value })}
-        placeholder="e.g. $3 draft beer"
-        style={{
-          flex: 1, padding: '7px 10px', borderRadius: 8,
-          border: '1px solid #E0DDD8', fontSize: 13, fontFamily: 'inherit',
-        }}
-      />
-
-      {/* Price */}
-      <div style={{ position: 'relative', flexShrink: 0, width: 80 }}>
-        <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#aaa', fontSize: 13 }}>$</span>
-        <input
-          type="number"
-          min="0"
-          step="0.5"
-          value={deal.price ?? ''}
-          onChange={e => onChange({ ...deal, price: e.target.value ? parseFloat(e.target.value) : undefined })}
-          placeholder="—"
+      {/* Row 1: type selector + remove button */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <select
+          value={deal.type}
+          onChange={e => onChange({ ...deal, type: e.target.value as DealType })}
           style={{
-            width: '100%', padding: '7px 8px 7px 22px', borderRadius: 8,
-            border: '1px solid #E0DDD8', fontSize: 13, fontFamily: 'inherit',
-            boxSizing: 'border-box' as const,
+            flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid #E0DDD8',
+            fontSize: 13, fontFamily: 'inherit', background: '#fff',
           }}
-        />
+        >
+          {DEAL_TYPE_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>{o.emoji} {o.label}</option>
+          ))}
+        </select>
+        {canRemove && (
+          <button
+            onClick={onRemove}
+            type="button"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 20, flexShrink: 0, padding: '0 4px', lineHeight: 1 }}
+          >✕</button>
+        )}
       </div>
 
-      {/* Remove */}
-      {canRemove && (
-        <button
-          onClick={onRemove}
-          type="button"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 18, flexShrink: 0, padding: '0 4px', lineHeight: 1 }}
-        >✕</button>
-      )}
+      {/* Row 2: description + price side by side */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          value={deal.description}
+          onChange={e => onChange({ ...deal, description: e.target.value })}
+          placeholder="e.g. $3 draft beer"
+          style={{
+            flex: 1, padding: '8px 10px', borderRadius: 8,
+            border: '1px solid #E0DDD8', fontSize: 13, fontFamily: 'inherit',
+            minWidth: 0,
+          }}
+        />
+        <div style={{ position: 'relative', flexShrink: 0, width: 72 }}>
+          <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#aaa', fontSize: 13 }}>$</span>
+          <input
+            type="number"
+            min="0"
+            step="0.5"
+            value={deal.price ?? ''}
+            onChange={e => onChange({ ...deal, price: e.target.value ? parseFloat(e.target.value) : undefined })}
+            placeholder="—"
+            style={{
+              width: '100%', padding: '8px 6px 8px 20px', borderRadius: 8,
+              border: '1px solid #E0DDD8', fontSize: 13, fontFamily: 'inherit',
+              boxSizing: 'border-box' as const,
+            }}
+          />
+        </div>
+      </div>
     </div>
   )
 }
