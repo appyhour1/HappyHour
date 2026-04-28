@@ -39,7 +39,7 @@ function Textarea({ ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement
 
 // ─── PHOTO SCAN ───────────────────────────────
 
-type DealType = 'beer' | 'cocktail' | 'food' | 'wine' | 'general'
+type DealType = 'beer' | 'cocktail' | 'liquor' | 'food' | 'wine' | 'general'
 
 interface ScannedDeal { type: DealType; description: string; price: string }
 interface ScanResult { deals: ScannedDeal[]; schedule?: string; dealText?: string }
@@ -110,6 +110,7 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
 const DEAL_COLORS: Record<DealType, { bg: string; color: string; border: string }> = {
   beer:     { bg: '#FFF8E8', color: '#7A5000', border: '#F5D88A' },
   cocktail: { bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' },
+  liquor:   { bg: '#FFF0F0', color: '#8B1A1A', border: '#FECACA' },
   food:     { bg: '#F0FDF4', color: '#166534', border: '#BBF7D0' },
   wine:     { bg: '#FFF0F6', color: '#7A0038', border: '#FBCFE8' },
   general:  { bg: '#F5F3EF', color: '#4A4540', border: '#D8D4CC' },
@@ -204,8 +205,9 @@ function ScheduleEditor({
               style={{ color: DEAL_COLORS[deal.type].color }}>
               <option value="beer">🍺 Beer</option>
               <option value="cocktail">🍸 Cocktail</option>
-              <option value="food">🍔 Food</option>
+              <option value="liquor">🥃 Liquor</option>
               <option value="wine">🍷 Wine</option>
+              <option value="food">🍔 Food</option>
               <option value="general">⭐ General</option>
             </select>
             <input className="cf-deal-desc" value={deal.description}
@@ -274,7 +276,6 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
   }
 
   function handlePhotoScan(result: ScanResult) {
-    // Apply scan result to the first schedule
     setSchedules(prev => prev.map((s, i) => {
       if (i !== 0) return s
       return {
@@ -310,7 +311,6 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
     setErrorMsg('')
 
     try {
-      // Auto-geocode address if no coordinates yet
       let resolvedLat = lat
       let resolvedLng = lng
       if (!resolvedLat && address.trim()) {
@@ -321,7 +321,6 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
         } catch { /* silently continue without coords */ }
       }
 
-      // Save to contributions table for admin review
       const { error } = await supabase.from('contributions').insert([{
         flow: 'new_venue',
         status: 'pending',
