@@ -351,6 +351,27 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
       }])
 
       if (error) throw new Error(error.message)
+
+      // Notify admin via email — best effort, never blocks submission
+      try {
+        await fetch('/api/notify-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            venue_name: name.trim(),
+            neighborhood: neighborhood.trim(),
+            submitter_email: '',
+            schedules: schedules.filter(s => s.days.length > 0).map(s => ({
+              days: s.days,
+              start_time: s.isAllDay ? '00:00' : s.startTime,
+              end_time: s.isAllDay ? '23:59' : s.endTime,
+              deal_text: s.dealText.trim() || s.deals.filter(d => d.description).map(d =>
+                `${d.description}${d.price ? ' $' + d.price : ''}`).join(', '),
+            })),
+          }),
+        })
+      } catch { /* never block submission if email fails */ }
+
       setStatus('success')
     } catch (e: any) {
       setErrorMsg(e.message || 'Something went wrong. Please try again.')
