@@ -53,8 +53,14 @@ export interface UseFilterStateReturn {
 // Default sort: featured first, then alphabetical
 const DEFAULT_SORT: SortMode = 'featured'
 
+// Auto-enable "Open Now" during typical happy hour hours (3 PM – 8 PM)
+function getDefaultOpenNow(): boolean {
+  const hour = new Date().getHours()
+  return hour >= 15 && hour < 20
+}
+
 function defaultFiltersWithToday(): FilterState {
-  return { ...DEFAULT_FILTERS }
+  return { ...DEFAULT_FILTERS, openNow: getDefaultOpenNow() }
 }
 
 export function useFilterState(): UseFilterStateReturn {
