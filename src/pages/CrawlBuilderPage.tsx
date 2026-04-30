@@ -4,6 +4,7 @@
  *
  * Bar crawl builder — pick start time, area, stops, get a plan.
  * Generates a shareable link so friends can see the same crawl.
+ * Supports ?neighborhood=OTR param from venue detail page "Add to crawl" button.
  */
 
 import React, { useState, useEffect } from 'react'
@@ -47,7 +48,6 @@ const RADIUS_OPTIONS = [
 function StopCard({ stop, index }: { stop: CrawlStop; index: number }) {
   return (
     <div className="crawl-stop">
-      {/* Connector line above (not for first stop) */}
       {index > 0 && (
         <div className="crawl-connector">
           {stop.distanceFromPrev && (
@@ -57,19 +57,15 @@ function StopCard({ stop, index }: { stop: CrawlStop; index: number }) {
       )}
 
       <div className="crawl-stop-card">
-        {/* Step number */}
         <div className="crawl-stop-num">{index + 1}</div>
 
         <div className="crawl-stop-body">
-          {/* Time badge */}
           <div className="crawl-stop-time">{stop.arrivalTime}</div>
 
-          {/* Venue name */}
           <Link to={`/venue/${stop.venue.id}`} className="crawl-stop-name">
             {stop.venue.name}
           </Link>
 
-          {/* Neighborhood */}
           <div className="crawl-stop-meta">
             {stop.venue.neighborhood}
             {stop.venue.price_tier && <span> · {stop.venue.price_tier}</span>}
@@ -84,7 +80,6 @@ function StopCard({ stop, index }: { stop: CrawlStop; index: number }) {
             )}
           </div>
 
-          {/* Active deal */}
           {stop.activeDeals && (
             <div className="crawl-stop-deal">
               🍺 {stop.activeDeals}
@@ -104,11 +99,20 @@ export default function CrawlBuilderPage() {
   const { venues, userLocation, requestLocation } = useAppContext()
   const [searchParams] = useSearchParams()
 
+  // Check for pre-fill from venue detail page
+  const prefilledNeighborhood = searchParams.get('neighborhood') || ''
+
   // Form state
-  const [startHour, setStartHour]       = useState(16)
+  const [startHour, setStartHour]       = useState(() => {
+    // Default to current hour if in happy hour window, otherwise 4 PM
+    const h = new Date().getHours()
+    return h >= 15 && h < 20 ? h : 16
+  })
   const [numStops, setNumStops]         = useState(3)
-  const [areaMode, setAreaMode]         = useState<'neighborhood' | 'radius'>('neighborhood')
-  const [neighborhood, setNeighborhood] = useState('')
+  const [areaMode, setAreaMode]         = useState<'neighborhood' | 'radius'>(
+    prefilledNeighborhood ? 'neighborhood' : 'neighborhood'
+  )
+  const [neighborhood, setNeighborhood] = useState(prefilledNeighborhood)
   const [radiusMiles, setRadiusMiles]   = useState(1)
   const [dayOfWeek, setDayOfWeek]       = useState<DayOfWeek>(() => {
     const d = new Date().getDay()
@@ -122,13 +126,16 @@ export default function CrawlBuilderPage() {
 
   const neighborhoods = getNeighborhoods(venues)
 
-  // If URL has crawl params, load the shared crawl
+  // If URL has crawl params (shared crawl), load it
   useEffect(() => {
     if (searchParams.get('v')) {
       const shared = parseCrawlFromUrl(searchParams, venues)
       if (shared) setPlan(shared)
     }
   }, [venues, searchParams])
+
+  // If pre-filled from venue detail, show a friendly hint
+  const hasPreFill = !!prefilledNeighborhood && !searchParams.get('v')
 
   function handleBuild() {
     setBuilding(true)
@@ -143,11 +150,10 @@ export default function CrawlBuilderPage() {
       })
       setPlan(result)
       setBuilding(false)
-      // Scroll to results
       setTimeout(() => {
         document.getElementById('crawl-results')?.scrollIntoView({ behavior: 'smooth' })
       }, 100)
-    }, 600) // slight delay for "feel"
+    }, 600)
   }
 
   function handleCopyLink() {
@@ -184,6 +190,16 @@ export default function CrawlBuilderPage() {
         {/* ── BUILDER FORM ── */}
         {!plan && (
           <div className="crawl-form">
+
+            {/* Pre-fill hint */}
+            {hasPreFill && (
+              <div style={{
+                background: '#FFF3E8', border: '1px solid #E85D1A', borderRadius: 10,
+                padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#E85D1A', fontWeight: 600,
+              }}>
+                🍺 Building a crawl around <strong>{prefilledNeighborhood}</strong> — customize below and hit build
+              </div>
+            )}
 
             {/* Day */}
             <div className="crawl-field">
@@ -311,7 +327,6 @@ export default function CrawlBuilderPage() {
         {plan && (
           <div id="crawl-results" className="crawl-results">
 
-            {/* Summary header */}
             <div className="crawl-results-header">
               <div className="crawl-results-title">
                 Your {plan.stops.length}-stop crawl
@@ -323,7 +338,6 @@ export default function CrawlBuilderPage() {
               </div>
             </div>
 
-            {/* Stop list */}
             <div className="crawl-stops">
               {plan.stops.length === 0 ? (
                 <div className="crawl-empty">
@@ -338,7 +352,6 @@ export default function CrawlBuilderPage() {
               )}
             </div>
 
-            {/* Actions */}
             {plan.stops.length > 0 && (
               <div className="crawl-actions">
                 <button className="crawl-share-btn" onClick={handleCopyLink}>
@@ -350,7 +363,6 @@ export default function CrawlBuilderPage() {
               </div>
             )}
 
-            {/* Pro tip */}
             {plan.stops.length > 0 && (
               <div className="crawl-tip">
                 💡 Happy hour times can change — always verify with the bar before heading out.

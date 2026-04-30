@@ -453,6 +453,33 @@ export default function VenueDetailPage() {
           </div>
         )}
 
+        {/* ── ADD TO CRAWL ── */}
+        <div style={{
+          margin: '8px 0', padding: '14px 18px',
+          background: '#F8F6F1', borderRadius: 14,
+          border: '1px solid #EAE6DF',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1612', marginBottom: 2 }}>
+              🍺 Like this spot?
+            </div>
+            <div style={{ fontSize: 12, color: '#888' }}>
+              Add it to a bar crawl and find the best happy hour route
+            </div>
+          </div>
+          <Link
+            to={`/crawl?neighborhood=${encodeURIComponent(venue.neighborhood)}`}
+            style={{
+              flexShrink: 0, padding: '9px 16px', background: '#1A1612', color: '#fff',
+              borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Build a crawl →
+          </Link>
+        </div>
+
         {related.length > 0 && (
           <div className="detail-section">
             <h2 className="detail-section-title">More in {venue.neighborhood}</h2>
