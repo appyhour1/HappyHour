@@ -2,7 +2,7 @@
  * AgeVerification.tsx
  *
  * Full-screen age gate shown on first visit.
- * CURRENTLY DISABLED — set ENABLED = true to activate at launch.
+ * CURRENTLY ENABLED — set ENABLED = false to disable.
  *
  * Once a user confirms their age, it's stored in localStorage
  * and never shown again on that device.
@@ -11,10 +11,9 @@
  *   import { AgeVerification } from './components/AgeVerification'
  *   // Add <AgeVerification /> anywhere inside the shell render
  */
-
 import React, { useState, useEffect } from 'react'
 
-// ─── TOGGLE THIS TO true AT LAUNCH ───────────────
+// ─── TOGGLE THIS TO false TO DISABLE ─────────────
 const ENABLED = true
 // ─────────────────────────────────────────────────
 
@@ -36,7 +35,6 @@ export function AgeVerification() {
   }
 
   function handleDeny() {
-    // Shake the modal and show a message
     setShaking(true)
     setTimeout(() => setShaking(false), 600)
   }
@@ -49,12 +47,12 @@ export function AgeVerification() {
 
         {/* Logo */}
         <div className="age-gate-logo">
-          <span className="age-gate-logo-appy">Appy</span>
-          <span className="age-gate-logo-hour">Hour</span>
+          <span className="age-gate-logo-appy">Happy Hour</span>
+          <span className="age-gate-logo-hour"> Unlocked</span>
         </div>
 
         {/* Icon */}
-        <div className="age-gate-icon">🍺</div>
+        <div className="age-gate-icon">🔓</div>
 
         {/* Heading */}
         <h1 className="age-gate-title">Are you 21 or older?</h1>
