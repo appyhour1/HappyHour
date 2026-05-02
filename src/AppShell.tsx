@@ -36,7 +36,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
           <Link to="/tonight" className={`shell-link${location.pathname === '/tonight' ? ' active' : ''}`}>Tonight</Link>
           <Link to="/about" className={`shell-link${location.pathname === '/about' ? ' active' : ''}`}>About</Link>
-          <Link to={`/${citySlug}`} className="shell-link">City Guide</Link>
           <Link to="/crawl" className={`shell-link${location.pathname === '/crawl' ? ' active' : ''}`}>🍺 Bar Crawl</Link>
         </nav>
 
