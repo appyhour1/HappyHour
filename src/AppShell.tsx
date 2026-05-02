@@ -13,7 +13,7 @@ import { AgeVerification } from './components/AgeVerification'
 import { Onboarding } from './components/Onboarding'
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { city, favorites, dark, toggleDark } = useAppContext()
+  const { city, favorites } = useAppContext()
   const location = useLocation()
   const [showAddForm, setShowAddForm] = useState(false)
 
@@ -44,14 +44,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {favorites.count > 0 && (
             <span className="shell-fav-count" title="Saved venues">♥ {favorites.count}</span>
           )}
-          <button
-            className="shell-dark-btn"
-            onClick={toggleDark}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={dark ? 'Light mode' : 'Dark mode'}
-          >
-            {dark ? '☀️' : '🌙'}
-          </button>
           <Link to="/admin" className="shell-admin-btn" title="Admin">⚙️</Link>
           <button className="shell-add-btn" onClick={() => setShowAddForm(true)}>
             + Add a spot
