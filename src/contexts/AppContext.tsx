@@ -15,7 +15,6 @@ import type { Venue, UserLocation } from '../types'
 import { getVenues } from '../services/venueService'
 import { useFavorites, type UseFavoritesReturn } from '../hooks/useFavorites'
 import { Analytics, initAnalytics } from '../services/analytics'
-import { useDarkMode } from '../hooks/useDarkMode'
 
 // ─────────────────────────────────────────────
 // CONTEXT TYPE
@@ -39,10 +38,6 @@ interface AppContextValue {
   // City
   city: string
   setCity: (c: string) => void
-
-  // Dark mode
-  dark: boolean
-  toggleDark: () => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -60,7 +55,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [city, setCity] = useState('Cincinnati')
 
   const favorites = useFavorites()
-  const { dark, toggle: toggleDark } = useDarkMode()
 
   // Init analytics once
   useEffect(() => {
@@ -71,7 +65,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Fetch venues on mount + when city changes
   useEffect(() => {
     fetchVenues()
-  }, [city])
+  }, [city]) // eslint-disable-line
 
   async function fetchVenues() {
     setLoading(true)
@@ -110,7 +104,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       userLocation, requestLocation, locationPermission,
       favorites,
       city, setCity,
-      dark, toggleDark,
     }}>
       {children}
     </AppContext.Provider>
