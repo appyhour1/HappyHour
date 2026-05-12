@@ -10,7 +10,7 @@ import { getVenueById } from '../services/venueService'
 import { supabase } from '../lib/supabase'
 import { fmtTime, isVenueActiveNow, getVenueActiveDays, verifiedAgo } from '../utils/filters'
 import { getScheduleStatus, STATUS_VISUALS } from '../utils/happeningNow'
-import { DEAL_TYPE_COLORS, DEAL_TYPE_LABELS, CATEGORY_LABELS, DAYS_OF_WEEK } from '../types'
+import { DEAL_TYPE_COLORS, DEAL_TYPE_LABELS, CATEGORY_LABELS } from '../types'
 import { Analytics } from '../services/analytics'
 import { SuggestEditForm } from '../components/ContributionForms'
 import { ClaimVenueForm } from '../components/ClaimVenueForm'
@@ -21,80 +21,55 @@ import type { Venue, HappyHourSchedule, HappyHourStatus, ScheduleStatus } from '
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
 
-// Map JS getDay() to our day abbreviations
 const JS_DAY_TO_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
-// Canonical deal type display order — consistent with VenueCard
 const DEAL_TYPE_ORDER = ['beer', 'cocktail', 'liquor', 'wine', 'food', 'general']
 
 function getBestDay(schedules: HappyHourSchedule[]): string {
   if (!schedules.length) return JS_DAY_TO_ABBR[new Date().getDay()]
   const todayAbbr = JS_DAY_TO_ABBR[new Date().getDay()]
-
-  // Get all days this venue has deals
   const allDays = Array.from(new Set(schedules.flatMap(s => s.days)))
-
-  // Prefer today if venue is open today
   if (allDays.includes(todayAbbr as any)) return todayAbbr
-
-  // Otherwise find next upcoming day
   const dayOrder = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
   const todayIdx = dayOrder.indexOf(todayAbbr)
   for (let i = 1; i <= 7; i++) {
     const next = dayOrder[(todayIdx + i) % 7]
     if (allDays.includes(next as any)) return next
   }
-
   return allDays[0] || todayAbbr
 }
 
-function getDealsForDay(schedules: HappyHourSchedule[], day: string) {
-  // Get all schedules that apply to this day
+// Returns each schedule window separately — preserves multiple time blocks per day
+function getScheduleBlocksForDay(schedules: HappyHourSchedule[], day: string) {
   const matching = schedules.filter(s => s.days.includes(day as any))
-  if (!matching.length) return { deals: [], dealText: '', time: '', schedule: null }
+  if (!matching.length) return []
 
-  // Use the schedule with the most deals as the "primary" for time display
-  const primary = matching.reduce((a, b) => b.deals.length > a.deals.length ? b : a)
+  // Sort chronologically — all day first, then by start time
+  const sorted = [...matching].sort((a, b) => {
+    if (a.is_all_day) return -1
+    if (b.is_all_day) return 1
+    return a.start_time.localeCompare(b.start_time)
+  })
 
-  // Merge all deals from all matching schedules, deduplicating by description
-  const allDeals: typeof primary.deals = []
-  matching.forEach(s => {
-    s.deals.forEach(deal => {
-      const alreadyShown = allDeals.some(d =>
-        d.description.toLowerCase().trim() === deal.description.toLowerCase().trim()
-      )
-      if (!alreadyShown) allDeals.push(deal)
+  return sorted.map(schedule => {
+    const sortedDeals = [...schedule.deals].sort((a, b) => {
+      const aIdx = DEAL_TYPE_ORDER.indexOf(a.type) ?? 99
+      const bIdx = DEAL_TYPE_ORDER.indexOf(b.type) ?? 99
+      if (aIdx !== bIdx) return aIdx - bIdx
+      const aHasPrice = a.price != null
+      const bHasPrice = b.price != null
+      if (aHasPrice && !bHasPrice) return -1
+      if (!aHasPrice && bHasPrice) return 1
+      if (aHasPrice && bHasPrice && a.price !== b.price) return (a.price ?? 0) - (b.price ?? 0)
+      return a.description.toLowerCase().localeCompare(b.description.toLowerCase())
     })
+
+    const time = schedule.is_all_day
+      ? 'All day'
+      : `${fmtTime(schedule.start_time)} – ${fmtTime(schedule.end_time)}`
+
+    return { schedule, deals: sortedDeals, time }
   })
-
-  // Sort deals:
-  // 1. By type in canonical order (beer → cocktail → wine → food → general)
-  // 2. Within each type: price ascending (priced deals first, cheapest first)
-  // 3. Final tiebreaker: description alphabetically
-  const sortedDeals = [...allDeals].sort((a, b) => {
-    const aTypeIdx = DEAL_TYPE_ORDER.indexOf(a.type) ?? 99
-    const bTypeIdx = DEAL_TYPE_ORDER.indexOf(b.type) ?? 99
-    if (aTypeIdx !== bTypeIdx) return aTypeIdx - bTypeIdx
-
-    // Same type — priced deals before unpriced
-    const aHasPrice = a.price != null
-    const bHasPrice = b.price != null
-    if (aHasPrice && !bHasPrice) return -1
-    if (!aHasPrice && bHasPrice) return 1
-
-    // Both priced — cheapest first
-    if (aHasPrice && bHasPrice) {
-      if (a.price !== b.price) return (a.price ?? 0) - (b.price ?? 0)
-    }
-
-    // Alphabetical by description
-    return a.description.toLowerCase().localeCompare(b.description.toLowerCase())
-  })
-
-  const dealText = matching.map(s => s.deal_text).filter(Boolean).join(' · ')
-  const time = primary.is_all_day ? 'All day' : `${fmtTime(primary.start_time)} – ${fmtTime(primary.end_time)}`
-
-  return { deals: sortedDeals, dealText, time, schedule: primary }
 }
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -109,7 +84,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 export default function VenueDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { favorites, venues: allVenues, userLocation } = useAppContext()
+  const { favorites, venues: allVenues } = useAppContext()
   const [venue, setVenue] = useState<Venue | null>(null)
   const [loading, setLoading] = useState(true)
   const [showEditForm, setShowEditForm] = useState(false)
@@ -169,18 +144,13 @@ export default function VenueDetailPage() {
       if (v) {
         setVenue(v)
         setActiveDay(getBestDay(v.schedules ?? []))
-
-        // Track page view via PostHog
         Analytics.venueDetailViewed(v.id, v.name)
-
-        // Log to venue_impressions (works with anon key, no RPC needed)
         try {
           await supabase.from('venue_impressions').insert({
             venue_id: v.id,
             event_type: 'detail_view',
           })
         } catch { /* silent */ }
-
         confirmDeal.loadCountsForVenues([v.id])
       }
       setLoading(false)
@@ -291,7 +261,7 @@ export default function VenueDetailPage() {
         </div>
 
         {/* ── MAP ── */}
-        {venue.latitude && venue.longitude && (
+        {venue.latitude && venue.longitude && process.env.REACT_APP_GOOGLE_PLACES_KEY && (
           <div className="detail-map-wrap">
             <iframe
               title={`Map of ${venue.name}`}
@@ -306,6 +276,7 @@ export default function VenueDetailPage() {
           </div>
         )}
 
+        {/* ── INFO ── */}
         {(venue.address || venue.website || venue.phone) && (
           <div className="detail-section">
             <h2 className="detail-section-title">Info</h2>
@@ -347,56 +318,92 @@ export default function VenueDetailPage() {
             const venueDays = dayOrder.filter(d => schedules.some(s => s.days.includes(d as any)))
             const todayAbbr = JS_DAY_TO_ABBR[new Date().getDay()]
             const selectedDay = activeDay || getBestDay(schedules)
-            const { deals, dealText, time, schedule } = getDealsForDay(schedules, selectedDay)
             const isToday = selectedDay === todayAbbr
-            const st = schedule ? getScheduleStatus(schedule) : null
+            const blocks = getScheduleBlocksForDay(schedules, selectedDay)
 
             return (
               <>
+                {/* Day tabs */}
                 {venueDays.length > 1 && (
                   <div className="detail-schedule-tabs">
-                    {venueDays.map(d => (
-                      <button
-                        key={d}
-                        className={`detail-tab${selectedDay === d ? ' active' : ''}`}
-                        onClick={() => setActiveDay(d)}
-                      >
-                        {d}
-                        {d === todayAbbr && isToday && st && (st.status === 'live_now' || st.status === 'ends_soon') && (
-                          <span className="tab-live-dot" />
-                        )}
-                      </button>
-                    ))}
+                    {venueDays.map(d => {
+                      const dayBlocks = getScheduleBlocksForDay(schedules, d)
+                      const hasLiveBlock = d === todayAbbr && dayBlocks.some(b => {
+                        const st = getScheduleStatus(b.schedule)
+                        return st && (st.status === 'live_now' || st.status === 'ends_soon')
+                      })
+                      return (
+                        <button
+                          key={d}
+                          className={`detail-tab${selectedDay === d ? ' active' : ''}`}
+                          onClick={() => setActiveDay(d)}
+                        >
+                          {d}
+                          {hasLiveBlock && <span className="tab-live-dot" />}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
-                <div className="detail-schedule">
-                  <div className="detail-schedule-header" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <span className="detail-time">{time}</span>
-                    {isToday && st && (
-                      <span className="detail-schedule-status" style={vis ? { background: vis.bg, color: vis.text } : {}}>
-                        {st.label}
-                      </span>
-                    )}
-                  </div>
-                  {schedule && !schedule.is_all_day && (
-                    <button className="detail-cal-btn" onClick={() => addToCalendar(schedule!)}>
-                      📅 Add to Google Calendar
-                    </button>
-                  )}
-                  {deals.length > 0 ? (
-                    <div className="detail-deals">
-                      {deals.map((deal, i) => (
-                        <div key={i} className="detail-deal-row" style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}>
-                          <span className="detail-deal-type">{DEAL_TYPE_LABELS[deal.type]}</span>
-                          <span className="detail-deal-desc">{deal.description}</span>
-                          {deal.price != null && <span className="detail-deal-price">${deal.price}</span>}
+
+                {/* Schedule blocks — one per time window */}
+                {blocks.length === 0 ? (
+                  <p className="detail-deal-text">No deals scheduled for this day.</p>
+                ) : (
+                  <div className="detail-schedule">
+                    {blocks.map((block, blockIdx) => {
+                      const st = getScheduleStatus(block.schedule)
+                      const blockVis = st ? STATUS_VISUALS[st.status] : null
+                      const isLive = st && (st.status === 'live_now' || st.status === 'ends_soon')
+                      const showStatus = isToday && st
+
+                      return (
+                        <div
+                          key={block.schedule.id}
+                          style={{
+                            marginBottom: blockIdx < blocks.length - 1 ? 20 : 0,
+                            paddingBottom: blockIdx < blocks.length - 1 ? 20 : 0,
+                            borderBottom: blockIdx < blocks.length - 1 ? '1px dashed #EAE6DF' : 'none',
+                          }}
+                        >
+                          {/* Time + status */}
+                          <div className="detail-schedule-header" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <span className="detail-time" style={isLive ? { color: '#22C55E' } : {}}>
+                              {block.time}
+                            </span>
+                            {showStatus && blockVis && (
+                              <span className="detail-schedule-status" style={{ background: blockVis.bg, color: blockVis.text }}>
+                                {st.label}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Calendar button */}
+                          {!block.schedule.is_all_day && (
+                            <button className="detail-cal-btn" onClick={() => addToCalendar(block.schedule)}>
+                              📅 Add to Google Calendar
+                            </button>
+                          )}
+
+                          {/* Deals */}
+                          {block.deals.length > 0 ? (
+                            <div className="detail-deals">
+                              {block.deals.map((deal, i) => (
+                                <div key={i} className="detail-deal-row" style={{ background: DEAL_TYPE_COLORS[deal.type].bg, color: DEAL_TYPE_COLORS[deal.type].text }}>
+                                  <span className="detail-deal-type">{DEAL_TYPE_LABELS[deal.type]}</span>
+                                  <span className="detail-deal-desc">{deal.description}</span>
+                                  {deal.price != null && <span className="detail-deal-price">${deal.price}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          ) : block.schedule.deal_text ? (
+                            <p className="detail-deal-text">{block.schedule.deal_text}</p>
+                          ) : null}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="detail-deal-text">{dealText}</p>
-                  )}
-                </div>
+                      )
+                    })}
+                  </div>
+                )}
               </>
             )
           })()}
