@@ -18,7 +18,9 @@ const isNative = !!(window as any).Capacitor?.isNativePlatform?.()
 
 // Open external links in system browser on native, new tab on web
 async function openExternal(url: string) {
-  if (isNative) {
+  // Check at call time — Capacitor may not be ready at module load
+  const native = !!(window as any).Capacitor?.isNativePlatform?.()
+  if (native) {
     try {
       const { Browser } = await import('@capacitor/browser')
       await Browser.open({ url })
