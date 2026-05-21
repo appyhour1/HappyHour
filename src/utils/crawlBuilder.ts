@@ -49,6 +49,10 @@ export interface CrawlParams {
   dayOfWeek?: DayOfWeek       // defaults to today
 }
 
+// Always use production URL for share links — window.location.origin
+// returns 'https://localhost' inside the Capacitor Android WebView
+const SITE_URL = 'https://www.happyhourunlocked.com'
+
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
@@ -186,7 +190,6 @@ export function buildCrawl(venues: Venue[], params: CrawlParams): CrawlPlan {
       // No happy hour at this hour — try to find any venue in the area
       const fallback = candidates.filter(v => !usedIds.has(v.id))[0]
       if (!fallback) break
-      // Still add it as a "no happy hour" stop
       const distFromPrev = prevStop && fallback.latitude && fallback.longitude &&
         prevStop.venue.latitude && prevStop.venue.longitude
         ? distanceMiles(prevStop.venue.latitude, prevStop.venue.longitude, fallback.latitude, fallback.longitude)
@@ -231,14 +234,14 @@ export function buildCrawl(venues: Venue[], params: CrawlParams): CrawlPlan {
     usedIds.add(best.id)
   }
 
-  // Build share URL
+  // Build share URL — always use production domain
   const shareParams = new URLSearchParams()
   shareParams.set('start', String(params.startHour))
   shareParams.set('stops', String(params.numStops))
   if (params.neighborhood) shareParams.set('hood', params.neighborhood)
   if (params.radiusMiles) shareParams.set('radius', String(params.radiusMiles))
   stops.forEach(s => shareParams.append('v', s.venue.id))
-  const shareUrl = `${window.location.origin}/crawl?${shareParams.toString()}`
+  const shareUrl = `${SITE_URL}/crawl?${shareParams.toString()}`
 
   return {
     stops,
@@ -267,7 +270,7 @@ export function parseCrawlFromUrl(
   if (venueIds.length === 0) return null
 
   const day: DayOfWeek = JS_DAY_TO_DOW[new Date().getDay()]
- const stops: CrawlStop[] = venueIds
+  const stops: CrawlStop[] = venueIds
     .map((id, i) => {
       const venue = venues.find(v => v.id === id)
       if (!venue) return null as unknown as CrawlStop
@@ -289,6 +292,6 @@ export function parseCrawlFromUrl(
     startTime: formatHour(startHour),
     neighborhood: hood,
     radiusMiles: radius,
-    shareUrl: `${window.location.origin}/crawl?${params.toString()}`,
+    shareUrl: `${SITE_URL}/crawl?${params.toString()}`,
   }
 }
