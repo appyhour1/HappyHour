@@ -1,10 +1,11 @@
 /**
  * AppShell.tsx
  * Persistent nav header + layout wrapper for all pages.
+ * Includes Capacitor back button handling and external link support.
  */
 
-import React, { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAppContext } from './contexts/AppContext'
 import { NewVenueForm } from './components/ContributionForms'
 import { BottomNav } from './components/BottomNav'
@@ -12,12 +13,55 @@ import { InstallPrompt } from './components/InstallPrompt'
 import { AgeVerification } from './components/AgeVerification'
 import { Onboarding } from './components/Onboarding'
 
+// Detect native Capacitor environment
+const isNative = !!(window as any).Capacitor?.isNativePlatform?.()
+
+// Open external links in system browser on native, new tab on web
+async function openExternal(url: string) {
+  if (isNative) {
+    try {
+      const { Browser } = await import('@capacitor/browser')
+      await Browser.open({ url })
+    } catch {
+      window.open(url, '_blank')
+    }
+  } else {
+    window.open(url, '_blank')
+  }
+}
+
+export { openExternal }
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const { city, favorites } = useAppContext()
   const location = useLocation()
+  const navigate = useNavigate()
   const [showAddForm, setShowAddForm] = useState(false)
 
   const citySlug = city.toLowerCase().replace(/\s+/g, '-')
+
+  // Android hardware back button handler
+  useEffect(() => {
+    if (!isNative) return
+
+    let cleanup: (() => void) | undefined
+
+    import('@capacitor/app').then(({ App }) => {
+      App.addListener('backButton', ({ canGoBack }) => {
+        if (location.pathname === '/') {
+          // On home screen — exit app
+          App.exitApp()
+        } else {
+          // Navigate back within the app
+          navigate(-1)
+        }
+      }).then(handle => {
+        cleanup = () => handle.remove()
+      })
+    })
+
+    return () => { cleanup?.() }
+  }, [location.pathname, navigate])
 
   return (
     <div className="shell">
@@ -81,7 +125,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <span style={{ color: 'var(--border-2)' }}>·</span>
           <Link to="/cookies" style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none', fontWeight: 500 }}>Cookie Policy</Link>
           <span style={{ color: 'var(--border-2)' }}>·</span>
-          <a href="mailto:info@happyhourunlocked.com" style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none', fontWeight: 500 }}>Contact</a>
+          <a
+            href="mailto:info@happyhourunlocked.com"
+            style={{ fontSize: 12, color: 'var(--ink-4)', textDecoration: 'none', fontWeight: 500 }}
+          >
+            Contact
+          </a>
         </div>
         <div style={{ fontSize: 11, color: 'var(--ink-4)' }}>
           © {new Date().getFullYear()} Happy Hour Unlocked · Cincinnati, Ohio
@@ -90,7 +139,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <Onboarding />
       <AgeVerification />
-      <InstallPrompt />
+      {!isNative && <InstallPrompt />}
       <BottomNav />
     </div>
   )
