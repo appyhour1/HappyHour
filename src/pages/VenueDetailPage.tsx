@@ -17,6 +17,7 @@ import { ClaimVenueForm } from '../components/ClaimVenueForm'
 import { useConfirmDeal } from '../hooks/useConfirmDeal'
 import { PhotoGallery } from '../components/PhotoGallery'
 import { track } from '../services/analytics'
+import { openExternal } from '../AppShell'
 import type { Venue, HappyHourSchedule, HappyHourStatus, ScheduleStatus } from '../types'
 
 const STATUS_PRIORITY: HappyHourStatus[] = ['live_now','ends_soon','starts_soon','later_today','ended','not_today']
@@ -115,7 +116,7 @@ export default function VenueDetailPage() {
     const details = encodeURIComponent(schedule.deal_text || 'Happy hour deals')
     const location = encodeURIComponent(venue?.address || venue?.neighborhood || '')
     const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}&location=${location}&recur=RRULE:FREQ=WEEKLY`
-    window.open(url, '_blank')
+    openExternal(url)
     track('add_to_calendar', { venue_id: venue?.id, venue_name: venue?.name })
   }
 
@@ -124,7 +125,7 @@ export default function VenueDetailPage() {
     const q = venue.address
       ? encodeURIComponent(venue.address)
       : `${encodeURIComponent(venue.name + ' ' + venue.city)}`
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${q}`, '_blank')
+    openExternal(`https://www.google.com/maps/dir/?api=1&destination=${q}`)
     Analytics.getDirectionsClicked(venue.id, venue.name)
   }
 
@@ -284,9 +285,10 @@ export default function VenueDetailPage() {
               {venue.address && (
                 <div className="detail-info-row">
                   <span className="detail-info-label">Address</span>
-                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
-                    target="_blank" rel="noopener noreferrer" className="detail-info-link"
-                    onClick={() => Analytics.getDirectionsClicked(venue.id, venue.name)}>
+                  <a
+                    href="#"
+                    className="detail-info-link"
+                    onClick={e => { e.preventDefault(); openExternal(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address!)}`); Analytics.getDirectionsClicked(venue.id, venue.name) }}>
                     {venue.address} ↗
                   </a>
                 </div>
@@ -294,8 +296,10 @@ export default function VenueDetailPage() {
               {venue.website && (
                 <div className="detail-info-row">
                   <span className="detail-info-label">Website</span>
-                  <a href={venue.website} target="_blank" rel="noopener noreferrer" className="detail-info-link"
-                    onClick={() => Analytics.outboundWebsiteClicked(venue.id, venue.website!)}>
+                  <a
+                    href="#"
+                    className="detail-info-link"
+                    onClick={e => { e.preventDefault(); openExternal(venue.website!); Analytics.outboundWebsiteClicked(venue.id, venue.website!) }}>
                     Visit website ↗
                   </a>
                 </div>
