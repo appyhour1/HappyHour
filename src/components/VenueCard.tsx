@@ -156,7 +156,7 @@ export const VenueCard = memo(function VenueCard({
   const daysSinceVerified = venue.last_verified_at
     ? Math.floor((Date.now() - new Date(venue.last_verified_at).getTime()) / 86_400_000)
     : null
-  const showExpiryWarning = daysSinceVerified !== null && daysSinceVerified > 30
+  const showExpiryWarning = false
 
   // Time signal thresholds — raised to 90 mins so users see urgency earlier
   const URGENCY_THRESHOLD_MINS = 90
