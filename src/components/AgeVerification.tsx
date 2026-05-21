@@ -76,6 +76,22 @@ export function AgeVerification() {
           Please drink responsibly.
         </p>
 
+        {/* Legal consent */}
+        <p className="age-gate-disclaimer">
+          By tapping "Yes, I'm 21+" you agree to our{' '}
+          <a
+            href="/terms"
+            onClick={e => { if ((window as any).Capacitor?.isNativePlatform?.()) { e.preventDefault(); import('@capacitor/browser').then(({ Browser }) => Browser.open({ url: 'https://www.happyhourunlocked.com/terms' })) }}}
+            style={{ color: 'var(--coral)', textDecoration: 'underline' }}
+          >Terms of Service</a>
+          {' '}and{' '}
+          <a
+            href="/privacy"
+            onClick={e => { if ((window as any).Capacitor?.isNativePlatform?.()) { e.preventDefault(); import('@capacitor/browser').then(({ Browser }) => Browser.open({ url: 'https://www.happyhourunlocked.com/privacy' })) }}}
+            style={{ color: 'var(--coral)', textDecoration: 'underline' }}
+          >Privacy Policy</a>.
+        </p>
+
         {/* Legal links */}
         <div className="age-gate-legal">
           <a href="/privacy" className="age-gate-legal-link">Privacy Policy</a>
