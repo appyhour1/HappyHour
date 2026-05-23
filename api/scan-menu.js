@@ -58,8 +58,16 @@ Rules:
     })
 
     const data = await response.json()
+
+    // Log the full response for debugging
+    if (!response.ok) {
+      console.error('Anthropic API error:', JSON.stringify(data))
+      return res.status(200).json({ error: 'Anthropic API error', details: data })
+    }
+
     res.status(200).json(data)
   } catch (e) {
-    res.status(500).json({ error: 'Scan failed' })
+    console.error('Scan error:', e.message)
+    res.status(500).json({ error: 'Scan failed', details: e.message })
   }
 }
