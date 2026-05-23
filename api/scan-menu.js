@@ -2,11 +2,11 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const key = process.env.REACT_APP_ANTHROPIC_API_KEY
+  // Use server-side key (no REACT_APP_ prefix for serverless functions)
+  const key = process.env.ANTHROPIC_API_KEY || process.env.REACT_APP_ANTHROPIC_API_KEY
   if (!key) return res.status(500).json({ error: 'API key not configured' })
 
   try {
@@ -37,7 +37,6 @@ export default async function handler(req, res) {
             {
               type: 'text',
               text: `Look at this happy hour menu or chalkboard sign. Extract all the deals you can see.
-
 Return ONLY valid JSON in this exact format, nothing else:
 {
   "deals": [
@@ -47,7 +46,6 @@ Return ONLY valid JSON in this exact format, nothing else:
   "schedule": "days and times if visible, e.g. Mon-Fri 4-7pm",
   "dealText": "one line summary of all deals"
 }
-
 Rules:
 - type must be exactly: beer, cocktail, food, wine, or general
 - price should be a number like "3" or "5.50" or empty string "" if not specified or percentage off
