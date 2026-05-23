@@ -51,7 +51,16 @@ async function scanMenuPhoto(base64: string, mediaType: string): Promise<ScanRes
     body: JSON.stringify({ base64, mediaType }),
   })
   const data = await response.json()
+
+  // Handle error responses
+  if (data.error) throw new Error(data.error)
+
+  // New format: server returns parsed JSON directly
+  if (data.deals) return data as ScanResult
+
+  // Legacy format: server returns raw Anthropic response
   const text = data.content?.[0]?.text ?? ''
+  if (!text) throw new Error('Empty response')
   const clean = text.replace(/```json|```/g, '').trim()
   return JSON.parse(clean)
 }
