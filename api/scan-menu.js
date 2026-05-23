@@ -65,7 +65,23 @@ Rules:
       return res.status(200).json({ error: 'Anthropic API error', details: data })
     }
 
-    res.status(200).json(data)
+    // Extract the text content and return it directly
+    const text = data.content?.[0]?.text ?? ''
+    if (!text) {
+      console.error('Empty response from Anthropic:', JSON.stringify(data))
+      return res.status(200).json({ error: 'Empty response', raw: data })
+    }
+
+    // Try to parse the JSON from the response
+    try {
+      const clean = text.replace(/```json|```/g, '').trim()
+      const parsed = JSON.parse(clean)
+      return res.status(200).json(parsed)
+    } catch (parseErr) {
+      console.error('JSON parse error:', text)
+      return res.status(200).json({ error: 'Could not parse response', raw: text })
+    }
+
   } catch (e) {
     console.error('Scan error:', e.message)
     res.status(500).json({ error: 'Scan failed', details: e.message })
