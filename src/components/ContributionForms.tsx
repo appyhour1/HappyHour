@@ -80,9 +80,33 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
         const reader = new FileReader()
         reader.onload = () => {
           const result = reader.result as string
-          setPreview(result)
           const mimeType = result.split(';')[0].split(':')[1] || 'image/jpeg'
-          res({ base64: result.split(',')[1], mediaType: mimeType })
+
+          // Auto-compress before sending to API
+          const img = new Image()
+          img.onload = () => {
+            const MAX_SIZE = 1200
+            let { width, height } = img
+            if (width > MAX_SIZE || height > MAX_SIZE) {
+              if (width > height) {
+                height = Math.round((height * MAX_SIZE) / width)
+                width = MAX_SIZE
+              } else {
+                width = Math.round((width * MAX_SIZE) / height)
+                height = MAX_SIZE
+              }
+            }
+            const canvas = document.createElement('canvas')
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext('2d')!
+            ctx.drawImage(img, 0, 0, width, height)
+            const compressed = canvas.toDataURL('image/jpeg', 0.8)
+            setPreview(compressed)
+            res({ base64: compressed.split(',')[1], mediaType: 'image/jpeg' })
+          }
+          img.onerror = rej
+          img.src = result
         }
         reader.onerror = rej
         reader.readAsDataURL(file)
