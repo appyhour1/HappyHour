@@ -49,7 +49,6 @@ async function scanMenuPhoto(base64: string, mediaType: string): Promise<ScanRes
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-app-secret': 'hhu-secure-2024-xk9m',
     },
     body: JSON.stringify({ base64, mediaType }),
   })
