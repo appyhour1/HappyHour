@@ -47,18 +47,17 @@ interface ScanResult { deals: ScannedDeal[]; schedule?: string; dealText?: strin
 async function scanMenuPhoto(base64: string, mediaType: string): Promise<ScanResult> {
   const response = await fetch('/api/scan-menu', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-app-secret': 'hhu-secure-2024-xk9m',
+    },
     body: JSON.stringify({ base64, mediaType }),
   })
   const data = await response.json()
 
-  // Handle error responses
   if (data.error) throw new Error(data.error)
-
-  // New format: server returns parsed JSON directly
   if (data.deals) return data as ScanResult
 
-  // Legacy format: server returns raw Anthropic response
   const text = data.content?.[0]?.text ?? ''
   if (!text) throw new Error('Empty response')
   const clean = text.replace(/```json|```/g, '').trim()
@@ -82,7 +81,6 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
           const result = reader.result as string
           const mimeType = result.split(';')[0].split(':')[1] || 'image/jpeg'
 
-          // Auto-compress before sending to API
           const img = new Image()
           img.onload = () => {
             const MAX_SIZE = 1200
@@ -385,7 +383,6 @@ export function NewVenueForm({ onClose }: { onClose?: () => void }) {
 
       if (error) throw new Error(error.message)
 
-      // Notify admin via email — best effort, never blocks submission
       try {
         await fetch('/api/notify-admin', {
           method: 'POST',
