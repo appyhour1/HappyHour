@@ -1,18 +1,20 @@
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Origin', 'https://www.happyhourunlocked.com')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-app-secret')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Secret token check — blocks unauthorized API calls
-  const secret = req.headers['x-app-secret']
-  const expectedSecret = process.env.SCAN_SECRET
-  if (!expectedSecret || secret !== expectedSecret) {
+  // Block requests not coming from our domain
+  const origin = req.headers['origin'] || ''
+  const referer = req.headers['referer'] || ''
+  const allowed =
+    origin.includes('happyhourunlocked.com') ||
+    referer.includes('happyhourunlocked.com')
+  if (!allowed) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  // Use server-side key (no REACT_APP_ prefix for serverless functions)
   const key = process.env.ANTHROPIC_API_KEY || process.env.REACT_APP_ANTHROPIC_API_KEY
   if (!key) return res.status(500).json({ error: 'API key not configured' })
 
@@ -20,7 +22,7 @@ export default async function handler(req, res) {
     const { base64, mediaType } = req.body
     if (!base64) return res.status(400).json({ error: 'Missing image data' })
 
-    // Sanity check — reject suspiciously large payloads
+    // Reject suspiciously large payloads
     if (base64.length > 2_000_000) {
       return res.status(400).json({ error: 'Image too large' })
     }
