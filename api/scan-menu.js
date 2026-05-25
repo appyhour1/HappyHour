@@ -1,9 +1,16 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-app-secret')
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  // Secret token check — blocks unauthorized API calls
+  const secret = req.headers['x-app-secret']
+  const expectedSecret = process.env.SCAN_SECRET
+  if (!expectedSecret || secret !== expectedSecret) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
 
   // Use server-side key (no REACT_APP_ prefix for serverless functions)
   const key = process.env.ANTHROPIC_API_KEY || process.env.REACT_APP_ANTHROPIC_API_KEY
@@ -12,6 +19,11 @@ export default async function handler(req, res) {
   try {
     const { base64, mediaType } = req.body
     if (!base64) return res.status(400).json({ error: 'Missing image data' })
+
+    // Sanity check — reject suspiciously large payloads
+    if (base64.length > 2_000_000) {
+      return res.status(400).json({ error: 'Image too large' })
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -59,20 +71,17 @@ Rules:
 
     const data = await response.json()
 
-    // Log the full response for debugging
     if (!response.ok) {
       console.error('Anthropic API error:', JSON.stringify(data))
       return res.status(200).json({ error: 'Anthropic API error', details: data })
     }
 
-    // Extract the text content and return it directly
     const text = data.content?.[0]?.text ?? ''
     if (!text) {
       console.error('Empty response from Anthropic:', JSON.stringify(data))
       return res.status(200).json({ error: 'Empty response', raw: data })
     }
 
-    // Try to parse the JSON from the response
     try {
       const clean = text.replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(clean)
@@ -81,7 +90,6 @@ Rules:
       console.error('JSON parse error:', text)
       return res.status(200).json({ error: 'Could not parse response', raw: text })
     }
-
   } catch (e) {
     console.error('Scan error:', e.message)
     res.status(500).json({ error: 'Scan failed', details: e.message })
