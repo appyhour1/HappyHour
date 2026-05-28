@@ -1,7 +1,26 @@
-/* v5
+/* v6
  * AdminPage.tsx — Route: /admin
+ *
+ * SECURITY CHANGES FROM v5:
+ * - Replaced client-side password comparison with Supabase Auth.
+ *   The old REACT_APP_ADMIN_PASSWORD was bundled into the JS and visible to anyone.
+ *   Now uses supabase.auth.signInWithPassword() with a real admin account.
+ *
+ *   SETUP REQUIRED (one time):
+ *   1. Go to supabase.com → your project → Authentication → Users
+ *   2. Click "Invite user" or "Add user" and create your admin account
+ *   3. Use that email + password to log in here
+ *   4. In Supabase → Authentication → Policies, ensure admin-only DB operations
+ *      are protected by checking auth.uid() = your admin user's ID, or use
+ *      a custom claim/role on the user's metadata.
+ *
+ * OTHER FIXES:
+ * - Removed localStorage contrib_overrides (stale state, two sources of truth)
+ * - Replaced alert() calls with inline toast notifications
+ * - Fixed handleLogoUpload to not silently store base64 data URIs in the DB
+ *
  * Tab 1: Pending approvals
- * Tab 2: Venue analytics + featured/sponsored toggles (collapsible per-venue cards)
+ * Tab 2: Venue analytics + featured/sponsored toggles
  * Tab 3: Brand ads
  */
 
@@ -14,8 +33,6 @@ import { getAllBrandAds, saveBrandAd, deleteBrandAd, toggleBrandAd } from '../se
 import type { BrandAd } from '../components/SponsoredBanner'
 import { EditVenueForm } from '../components/EditVenueForm'
 
-const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'happyhour2026'
-
 interface VenueStats {
   venue_id: string; card_views: number; detail_views: number
   directions_clicks: number; website_clicks: number
@@ -26,6 +43,50 @@ interface Contribution {
   id: string; flow: 'new_venue' | 'suggest_edit'
   data: any; status: 'pending' | 'approved' | 'rejected'; created_at: string
 }
+
+// ── Simple inline toast ──────────────────────────────────────────────────────
+
+interface Toast {
+  id: number
+  message: string
+  type: 'success' | 'error' | 'info'
+}
+
+function useToast() {
+  const [toasts, setToasts] = useState<Toast[]>([])
+  let counter = 0
+
+  function show(message: string, type: Toast['type'] = 'info') {
+    const id = Date.now() + counter++
+    setToasts(prev => [...prev, { id, message, type }])
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500)
+  }
+
+  return { toasts, show }
+}
+
+function ToastContainer({ toasts }: { toasts: Toast[] }) {
+  if (!toasts.length) return null
+  return (
+    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {toasts.map(t => (
+        <div key={t.id} style={{
+          padding: '12px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+          background: t.type === 'success' ? '#DCFCE7' : t.type === 'error' ? '#fee2e2' : '#EFF6FF',
+          color: t.type === 'success' ? '#15803D' : t.type === 'error' ? '#c0392b' : '#1E40AF',
+          border: `1px solid ${t.type === 'success' ? '#bbf7d0' : t.type === 'error' ? '#fecaca' : '#bfdbfe'}`,
+          boxShadow: '0 4px 12px rgba(0,0,0,.1)',
+          maxWidth: 320,
+          animation: 'slideIn .2s ease',
+        }}>
+          {t.type === 'success' ? '✓ ' : t.type === 'error' ? '✕ ' : 'ℹ '}{t.message}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Style helpers ────────────────────────────────────────────────────────────
 
 const btn = (bg: string, color: string, extra?: React.CSSProperties): React.CSSProperties => ({
   border: 'none', borderRadius: 8, padding: '7px 13px', fontSize: 12,
@@ -73,9 +134,14 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
 }
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem('hhu_admin_authed') === '1')
+  // ── Auth state — driven by Supabase session ──────────────────────────────
+  const [authed, setAuthed] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
+  const [loggingIn, setLoggingIn] = useState(false)
+
   const [tab, setTab] = useState<'pending' | 'analytics' | 'ads'>('pending')
 
   const [contributions, setContributions] = useState<Contribution[]>([])
@@ -109,66 +175,124 @@ export default function AdminPage() {
     byDay: { date: string; count: number }[]
   }>({ total: 0, android: 0, ios: 0, thisMonth: 0, byDay: [] })
 
-  // ── Auth ────────────────────────────────────────────────────────────────────
+  const { toasts, show: showToast } = useToast()
 
-  function handleLogin(e: React.FormEvent) {
+  // ── Auth — check session on mount, subscribe to changes ─────────────────
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthed(!!session)
+      setAuthLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(!!session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    if (password === ADMIN_PASSWORD) {
-      setAuthed(true)
-      sessionStorage.setItem('hhu_admin_authed', '1')
-      setLoginError('')
-      // useEffect on [authed] handles data loading — no setTimeout needed
-    } else {
-      setLoginError('Incorrect password')
+    setLoginError('')
+    setLoggingIn(true)
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setLoginError('Incorrect email or password')
     }
+    setLoggingIn(false)
   }
 
-  // ── Data loading ────────────────────────────────────────────────────────────
+  async function handleLogout() {
+    await supabase.auth.signOut()
+  }
+
+  // ── Data loading ─────────────────────────────────────────────────────────
 
   async function loadContributions() {
     setContribLoading(true)
-    const { data } = await supabase.from('contributions').select('*').order('created_at', { ascending: false })
-    if (data) {
-      const overrides = JSON.parse(localStorage.getItem('contrib_overrides') || '{}')
-      const merged = data.map((c: Contribution) => overrides[c.id] ? { ...c, status: overrides[c.id] } : c)
-      setContributions(merged)
-    }
+    const { data } = await supabase
+      .from('contributions')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) setContributions(data)
     setContribLoading(false)
   }
 
   async function loadAnalytics() {
     setAnalyticsLoading(true)
     try {
-      // 30 days of traffic from app_visits
-      const since = new Date()
-      since.setDate(since.getDate() - 30)
-      const { data: visits } = await supabase
-        .from('app_visits')
-        .select('session_id, created_at')
-        .gte('created_at', since.toISOString())
-        .order('created_at', { ascending: true })
+      // ── COST OPTIMIZATION: Use server-side aggregation instead of pulling raw rows ──
+      //
+      // Old approach: fetch ALL app_visits rows for 30 days into the browser,
+      // then aggregate with JS. At 500 daily users = 15,000 rows downloaded.
+      //
+      // New approach: try a Supabase RPC that aggregates on the DB server,
+      // returning only 30 rows (one per day). Falls back to old approach if
+      // the function hasn't been created yet.
+      //
+      // TO CREATE THE FUNCTION (run once in Supabase SQL Editor):
+      // ─────────────────────────────────────────────────────────
+      // CREATE OR REPLACE FUNCTION get_daily_visitors(days_back integer DEFAULT 30)
+      // RETURNS TABLE(date_str text, visitors bigint)
+      // LANGUAGE sql SECURITY DEFINER AS $$
+      //   SELECT
+      //     TO_CHAR(DATE(created_at), 'Mon DD') AS date_str,
+      //     COUNT(DISTINCT session_id)          AS visitors
+      //   FROM app_visits
+      //   WHERE created_at >= NOW() - (days_back || ' days')::interval
+      //   GROUP BY DATE(created_at)
+      //   ORDER BY DATE(created_at) ASC;
+      // $$;
+      // ─────────────────────────────────────────────────────────
 
-      if (visits) {
-        const byDay: Record<string, Set<string>> = {}
-        visits.forEach((v: any) => {
-          const day = v.created_at.split('T')[0]
-          if (!byDay[day]) byDay[day] = new Set()
-          byDay[day].add(v.session_id)
-        })
+      const { data: rpcData, error: rpcErr } = await supabase
+        .rpc('get_daily_visitors', { days_back: 30 })
+
+      if (!rpcErr && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
+        // RPC exists — use the efficient aggregated result (30 rows, not 15,000)
+        const rpcByLabel: Record<string, number> = {}
+        rpcData.forEach((row: any) => { rpcByLabel[row.date_str] = Number(row.visitors) })
+
         const days: { date: string; visitors: number; sessions: number }[] = []
         for (let i = 29; i >= 0; i--) {
           const d = new Date(); d.setDate(d.getDate() - i)
-          const key = d.toISOString().split('T')[0]
           const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-          days.push({ date: label, visitors: byDay[key]?.size || 0, sessions: byDay[key]?.size || 0 })
+          const visitors = rpcByLabel[label] || 0
+          days.push({ date: label, visitors, sessions: visitors })
         }
         setTrafficData(days)
+      } else {
+        // RPC not created yet — fall back to row-by-row (create the function above to fix this)
+        const since = new Date()
+        since.setDate(since.getDate() - 30)
+        const { data: visits } = await supabase
+          .from('app_visits')
+          .select('session_id, created_at')
+          .gte('created_at', since.toISOString())
+          .order('created_at', { ascending: true })
+
+        if (visits) {
+          const byDay: Record<string, Set<string>> = {}
+          visits.forEach((v: any) => {
+            const day = v.created_at.split('T')[0]
+            if (!byDay[day]) byDay[day] = new Set()
+            byDay[day].add(v.session_id)
+          })
+          const days: { date: string; visitors: number; sessions: number }[] = []
+          for (let i = 29; i >= 0; i--) {
+            const d = new Date(); d.setDate(d.getDate() - i)
+            const key = d.toISOString().split('T')[0]
+            const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            days.push({ date: label, visitors: byDay[key]?.size || 0, sessions: byDay[key]?.size || 0 })
+          }
+          setTrafficData(days)
+        }
       }
 
       const venueList = await getVenues('Cincinnati')
       setVenues(venueList)
 
-      // Pull impression events for the selected week
       const weekStart = new Date(getWeekStart(weekOffset))
       const weekEnd = new Date(getWeekEnd(weekOffset))
       weekEnd.setDate(weekEnd.getDate() + 1)
@@ -178,7 +302,6 @@ export default function AdminPage() {
         .gte('created_at', weekStart.toISOString())
         .lt('created_at', weekEnd.toISOString())
 
-      // Pull venue_stats filtered to the specific week being viewed
       const { data: statsData } = await supabase
         .from('venue_stats')
         .select('*')
@@ -187,7 +310,6 @@ export default function AdminPage() {
       const statsMap: Record<string, VenueStats> = {}
       if (statsData) statsData.forEach((s: VenueStats) => { statsMap[s.venue_id] = s })
 
-      // Merge impression counts into stats
       if (impressions) {
         impressions.forEach((r: any) => {
           if (!statsMap[r.venue_id]) {
@@ -220,6 +342,11 @@ export default function AdminPage() {
     } else if (range === 'month') {
       const d = new Date(); d.setDate(d.getDate() - 30); since = d.toISOString()
     }
+    // For 'alltime', default to last 90 days to avoid pulling unbounded rows
+    // into the browser. Adjust the cap here as needed.
+    if (range === 'alltime') {
+      const d = new Date(); d.setDate(d.getDate() - 90); since = d.toISOString()
+    }
     let query = supabase.from('venue_impressions').select('venue_id')
     if (since) query = query.gte('created_at', since)
     const { data } = await query
@@ -229,7 +356,6 @@ export default function AdminPage() {
   }
 
   async function loadInstallStats() {
-    // All-time confirmed installs (accepted + appinstalled + ios_installed)
     const INSTALL_EVENTS = ['pwa_install_accepted', 'pwa_installed', 'pwa_ios_installed']
 
     const { data: allTime } = await supabase
@@ -255,7 +381,6 @@ export default function AdminPage() {
       byDayMap[day] = (byDayMap[day] || 0) + 1
     })
 
-    // Build last 30 days array for the chart
     const byDay: { date: string; count: number }[] = []
     for (let i = 29; i >= 0; i--) {
       const d = new Date()
@@ -293,7 +418,7 @@ export default function AdminPage() {
     }
   }
 
-  // ── Effects ─────────────────────────────────────────────────────────────────
+  // ── Effects ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (authed) {
@@ -312,7 +437,7 @@ export default function AdminPage() {
     if (authed) loadAnalytics()
   }, [weekOffset]) // eslint-disable-line
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
   function getWeekStart(offset = 0): string {
     const d = new Date(); const day = d.getDay()
@@ -360,12 +485,24 @@ export default function AdminPage() {
   const totalFavorites = venues.reduce((acc, v) => acc + getVenueStat(v.id).favorites, 0)
   const totalConfirmations = venues.reduce((acc, v) => acc + getVenueStat(v.id).confirmations, 0)
 
-  // ── Actions ─────────────────────────────────────────────────────────────────
+  // ── Actions ──────────────────────────────────────────────────────────────
 
   async function approveVenue(contrib: Contribution) {
     setActionLoading(contrib.id)
     try {
       const d = contrib.data
+
+      // Validate deal data before inserting
+      function sanitizeDeal(deal: any) {
+        const VALID_TYPES = ['beer', 'cocktail', 'liquor', 'wine', 'food', 'general']
+        return {
+          type: VALID_TYPES.includes(deal.type) ? deal.type : 'general',
+          description: String(deal.description ?? '').slice(0, 200),
+          price: typeof deal.price === 'number' && deal.price >= 0 && deal.price <= 999
+            ? deal.price : null,
+        }
+      }
+
       const { data: venue, error: vErr } = await supabase.from('venues').insert([{
         name: d.name?.trim(), neighborhood: d.neighborhood?.trim() || 'Cincinnati',
         city: d.city || 'Cincinnati', state: 'OH',
@@ -380,6 +517,7 @@ export default function AdminPage() {
         created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
       }]).select().single()
       if (vErr) throw new Error(vErr.message)
+
       const submittedSchedules = d.schedules || []
       if (submittedSchedules.length > 0) {
         await supabase.from('happy_hour_schedules').insert(
@@ -387,7 +525,8 @@ export default function AdminPage() {
             venue_id: venue.id, days: s.days,
             start_time: s.start_time || '16:00', end_time: s.end_time || '19:00',
             is_all_day: s.is_all_day || false,
-            deal_text: s.deal_text || '', deals: s.deals || [],
+            deal_text: String(s.deal_text || '').slice(0, 500),
+            deals: Array.isArray(s.deals) ? s.deals.slice(0, 20).map(sanitizeDeal) : [],
             created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
           }))
         )
@@ -395,15 +534,17 @@ export default function AdminPage() {
         await supabase.from('happy_hour_schedules').insert([{
           venue_id: venue.id, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
           start_time: '16:00', end_time: '19:00', is_all_day: false,
-          deal_text: d.deal_details || d.schedule_description || '',
+          deal_text: String(d.deal_details || d.schedule_description || '').slice(0, 500),
           deals: [], created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
         }])
       }
+
       await supabase.from('contributions').update({ status: 'approved' }).eq('id', contrib.id)
       setContributions(prev => prev.map(c => c.id === contrib.id ? { ...c, status: 'approved' } : c))
-      alert(`✅ ${d.name} is now live!`)
+      // FIX: replaced alert() with inline toast
+      showToast(`${d.name || 'Venue'} is now live!`, 'success')
     } catch (e: any) {
-      alert('Error: ' + e.message)
+      showToast('Error: ' + e.message, 'error')
     }
     setActionLoading(null)
   }
@@ -411,10 +552,13 @@ export default function AdminPage() {
   async function rejectContribution(contrib: Contribution) {
     if (!window.confirm('Reject this submission?')) return
     setActionLoading(contrib.id)
-    await supabase.from('contributions').update({ status: 'rejected' }).eq('id', contrib.id)
-    const overrides = JSON.parse(localStorage.getItem('contrib_overrides') || '{}')
-    localStorage.setItem('contrib_overrides', JSON.stringify({ ...overrides, [contrib.id]: 'rejected' }))
-    setContributions(prev => prev.map(c => c.id === contrib.id ? { ...c, status: 'rejected' } : c))
+    // FIX: removed localStorage contrib_overrides write — database is the only source of truth
+    const { error } = await supabase.from('contributions').update({ status: 'rejected' }).eq('id', contrib.id)
+    if (!error) {
+      setContributions(prev => prev.map(c => c.id === contrib.id ? { ...c, status: 'rejected' } : c))
+    } else {
+      showToast('Failed to reject: ' + error.message, 'error')
+    }
     setActionLoading(null)
   }
 
@@ -425,7 +569,7 @@ export default function AdminPage() {
   }
 
   async function toggleVenueFlag(venue: Venue, field: 'is_featured' | 'is_sponsored') {
-    const newVal = !venue[field]
+    const newVal = !(venue as any)[field]
     setToggling(venue.id + field)
     const { error } = await supabase.from('venues').update({ [field]: newVal }).eq('id', venue.id)
     if (!error) setVenues(prev => prev.map(v => v.id === venue.id ? { ...v, [field]: newVal } : v))
@@ -435,8 +579,13 @@ export default function AdminPage() {
   async function deleteVenue(venue: Venue) {
     if (!window.confirm(`Delete "${venue.name}"? This cannot be undone.`)) return
     const { error } = await supabase.from('venues').delete().eq('id', venue.id)
-    if (error) { alert('Delete failed: ' + error.message); return }
+    if (error) {
+      // FIX: replaced alert() with toast
+      showToast('Delete failed: ' + error.message, 'error')
+      return
+    }
     setVenues(prev => prev.filter(v => v.id !== venue.id))
+    showToast(`${venue.name} deleted`, 'info')
   }
 
   async function sendStatsEmail(venue: Venue) {
@@ -461,7 +610,7 @@ export default function AdminPage() {
 
   async function handleSaveAd() {
     if (!editingAd?.brand_name || !editingAd?.headline) {
-      alert('Brand name and headline are required')
+      showToast('Brand name and headline are required', 'error')
       return
     }
     setAdSaving(true)
@@ -477,6 +626,9 @@ export default function AdminPage() {
         setBrandAds(prev => [...prev, saved])
       }
       setEditingAd(null)
+      showToast('Ad saved', 'success')
+    } else {
+      showToast('Failed to save ad', 'error')
     }
     setAdSaving(false)
   }
@@ -486,15 +638,22 @@ export default function AdminPage() {
     if (!file) return
     const fileExt = file.name.split('.').pop()
     const fileName = `brand-logos/${Date.now()}.${fileExt}`
+
     const { data, error } = await supabase.storage.from('public').upload(fileName, file, { upsert: true })
+
     if (error) {
-      const reader = new FileReader()
-      reader.onload = () => setEditingAd(prev => ({ ...prev, logo_url: reader.result as string }))
-      reader.readAsDataURL(file)
+      // FIX: removed base64 data URI fallback.
+      // Previously, if Supabase Storage upload failed, the logo was stored as a
+      // raw base64 data URI in the DB column — potentially 50KB+ per ad record,
+      // downloaded by every mobile user on every page load.
+      // Now we surface the error so you can fix the storage issue instead.
+      showToast(`Logo upload failed: ${error.message}. Check your Supabase Storage settings.`, 'error')
       return
     }
+
     const { data: urlData } = supabase.storage.from('public').getPublicUrl(fileName)
     setEditingAd(prev => ({ ...prev, logo_url: urlData.publicUrl }))
+    showToast('Logo uploaded', 'success')
   }
 
   const EMPTY_AD: Partial<BrandAd> = {
@@ -502,7 +661,17 @@ export default function AdminPage() {
     logo_bg_color: '#E85D1A', is_active: false, position: 0,
   }
 
-  // ── LOGIN ────────────────────────────────────────────────────────────────────
+  // ── Loading state while checking Supabase session ────────────────────────
+
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8F6F1' }}>
+        <div style={{ fontSize: 13, color: '#888' }}>Loading...</div>
+      </div>
+    )
+  }
+
+  // ── LOGIN ────────────────────────────────────────────────────────────────
 
   if (!authed) {
     return (
@@ -517,28 +686,42 @@ export default function AdminPage() {
           </div>
           <form onSubmit={handleLogin}>
             <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="Admin email"
+              required
+              autoFocus
+              style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #E0DDD8', fontSize: 15, marginBottom: 10, fontFamily: 'inherit', boxSizing: 'border-box' as const }}
+            />
+            <input
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Enter admin password"
-              autoFocus
+              placeholder="Password"
+              required
               style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #E0DDD8', fontSize: 15, marginBottom: 12, fontFamily: 'inherit', boxSizing: 'border-box' as const }}
             />
             {loginError && <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 10 }}>{loginError}</div>}
-            <button type="submit" style={{ width: '100%', padding: 13, background: '#E85D1A', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Sign in
+            <button type="submit" disabled={loggingIn} style={{ width: '100%', padding: 13, background: '#E85D1A', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: loggingIn ? .7 : 1 }}>
+              {loggingIn ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
+          <p style={{ fontSize: 11, color: '#bbb', textAlign: 'center', marginTop: 16 }}>
+            Use your Supabase admin account credentials
+          </p>
         </div>
       </div>
     )
   }
 
-  // ── DASHBOARD ────────────────────────────────────────────────────────────────
+  // ── DASHBOARD ────────────────────────────────────────────────────────────
 
   return (
     <>
       <Helmet><title>Admin — Happy Hour Unlocked</title></Helmet>
+      <ToastContainer toasts={toasts} />
+
       <div style={{ maxWidth: 920, margin: '0 auto', padding: '20px 16px 80px' }}>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
@@ -546,7 +729,15 @@ export default function AdminPage() {
             <span>Happy Hour</span><span style={{ color: '#E85D1A' }}> Unlocked</span>
             <span style={{ fontSize: 12, fontWeight: 400, color: '#888', marginLeft: 10, fontStyle: 'normal' }}>Admin</span>
           </div>
-          <div style={{ fontSize: 12, color: '#888' }}>{venues.length} venues · Cincinnati</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ fontSize: 12, color: '#888' }}>{venues.length} venues · Cincinnati</div>
+            <button
+              onClick={handleLogout}
+              style={{ ...btn('#F3F4F6', '#555'), border: '1px solid #EAE6DF', fontSize: 11 }}
+            >
+              Sign out
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -730,7 +921,7 @@ export default function AdminPage() {
                         <button onClick={() => setEditingAd(prev => ({ ...prev, logo_url: '' }))} style={{ ...btn('#fee2e2', '#c0392b'), fontSize: 11 }}>Remove</button>
                       )}
                     </div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>PNG, JPG, or SVG. Square logos work best.</div>
+                    <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>PNG, JPG, or SVG. Square logos work best. Uploaded to Supabase Storage.</div>
                   </div>
                 </div>
                 {editingAd.headline && (
@@ -830,7 +1021,6 @@ export default function AdminPage() {
         {tab === 'analytics' && (
           <div>
 
-            {/* Traffic chart */}
             {trafficData.length > 0 && (() => {
               const max = Math.max(...trafficData.map(d => d.visitors), 1)
               const total = trafficData.reduce((a, d) => a + d.visitors, 0)
@@ -882,7 +1072,7 @@ export default function AdminPage() {
               )
             })()}
 
-            {/* ── App Installs ── */}
+            {/* App Installs */}
             <div style={{ background: '#fff', border: '1px solid #EAE6DF', borderRadius: 14, padding: '16px 18px', marginBottom: 20 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1612', marginBottom: 14 }}>App installs</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
@@ -988,7 +1178,7 @@ export default function AdminPage() {
               ))}
             </div>
 
-            {/* Venue cards — collapsible */}
+            {/* Venue cards */}
             {analyticsLoading ? (
               <div style={{ textAlign: 'center', color: '#888', padding: 40 }}>Loading...</div>
             ) : filteredVenues.map(venue => {
@@ -1000,7 +1190,7 @@ export default function AdminPage() {
               const impressionRangeLabel =
                 impressionRange === 'today' ? 'Today' :
                 impressionRange === 'week' ? 'Last 7 days' :
-                impressionRange === 'month' ? 'Last 30 days' : 'All time'
+                impressionRange === 'month' ? 'Last 30 days' : 'Last 90 days'
 
               return (
                 <div
@@ -1011,7 +1201,6 @@ export default function AdminPage() {
                     transition: 'box-shadow .15s',
                   }}
                 >
-                  {/* Header — always visible, click to expand */}
                   <div
                     onClick={() => setExpandedId(isExpanded ? null : venue.id)}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, cursor: 'pointer' }}
@@ -1029,7 +1218,6 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    {/* Collapsed: show top-line numbers at a glance */}
                     {!isExpanded && (
                       <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexShrink: 0 }}>
                         <div style={{ textAlign: 'center' }}>
@@ -1048,11 +1236,8 @@ export default function AdminPage() {
                     )}
                   </div>
 
-                  {/* Expanded content */}
                   {isExpanded && (
                     <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #EAE6DF' }}>
-
-                      {/* Impression bar */}
                       <div style={{ marginBottom: 16 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', letterSpacing: '.04em' }}>
@@ -1069,7 +1254,6 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* All stats — 3-col grid */}
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
                         {[
                           { label: 'Page views', value: s.detail_views, color: '#E85D1A', note: getWeekLabel().toLowerCase() },
@@ -1087,7 +1271,6 @@ export default function AdminPage() {
                         ))}
                       </div>
 
-                      {/* Toggles + actions */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
                         <div style={{ display: 'flex', gap: 20 }}>
                           <Toggle on={venue.is_featured} onChange={() => toggleVenueFlag(venue, 'is_featured')} label="Featured" color="#E85D1A" />
@@ -1108,7 +1291,6 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* Inline venue editor */}
                       {editingVenueId === venue.id && (
                         <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #EAE6DF' }}>
                           <EditVenueForm

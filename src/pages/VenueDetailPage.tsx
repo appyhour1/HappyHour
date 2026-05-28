@@ -26,6 +26,12 @@ const JS_DAY_TO_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
 const DEAL_TYPE_ORDER = ['beer', 'cocktail', 'liquor', 'wine', 'food', 'general']
 
+// Maps schedule day abbreviations to Google Calendar RRULE BYDAY codes
+const DAY_TO_RRULE: Record<string, string> = {
+  Mon: 'MO', Tue: 'TU', Wed: 'WE', Thu: 'TH',
+  Fri: 'FR', Sat: 'SA', Sun: 'SU',
+}
+
 function getBestDay(schedules: HappyHourSchedule[]): string {
   if (!schedules.length) return JS_DAY_TO_ABBR[new Date().getDay()]
   const todayAbbr = JS_DAY_TO_ABBR[new Date().getDay()]
@@ -40,12 +46,10 @@ function getBestDay(schedules: HappyHourSchedule[]): string {
   return allDays[0] || todayAbbr
 }
 
-// Returns each schedule window separately — preserves multiple time blocks per day
 function getScheduleBlocksForDay(schedules: HappyHourSchedule[], day: string) {
   const matching = schedules.filter(s => s.days.includes(day as any))
   if (!matching.length) return []
 
-  // Sort chronologically — all day first, then by start time
   const sorted = [...matching].sort((a, b) => {
     if (a.is_all_day) return -1
     if (b.is_all_day) return 1
@@ -100,7 +104,14 @@ export default function VenueDetailPage() {
       navigator.share({ title: venue?.name ?? 'Happy Hour', text, url })
     } else {
       navigator.clipboard.writeText(url)
-      alert('Link copied!')
+      // Use a non-blocking notification instead of alert()
+      // If you have a toast system, call it here instead
+      const btn = document.activeElement as HTMLElement
+      const orig = btn?.textContent ?? ''
+      if (btn) {
+        btn.textContent = 'Copied!'
+        setTimeout(() => { btn.textContent = orig }, 1500)
+      }
     }
     track('venue_shared', { venue_id: venue?.id, venue_name: venue?.name, source: 'detail' })
   }
@@ -115,7 +126,16 @@ export default function VenueDetailPage() {
     const title = encodeURIComponent(`Happy Hour at ${venue?.name}`)
     const details = encodeURIComponent(schedule.deal_text || 'Happy hour deals')
     const location = encodeURIComponent(venue?.address || venue?.neighborhood || '')
-    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}&location=${location}&recur=RRULE:FREQ=WEEKLY`
+
+    // FIX: include BYDAY in RRULE so the event recurs on the correct days,
+    // not just whatever day the user happens to click the button.
+    const byday = schedule.days
+      .map(d => DAY_TO_RRULE[d])
+      .filter(Boolean)
+      .join(',')
+    const rrule = byday ? `RRULE:FREQ=WEEKLY;BYDAY=${byday}` : 'RRULE:FREQ=WEEKLY'
+
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${fmt(start)}/${fmt(end)}&details=${details}&location=${location}&recur=${encodeURIComponent(rrule)}`
     openExternal(url)
     track('add_to_calendar', { venue_id: venue?.id, venue_name: venue?.name })
   }
@@ -127,6 +147,16 @@ export default function VenueDetailPage() {
       : `${encodeURIComponent(venue.name + ' ' + venue.city)}`
     openExternal(`https://www.google.com/maps/dir/?api=1&destination=${q}`)
     Analytics.getDirectionsClicked(venue.id, venue.name)
+  }
+
+  // FIX: navigate(-1) sends users who arrive from Google straight off the app.
+  // Check if there's an app-internal history entry first; fall back to home.
+  function handleBack() {
+    if (window.history.state?.idx > 0) {
+      navigate(-1)
+    } else {
+      navigate('/')
+    }
   }
 
   useEffect(() => {
@@ -212,7 +242,9 @@ export default function VenueDetailPage() {
 
         {/* ── BACK NAV ── */}
         <nav className="detail-nav">
-          <button className="detail-back-btn" onClick={() => navigate(-1)}>← Back</button>
+          {/* FIX: use handleBack() instead of navigate(-1) to prevent users
+              who arrived from Google from being kicked off the app */}
+          <button className="detail-back-btn" onClick={handleBack}>← Back</button>
           <div className="detail-nav-actions">
             <button className="detail-share-btn" onClick={openDirections} aria-label="Directions">
               🗺️ Directions
@@ -327,7 +359,6 @@ export default function VenueDetailPage() {
 
             return (
               <>
-                {/* Day tabs */}
                 {venueDays.length > 1 && (
                   <div className="detail-schedule-tabs">
                     {venueDays.map(d => {
@@ -350,7 +381,6 @@ export default function VenueDetailPage() {
                   </div>
                 )}
 
-                {/* Schedule blocks — one per time window */}
                 {blocks.length === 0 ? (
                   <p className="detail-deal-text">No deals scheduled for this day.</p>
                 ) : (
@@ -370,7 +400,6 @@ export default function VenueDetailPage() {
                             borderBottom: blockIdx < blocks.length - 1 ? '1px dashed #EAE6DF' : 'none',
                           }}
                         >
-                          {/* Time + status */}
                           <div className="detail-schedule-header" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                             <span className="detail-time" style={isLive ? { color: '#22C55E' } : {}}>
                               {block.time}
@@ -382,14 +411,12 @@ export default function VenueDetailPage() {
                             )}
                           </div>
 
-                          {/* Calendar button */}
                           {!block.schedule.is_all_day && (
                             <button className="detail-cal-btn" onClick={() => addToCalendar(block.schedule)}>
                               📅 Add to Google Calendar
                             </button>
                           )}
 
-                          {/* Deals */}
                           {block.deals.length > 0 ? (
                             <div className="detail-deals">
                               {block.deals.map((deal, i) => (

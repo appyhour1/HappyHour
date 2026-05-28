@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { Link } from 'react-router-dom'
 import { useAppContext } from '../contexts/AppContext'
@@ -21,30 +21,61 @@ import type { BrandAd } from '../components/SponsoredBanner'
 import { getActiveBrandAds } from '../services/brandAdService'
 import type { Venue } from '../types'
 
+// ─── PAGINATION CONSTANTS ────────────────────────────────────────────────────
+// Why: Rendering 200 VenueCards simultaneously creates 200 IntersectionObservers,
+// 200 refs, and heavy initial paint. Showing 30 at a time keeps the DOM lean
+// with no UX cost — users rarely scroll past 30 results.
+const INITIAL_PAGE_SIZE = 30
+const LOAD_MORE_SIZE = 20
+
+// ─── ROTATING AD ────────────────────────────────────────────────────────────
+// Self-contained: manages its own rotation so BrowsePage never re-renders
+// from the timer. Each slot staggers its offset so ads don't all rotate at once.
+
+interface RotatingAdProps {
+  ads: BrandAd[]
+  slotIndex: number
+}
+
+const RotatingAd = React.memo(function RotatingAd({ ads, slotIndex }: RotatingAdProps) {
+  const [adIndex, setAdIndex] = useState(() => slotIndex % ads.length)
+
+  useEffect(() => {
+    if (ads.length <= 1) return
+    const id = setInterval(() => setAdIndex(i => (i + 1) % ads.length), 15_000)
+    return () => clearInterval(id)
+  }, [ads.length])
+
+  const ad = ads[adIndex]
+  if (!ad) return null
+  return <SponsoredBanner ad={ad} />
+})
+
 // ─── TIME-AWARE HERO ────────────────────────────────────────────────────────
+// Memoized separately so it doesn't re-render when filter state changes
 
-function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
+const BrowseHero = React.memo(function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
   const now = new Date()
-  const hour = now.getHours()
-  const currentMins = hour * 60 + now.getMinutes()
+  const currentMins = now.getHours() * 60 + now.getMinutes()
+  const todayAbbr = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][now.getDay()]
 
-  const liveCount = venues.filter(v => isVenueActiveNow(v)).length
-  const totalDeals = venues.reduce((acc, v) => acc + (v.schedules?.length ?? 0), 0)
+  const liveCount = useMemo(() => venues.filter(v => isVenueActiveNow(v)).length, [venues])
+  const totalDeals = useMemo(() => venues.reduce((acc, v) => acc + (v.schedules?.length ?? 0), 0), [venues])
 
-  // Venues starting within 90 minutes
-  const startingSoonCount = venues.filter(v =>
+  const startingSoonCount = useMemo(() => venues.filter(v =>
     (v.schedules ?? []).some(s => {
+      if (!s.days.includes(todayAbbr as any)) return false
       const [sh, sm] = s.start_time.split(':').map(Number)
       const minsUntil = (sh * 60 + (sm || 0)) - currentMins
       return minsUntil > 0 && minsUntil <= 90
     })
-  ).length
+  ).length, [venues, todayAbbr, currentMins])
 
-  // Next happy hour start across all venues
-  const nextStart = (() => {
+  const nextStart = useMemo(() => {
     let earliest = Infinity
     venues.forEach(v => {
       ;(v.schedules ?? []).forEach(s => {
+        if (!s.days.includes(todayAbbr as any)) return
         const [sh, sm] = s.start_time.split(':').map(Number)
         const minsUntil = (sh * 60 + (sm || 0)) - currentMins
         if (minsUntil > 0 && minsUntil < earliest) earliest = minsUntil
@@ -55,9 +86,8 @@ function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
     const m = earliest % 60
     if (h === 0) return `${m}m`
     return m === 0 ? `${h}h` : `${h}h ${m}m`
-  })()
+  }, [venues, todayAbbr, currentMins])
 
-  // Hero content based on time of day
   let bigNumber: number
   let bigLabel: string
   let subLabel: string
@@ -74,13 +104,13 @@ function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
     bigNumber = startingSoonCount
     bigLabel = `spot${startingSoonCount !== 1 ? 's' : ''} starting soon`
     subLabel = nextStart ? `Happy hour kicks off in ${nextStart}` : `Coming up soon in ${city}`
-    ctaLabel = 'See what\'s starting →'
+    ctaLabel = "See what's starting →"
     ctaPath = '/tonight'
   } else if (nextStart) {
     bigNumber = venues.length
     bigLabel = `happy hour spots in ${city}`
     subLabel = `Next happy hour starts in ${nextStart}`
-    ctaLabel = 'See tonight\'s deals →'
+    ctaLabel = "See tonight's deals →"
     ctaPath = '/tonight'
   } else {
     bigNumber = venues.length
@@ -117,7 +147,7 @@ function BrowseHero({ venues, city }: { venues: Venue[]; city: string }) {
       </div>
     </div>
   )
-}
+})
 
 // ─── MAIN PAGE ───────────────────────────────────────────────────────────────
 
@@ -131,15 +161,12 @@ export default function BrowsePage() {
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null)
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [brandAds, setBrandAds] = useState<BrandAd[]>([])
-  const adOffset = useRef(Math.floor(Math.random() * 100))
-  const [tick, setTick] = useState(0)
+  const [visibleCount, setVisibleCount] = useState(INITIAL_PAGE_SIZE)
   const venueCardRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const { showCapture, trigger, dismiss: dismissEmail } = useEmailCapture(favorites.count)
 
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 15_000)
     getActiveBrandAds().then(setBrandAds)
-    return () => clearInterval(id)
   }, [])
 
   useEffect(() => {
@@ -147,19 +174,38 @@ export default function BrowsePage() {
     Analytics.pageVisited('browse')
   }, [city])
 
-  const neighborhoods = getNeighborhoods(venues)
+  // Reset pagination when filters change — avoid stale "Load more" state
+  useEffect(() => {
+    setVisibleCount(INITIAL_PAGE_SIZE)
+  }, [fs.filters, showFavoritesOnly])
 
-  let filtered = sortVenuesByMode(
-    filterVenues(venues, fs.filters, userLocation),
-    fs.sort,
-    userLocation
+  // Memoize expensive computations so they don't re-run on every render
+  const neighborhoods = useMemo(() => getNeighborhoods(venues), [venues])
+
+  const filtered = useMemo(() => {
+    let result = sortVenuesByMode(
+      filterVenues(venues, fs.filters, userLocation),
+      fs.sort,
+      userLocation
+    )
+    if (showFavoritesOnly) {
+      result = result.filter(v => favorites.isFavorite(v.id))
+    }
+    return result
+  }, [venues, fs.filters, fs.sort, userLocation, showFavoritesOnly, favorites])
+
+  const bestPicksSections = useMemo(
+    () => buildBestPicksSections(venues, userLocation),
+    [venues, userLocation]
   )
 
-  if (showFavoritesOnly) {
-    filtered = filtered.filter(v => favorites.isFavorite(v.id))
-  }
+  // Only render up to visibleCount cards — key to keeping DOM lean
+  const visibleVenues = useMemo(
+    () => filtered.slice(0, visibleCount),
+    [filtered, visibleCount]
+  )
 
-  const bestPicksSections = buildBestPicksSections(venues, userLocation)
+  const hasMore = visibleCount < filtered.length
   const isSearching = fs.filters.search.trim().length > 0
   const showBestPicks = !showFavoritesOnly && !isSearching
 
@@ -172,10 +218,11 @@ export default function BrowsePage() {
     }, 100)
   }
 
-  function getDistanceLabel(venue: Venue): string | undefined {
+  // Stable callback to avoid re-creating per venue
+  const getDistanceLabel = useCallback((venue: Venue): string | undefined => {
     if (!userLocation || !venue.latitude || !venue.longitude) return undefined
     return fmtDistance(distanceMiles(userLocation.lat, userLocation.lng, venue.latitude, venue.longitude))
-  }
+  }, [userLocation])
 
   return (
     <>
@@ -241,7 +288,7 @@ export default function BrowsePage() {
           </div>
         </div>
 
-        {/* Open Now indicator — shown when auto-enabled */}
+        {/* Open Now indicator */}
         {fs.filters.openNow && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
@@ -276,7 +323,7 @@ export default function BrowsePage() {
         {loading && <p className="loading-msg">Loading deals...</p>}
         {error && !loading && <p className="error-msg">Using sample data - {error}</p>}
 
-        {/* Best picks */}
+        {/* Best picks — memoized, only recalculates when venues or location changes */}
         {!loading && showBestPicks && bestPicksSections.length > 0 && (
           <div className="best-picks-area">
             {bestPicksSections.map(section => (
@@ -327,28 +374,56 @@ export default function BrowsePage() {
                       <button className="hn-empty-btn" onClick={fs.clearAll}>Clear filters</button>
                     )}
                   </div>
-                ) : filtered.flatMap((venue, i) => {
-                  const nodes: React.ReactNode[] = [
-                    <VenueCard
-                      key={venue.id}
-                      venue={venue}
-                      isFavorite={favorites.isFavorite(venue.id)}
-                      onToggleFavorite={favorites.toggleFavorite}
-                      isSelected={selectedVenueId === venue.id}
-                      distanceLabel={getDistanceLabel(venue)}
-                      cardRef={el => { venueCardRefs.current[venue.id] = el }}
-                    />
-                  ]
-                  if (brandAds.length > 0 && (i + 1) % 4 === 0) {
-                    const slotIndex = Math.floor(i / 4)
-                    const adIndex = (slotIndex + adOffset.current + tick) % brandAds.length
-                    if (slotIndex < brandAds.length) {
-                      const ad = brandAds[adIndex]
-                      nodes.push(<SponsoredBanner key={`ad-${i}-${tick}`} ad={ad} />)
-                    }
-                  }
-                  return nodes
-                })}
+                ) : (
+                  <>
+                    {visibleVenues.flatMap((venue, i) => {
+                      const nodes: React.ReactNode[] = [
+                        <VenueCard
+                          key={venue.id}
+                          venue={venue}
+                          isFavorite={favorites.isFavorite(venue.id)}
+                          onToggleFavorite={favorites.toggleFavorite}
+                          isSelected={selectedVenueId === venue.id}
+                          distanceLabel={getDistanceLabel(venue)}
+                          cardRef={el => { venueCardRefs.current[venue.id] = el }}
+                        />
+                      ]
+
+                      // Ad every 4th venue — RotatingAd manages its own timer
+                      // so this never triggers a BrowsePage re-render
+                      if (brandAds.length > 0 && (i + 1) % 4 === 0) {
+                        const slotIndex = Math.floor(i / 4)
+                        nodes.push(
+                          <RotatingAd
+                            key={`ad-slot-${slotIndex}`}
+                            ads={brandAds}
+                            slotIndex={slotIndex}
+                          />
+                        )
+                      }
+
+                      return nodes
+                    })}
+
+                    {/* Load more — only renders when results exceed INITIAL_PAGE_SIZE */}
+                    {hasMore && (
+                      <button
+                        onClick={() => setVisibleCount(c => c + LOAD_MORE_SIZE)}
+                        style={{
+                          width: '100%', marginTop: 8, padding: '14px',
+                          background: '#F8F6F1', border: '2px solid #1A1612',
+                          borderRadius: 12, fontSize: 14, fontWeight: 700,
+                          color: '#1A1612', cursor: 'pointer',
+                        }}
+                      >
+                        Load {Math.min(LOAD_MORE_SIZE, filtered.length - visibleCount)} more
+                        <span style={{ fontWeight: 400, color: '#888', marginLeft: 6 }}>
+                          ({visibleCount} of {filtered.length})
+                        </span>
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
