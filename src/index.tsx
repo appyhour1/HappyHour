@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { AppProvider } from './contexts/AppContext'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import AppShell from './AppShell'
 import BrowsePage from './pages/BrowsePage'
 import VenueDetailPage from './pages/VenueDetailPage'
@@ -29,27 +30,29 @@ if ('serviceWorker' in navigator) {
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 root.render(
-  <HelmetProvider>
-    <AppProvider>
-      <BrowserRouter>
-        <AppShell>
-          <Routes>
-            <Route path="/" element={<BrowsePage />} />
-            <Route path="/venue/:id" element={<VenueDetailPage />} />
-            <Route path="/crawl" element={<CrawlBuilderPage />} />
-            <Route path="/now" element={<NowPage />} />
-            <Route path="/tonight" element={<TonightPage />} />
-            <Route path="/admin/email-preview" element={<EmailPreviewPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/cookies" element={<CookiePolicyPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/:city" element={<SeoLandingPage />} />
-            <Route path="/:city/:slug" element={<SeoLandingPage />} />
-          </Routes>
-        </AppShell>
-      </BrowserRouter>
-    </AppProvider>
-  </HelmetProvider>
+  <ErrorBoundary>
+    <HelmetProvider>
+      <AppProvider>
+        <BrowserRouter>
+          <AppShell>
+            <Routes>
+              <Route path="/" element={<BrowsePage />} />
+              <Route path="/venue/:id" element={<VenueDetailPage />} />
+              <Route path="/crawl" element={<CrawlBuilderPage />} />
+              <Route path="/now" element={<NowPage />} />
+              <Route path="/tonight" element={<TonightPage />} />
+              <Route path="/admin/email-preview" element={<EmailPreviewPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/cookies" element={<CookiePolicyPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/:city" element={<SeoLandingPage />} />
+              <Route path="/:city/:slug" element={<SeoLandingPage />} />
+            </Routes>
+          </AppShell>
+        </BrowserRouter>
+      </AppProvider>
+    </HelmetProvider>
+  </ErrorBoundary>
 )
