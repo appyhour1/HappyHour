@@ -198,8 +198,6 @@ export function SponsoredBanner({ ad }: { ad: BrandAd }) {
       }
     }, 40)
     return () => clearTimeout(t)
-    // Intentionally re-run on every render so rotation triggers new impressions
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ad.id, ad.brand_name])
 
   return (
