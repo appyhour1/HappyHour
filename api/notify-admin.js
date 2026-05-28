@@ -1,14 +1,28 @@
+const ALLOWED_ORIGINS = [
+  'https://www.happyhourunlocked.com',
+  'https://happyhourunlocked.com',
+]
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
+  const origin = req.headers['origin'] || ''
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).end()
+  if (!ALLOWED_ORIGINS.includes(origin) && origin !== '') {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
 
   const { venue_name, neighborhood, deal_details, submitter_email, schedules } = req.body || {}
 
-  const adminEmail = process.env.REACT_APP_ADMIN_EMAIL
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.REACT_APP_ADMIN_EMAIL
   const resendKey = process.env.RESEND_API_KEY
-  const siteUrl = process.env.REACT_APP_SITE_URL || 'https://www.happyhourunlocked.com'
+  const siteUrl = process.env.SITE_URL || process.env.REACT_APP_SITE_URL || 'https://www.happyhourunlocked.com'
 
   if (!adminEmail || !resendKey) {
     return res.status(200).json({ ok: true, skipped: true })

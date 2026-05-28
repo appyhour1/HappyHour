@@ -1,28 +1,42 @@
+// NOTE ON RATE LIMITING:
+// In-memory rate limiting won't work reliably in serverless functions because
+// each invocation may be a new process. For real rate limiting, add Upstash Redis:
+// https://upstash.com/docs/redis/sdks/ratelimit-ts/overview
+// Until then, the CORS origin restriction below is the primary defense.
+
+const ALLOWED_ORIGINS = [
+  'https://www.happyhourunlocked.com',
+  'https://happyhourunlocked.com',
+]
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://www.happyhourunlocked.com')
+  const origin = req.headers['origin'] || ''
+
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Vary', 'Origin')
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Block requests not coming from our domain
-  const origin = req.headers['origin'] || ''
-  const referer = req.headers['referer'] || ''
-  const allowed =
-    origin.includes('happyhourunlocked.com') ||
-    referer.includes('happyhourunlocked.com')
-  if (!allowed) {
-    return res.status(401).json({ error: 'Unauthorized' })
+  // Reject requests not from our allowed origins
+  if (!ALLOWED_ORIGINS.includes(origin)) {
+    return res.status(403).json({ error: 'Forbidden' })
   }
 
-  const key = process.env.ANTHROPIC_API_KEY || process.env.REACT_APP_ANTHROPIC_API_KEY
+  // ANTHROPIC_API_KEY (no REACT_APP_ prefix) must be set in Vercel
+  // under Settings → Environment Variables → Server scope
+  const key = process.env.ANTHROPIC_API_KEY
   if (!key) return res.status(500).json({ error: 'API key not configured' })
 
   try {
     const { base64, mediaType } = req.body
     if (!base64) return res.status(400).json({ error: 'Missing image data' })
 
-    // Reject suspiciously large payloads
+    // Reject suspiciously large payloads (approx 1.5MB image)
     if (base64.length > 2_000_000) {
       return res.status(400).json({ error: 'Image too large' })
     }
