@@ -1,35 +1,19 @@
+/**
+ * useCardImpression.ts
+ *
+ * NOTE: This hook is not currently used by VenueCard — VenueCard manages
+ * its own IntersectionObserver inline. This file is kept for any other
+ * components that may need impression tracking.
+ *
+ * Updated to use impressionBuffer for batched writes instead of 3 sequential
+ * direct DB operations per impression. See impressionBuffer.ts for details.
+ */
+
 import { useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
-import { track } from '../services/analytics'
+import { trackImpression } from '../services/impressionBuffer'
 
-// Tracks once per card per session — fires after 1 second of 50% visibility
+// Session-level dedup — fires once per venue per page load
 const seen = new Set<string>()
-
-async function recordImpression(venueId: string, venueName: string, isFeatured: boolean, isSponsored: boolean) {
-  try {
-    // 1. Fire to PostHog
-    track('venue_card_impression', {
-      venue_id: venueId,
-      venue_name: venueName,
-      is_featured: isFeatured,
-      is_sponsored: isSponsored,
-    })
-
-    // 2. Increment weekly venue_stats (existing)
-    await supabase.rpc('increment_venue_stat', {
-      p_venue_id: venueId,
-      p_stat: 'card_views',
-    })
-
-    // 3. Log timestamped event for daily/weekly/monthly/yearly/all-time queries
-    await supabase.from('venue_impressions').insert({
-      venue_id: venueId,
-      event_type: 'card_view',
-    })
-  } catch {
-    // Never break the UI for analytics
-  }
-}
 
 export function useCardImpression(
   venueId: string,
@@ -50,7 +34,8 @@ export function useCardImpression(
           timerRef.current = setTimeout(() => {
             if (!seen.has(venueId)) {
               seen.add(venueId)
-              recordImpression(venueId, venueName, isFeatured, isSponsored)
+              // Batched write — does not hit Supabase immediately
+              trackImpression(venueId, 'card_view')
             }
           }, 1000)
         } else {
@@ -69,7 +54,7 @@ export function useCardImpression(
       observer.disconnect()
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [venueId, venueName, isFeatured, isSponsored])
+  }, [venueId])
 
   return ref
 }
