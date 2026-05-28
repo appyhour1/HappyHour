@@ -18,7 +18,6 @@ const isNative = !!(window as any).Capacitor?.isNativePlatform?.()
 
 // Open external links in system browser on native, new tab on web
 async function openExternal(url: string) {
-  // Check at call time — Capacitor may not be ready at module load
   const native = !!(window as any).Capacitor?.isNativePlatform?.()
   if (native) {
     try {
@@ -42,19 +41,46 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const citySlug = city.toLowerCase().replace(/\s+/g, '-')
 
-  // Android hardware back button handler
+  // ── DEEP LINK HANDLER ──────────────────────────────────────────────────────
+  // When a shared venue link (e.g. https://www.happyhourunlocked.com/venue/abc)
+  // is opened from outside the app, Capacitor fires appUrlOpen with the full URL.
+  // Without this listener the app just opens to the home page and ignores the path.
   useEffect(() => {
     if (!isNative) return
 
     let cleanup: (() => void) | undefined
 
     import('@capacitor/app').then(({ App }) => {
-      App.addListener('backButton', ({ canGoBack }) => {
+      App.addListener('appUrlOpen', (event) => {
+        try {
+          const url = new URL(event.url)
+          const path = url.pathname + url.search
+          // Only navigate if it's a real path — ignore bare domain opens
+          if (path && path !== '/') {
+            navigate(path, { replace: true })
+          }
+        } catch {
+          // Malformed URL — ignore and stay on current page
+        }
+      }).then(handle => {
+        cleanup = () => handle.remove()
+      })
+    })
+
+    return () => { cleanup?.() }
+  }, [navigate])
+
+  // ── ANDROID HARDWARE BACK BUTTON ───────────────────────────────────────────
+  useEffect(() => {
+    if (!isNative) return
+
+    let cleanup: (() => void) | undefined
+
+    import('@capacitor/app').then(({ App }) => {
+      App.addListener('backButton', () => {
         if (location.pathname === '/') {
-          // On home screen — exit app
           App.exitApp()
         } else {
-          // Navigate back within the app
           navigate(-1)
         }
       }).then(handle => {
