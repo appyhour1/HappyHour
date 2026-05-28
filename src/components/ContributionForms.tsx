@@ -4,7 +4,7 @@
  * SuggestEditForm — sends correction suggestions
  */
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { PlacesSearch, type PlaceResult } from './PlacesSearch'
 import { supabase } from '../lib/supabase'
 import type { Venue, DayOfWeek } from '../types'
@@ -63,27 +63,28 @@ async function scanMenuPhoto(base64: string, mediaType: string): Promise<ScanRes
   return JSON.parse(clean)
 }
 
-function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
-  const [scanning, setScanning] = useState(false)
-  const [error, setError] = useState('')
-  const [preview, setPreview] = useState<string | null>(null)
+// Safely compress image with fallback for iPad/older devices
+async function compressImage(file: File): Promise<{ base64: string; mediaType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setError('')
-    setScanning(true)
-    try {
-      const { base64, mediaType } = await new Promise<{ base64: string; mediaType: string }>((res, rej) => {
-        const reader = new FileReader()
-        reader.onload = () => {
-          const result = reader.result as string
-          const mimeType = result.split(';')[0].split(':')[1] || 'image/jpeg'
+    reader.onerror = () => reject(new Error('Failed to read file'))
 
-          const img = new Image()
-          img.onload = () => {
+    reader.onload = () => {
+      try {
+        const result = reader.result as string
+        if (!result) return reject(new Error('Empty file result'))
+
+        const img = new Image()
+
+        img.onerror = () => reject(new Error('Failed to load image'))
+
+        img.onload = () => {
+          try {
             const MAX_SIZE = 1200
             let { width, height } = img
+
+            // Only resize if needed
             if (width > MAX_SIZE || height > MAX_SIZE) {
               if (width > height) {
                 height = Math.round((height * MAX_SIZE) / width)
@@ -93,40 +94,106 @@ function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
                 height = MAX_SIZE
               }
             }
-            const canvas = document.createElement('canvas')
-            canvas.width = width
-            canvas.height = height
-            const ctx = canvas.getContext('2d')!
-            ctx.drawImage(img, 0, 0, width, height)
-            const compressed = canvas.toDataURL('image/jpeg', 0.8)
-            setPreview(compressed)
-            res({ base64: compressed.split(',')[1], mediaType: 'image/jpeg' })
+
+            // Try canvas compression
+            try {
+              const canvas = document.createElement('canvas')
+              canvas.width = width
+              canvas.height = height
+              const ctx = canvas.getContext('2d')
+
+              if (!ctx) throw new Error('No canvas context')
+
+              ctx.drawImage(img, 0, 0, width, height)
+              const compressed = canvas.toDataURL('image/jpeg', 0.8)
+
+              if (!compressed || compressed === 'data:,') throw new Error('Canvas output empty')
+
+              resolve({
+                base64: compressed.split(',')[1],
+                mediaType: 'image/jpeg',
+              })
+            } catch {
+              // Canvas failed — fall back to sending original file
+              const mimeType = result.split(';')[0].split(':')[1] || 'image/jpeg'
+              resolve({
+                base64: result.split(',')[1],
+                mediaType: mimeType,
+              })
+            }
+          } catch (err) {
+            reject(err)
           }
-          img.onerror = rej
-          img.src = result
         }
-        reader.onerror = rej
-        reader.readAsDataURL(file)
-      })
+
+        img.src = result
+      } catch (err) {
+        reject(err)
+      }
+    }
+
+    reader.readAsDataURL(file)
+  })
+}
+
+function PhotoScan({ onScanned }: { onScanned: (result: ScanResult) => void }) {
+  const [scanning, setScanning] = useState(false)
+  const [error, setError] = useState('')
+  const [preview, setPreview] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setError('')
+    setScanning(true)
+    setPreview(null)
+
+    try {
+      const { base64, mediaType } = await compressImage(file)
+
+      // Show preview
+      const previewUrl = `data:${mediaType};base64,${base64}`
+      setPreview(previewUrl)
+
       const result = await scanMenuPhoto(base64, mediaType)
       onScanned(result)
-    } catch {
+    } catch (err) {
+      console.error('Photo scan error:', err)
       setError('Could not read the photo. Try a clearer image or fill in manually.')
+    } finally {
+      setScanning(false)
+      // Reset input so same file can be selected again
+      if (inputRef.current) inputRef.current.value = ''
     }
-    setScanning(false)
   }
 
   return (
     <div className="cf-photo-scan">
       <label className="cf-photo-label">
-        <input type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFile}
+          style={{ display: 'none' }}
+        />
         <div className="cf-photo-btn">
-          {scanning ? <><span className="cf-spinner" />Reading your photo...</> : <>📷 Scan happy hour menu or sign</>}
+          {scanning
+            ? <><span className="cf-spinner" />Reading your photo...</>
+            : <>📷 Scan happy hour menu or sign</>
+          }
         </div>
       </label>
       {preview && !scanning && (
         <div className="cf-photo-preview">
-          <img src={preview} alt="Menu preview" style={{ width: '100%', borderRadius: 8, maxHeight: 160, objectFit: 'cover' }} />
+          <img
+            src={preview}
+            alt="Menu preview"
+            style={{ width: '100%', borderRadius: 8, maxHeight: 160, objectFit: 'cover' }}
+          />
           <div className="cf-photo-success">✓ Deals extracted — review below</div>
         </div>
       )}
