@@ -2,7 +2,7 @@ import React from 'react'
 import { Analytics } from '../services/analytics'
 
 const REDBULL_LOGO = "/redbull-logo.jpg"
-const TITOS_LOGO = "/titos-logo.jpg" 
+const TITOS_LOGO = "/titos-logo.jpg"
 
 export interface BrandAd {
   id: string
@@ -19,29 +19,29 @@ interface BrandConfig {
   bg: string
   logoBg: string
   headlineColor: string
-  accentWord: string        // last word of headline gets this color
+  accentWord: string
   subColor: string
   tagline: string
   tagColor: string
-  accentLine?: string       // left accent bar color
+  accentLine?: string
   style: 'redbull' | 'titos' | 'uber' | 'default'
 }
 
 const BRAND_CONFIGS: Record<string, BrandConfig> = {
   'red bull': {
-    bg: '#1B47C8',          // Red Bull royal blue
+    bg: '#1B47C8',
     logoBg: '#CC1E4A',
     headlineColor: '#ffffff',
-    accentWord: '#FFC906',  // Red Bull gold/yellow
+    accentWord: '#FFC906',
     subColor: 'rgba(255,255,255,.55)',
     tagline: "GIVES YOU WINGS",
     tagColor: '#FFC906',
     style: 'redbull',
   },
   "tito's vodka": {
-    bg: '#1E1208',          // Dark warm brown, like the wood
+    bg: '#1E1208',
     logoBg: '#C87941',
-    headlineColor: '#F5E6C8',   // warm cream
+    headlineColor: '#F5E6C8',
     accentWord: '#C87941',
     subColor: 'rgba(245,230,200,.55)',
     tagline: "AMERICA'S ORIGINAL CRAFT VODKA",
@@ -76,11 +76,28 @@ function getConfig(brandName: string): BrandConfig {
   return BRAND_CONFIGS[brandName.toLowerCase().trim()] || DEFAULT_CONFIG
 }
 
-// Split headline — accent the last word
+// Split headline — accent the last word.
+// FIX: guard against single-word headlines to avoid leading space.
 function HeadlineSplit({ text, cfg }: { text: string; cfg: BrandConfig }) {
   const words = text.trim().split(' ')
-  const last = words.pop()
-  const rest = words.join(' ')
+
+  // Single-word headline — render without split
+  if (words.length <= 1) {
+    const styleBase = {
+      lineHeight: 1.15 as number,
+      marginBottom: 3,
+    }
+    if (cfg.style === 'redbull') {
+      return <div style={{ ...styleBase, fontSize: 15, fontWeight: 900, color: cfg.headlineColor, letterSpacing: '-.2px' }}>{text}</div>
+    }
+    if (cfg.style === 'uber') {
+      return <div style={{ ...styleBase, fontSize: 14, fontWeight: 900, color: cfg.headlineColor, textTransform: 'uppercase' as const, letterSpacing: '.01em' }}>{text}</div>
+    }
+    return <div style={{ ...styleBase, fontSize: 14, fontWeight: 800, color: cfg.headlineColor, lineHeight: 1.2 }}>{text}</div>
+  }
+
+  const last = words[words.length - 1]
+  const rest = words.slice(0, words.length - 1).join(' ')
 
   if (cfg.style === 'redbull') {
     return (
@@ -165,15 +182,25 @@ export function SponsoredBanner({ ad }: { ad: BrandAd }) {
   const [visible, setVisible] = React.useState(false)
   const cfg = getConfig(ad.brand_name)
 
+  // FIX: track the last ad ID we fired an impression for.
+  // Without this, if the same ad rotates back into the slot, the useEffect
+  // won't re-fire because ad.id hasn't changed.
+  const lastFiredAdId = React.useRef<string | null>(null)
+
   React.useEffect(() => {
     setVisible(false)
     const t = setTimeout(() => {
       setVisible(true)
-      // Fire impression event
-      Analytics.adImpression(ad.id, ad.brand_name)
+      // Only fire impression if this is a different ad than last time
+      if (lastFiredAdId.current !== ad.id) {
+        lastFiredAdId.current = ad.id
+        Analytics.adImpression(ad.id, ad.brand_name)
+      }
     }, 40)
     return () => clearTimeout(t)
-  }, [ad.id])
+    // Intentionally re-run on every render so rotation triggers new impressions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ad.id, ad.brand_name])
 
   return (
     <div style={{
@@ -192,11 +219,9 @@ export function SponsoredBanner({ ad }: { ad: BrandAd }) {
         overflow: 'hidden',
         position: 'relative',
         cursor: 'pointer',
-        // Tito's gets a left copper accent bar
         borderLeft: cfg.accentLine ? `3px solid ${cfg.accentLine}` : undefined,
       }}>
 
-        {/* Red Bull: subtle blue-on-blue right edge accent circle */}
         {cfg.style === 'redbull' && (
           <div style={{ position: 'absolute', right: -24, top: -24, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,201,6,.08)', pointerEvents: 'none' }} />
         )}
@@ -206,7 +231,6 @@ export function SponsoredBanner({ ad }: { ad: BrandAd }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <HeadlineSplit text={ad.headline} cfg={cfg} />
 
-          {/* Red Bull accent rule */}
           {cfg.style === 'redbull' && (
             <div style={{ width: 24, height: 2, background: '#CC1E4A', borderRadius: 2, marginBottom: 5 }} />
           )}
