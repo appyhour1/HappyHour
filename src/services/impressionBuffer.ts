@@ -62,13 +62,7 @@ function init(): void {
   // NOTE: 'beforeunload' is unreliable on iOS Safari — visibilitychange is correct
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
-      // Use sendBeacon if available — works even when the page is being unloaded
-      if (buffer.length > 0 && navigator.sendBeacon) {
-        // sendBeacon can't use supabase client directly, so fall back to fetch-based flush
-        void flush()
-      } else {
-        void flush()
-      }
+      void flush()
     }
   })
 
